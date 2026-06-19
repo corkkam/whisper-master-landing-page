@@ -81,7 +81,7 @@ const fragmentShader = /* glsl */ `
     vec2 p = uv - 0.5;
     p.x *= uRes.x / uRes.y;
 
-    float t = uTime * 0.045;
+    float t = uTime * 0.040; // calmer drift
 
     // Two-stage domain warp → rich, flowing filament detail (the "depth").
     vec2 q = vec2(
@@ -98,11 +98,11 @@ const fragmentShader = /* glsl */ `
     vec3 base = vec3(0.035, 0.035, 0.055);
     vec3 col = base;
 
-    // Bold, layered aurora glows — vivid and present, not a faint wash.
-    col = mix(col, uColorA, smoothstep(0.35, 0.95, n) * 0.85);
+    // Layered aurora glows — calmed further (~25% below the bold peak).
+    col = mix(col, uColorA, smoothstep(0.35, 0.95, n) * 0.65);
     col = mix(col, uColorB,
-      smoothstep(0.45, 1.0, fbm(p * 1.2 + r) * 0.5 + 0.5) * 0.55);
-    col = mix(col, uColorC, smoothstep(0.72, 1.0, n) * 0.30);
+      smoothstep(0.45, 1.0, fbm(p * 1.2 + r) * 0.5 + 0.5) * 0.42);
+    col = mix(col, uColorC, smoothstep(0.72, 1.0, n) * 0.22);
 
     // Carve deep shadow pockets for contrast and drama.
     col *= 0.82 + 0.18 * smoothstep(0.2, 0.85, n);
@@ -110,7 +110,7 @@ const fragmentShader = /* glsl */ `
     // Soft edge vignette so the aurora frames the hero rather than flooding it.
     float d = length((uv - vec2(0.5, 0.55)) * vec2(1.0, 1.05));
     float vig = smoothstep(1.25, 0.3, d);
-    col = mix(base, col, 0.55 + 0.45 * vig);
+    col = mix(base, col, 0.45 + 0.40 * vig);
 
     gl_FragColor = vec4(col, 1.0);
   }
