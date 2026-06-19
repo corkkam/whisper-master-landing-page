@@ -35,28 +35,46 @@ export default function HowItWorks() {
         />
       </div>
 
-      <Stagger className="mt-14 grid gap-5 md:grid-cols-3">
-        {steps.map((s) => (
-          <Item key={s.n}>
-            <div className="glass-soft h-full rounded-2xl p-6 transition duration-300 hover:-translate-y-1 hover:border-white/[0.14]">
-              <div className="flex items-center justify-between">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent/12 text-accent-300 ring-1 ring-accent/25">
-                  {s.icon}
-                </span>
-                <span className="font-mono text-sm font-medium tracking-widest text-white/25">
-                  {s.n}
-                </span>
-              </div>
-              <h3 className="mt-5 text-lg font-semibold text-white">
+      <div className="relative mt-16">
+        {/* flowing connector path linking the three nodes (md+) */}
+        <div
+          aria-hidden
+          className="absolute left-[16%] right-[16%] top-8 hidden h-px md:block"
+          style={{
+            background:
+              "linear-gradient(to right, transparent, rgba(99,102,241,0.4), rgba(255,255,255,0.08), rgba(99,102,241,0.4), transparent)",
+          }}
+        />
+
+        <Stagger className="grid gap-12 md:grid-cols-3 md:gap-8">
+          {steps.map((s) => (
+            <Item key={s.n} className="relative">
+              {/* oversized ghost numeral */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -top-8 right-1 select-none text-[5.5rem] font-bold leading-none text-white/[0.045]"
+              >
+                {s.n}
+              </span>
+
+              {/* node sits on the connector line */}
+              <span className="glass relative z-10 flex h-16 w-16 items-center justify-center rounded-2xl text-accent-300">
+                {s.icon}
+              </span>
+
+              <p className="mt-6 text-[12px] font-semibold uppercase tracking-eyebrow text-accent-300">
+                Step {s.n}
+              </p>
+              <h3 className="mt-2 text-xl font-semibold text-white">
                 {s.title}
               </h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-white/55">
+              <p className="mt-2 max-w-xs text-[15px] leading-relaxed text-white/55">
                 {s.body}
               </p>
-            </div>
-          </Item>
-        ))}
-      </Stagger>
+            </Item>
+          ))}
+        </Stagger>
+      </div>
     </Section>
   );
 }
