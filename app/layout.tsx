@@ -49,10 +49,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-    <Analytics/>
       <body className="bg-base-900 font-sans antialiased">
         {children}
-        <SpeedInsights />
+           <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
