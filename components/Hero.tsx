@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
 import { FEATURE_3D_HERO, product } from "@/lib/config";
 import AuroraFallback from "./AuroraFallback";
-import VoiceDemo from "./VoiceDemo";
+import ProductDemo from "./ProductDemo";
 import WaitlistForm from "./WaitlistForm";
 
 // WebGL hero is client-only + lazy so it never blocks first paint or SSR.
@@ -33,17 +33,6 @@ export default function Hero() {
       {/* Aurora: CSS base always renders; WebGL layers on top when eligible. */}
       <AuroraFallback />
       {FEATURE_3D_HERO && <HeroCanvas />}
-
-      {/* Readability scrim — carves a calm, dark pocket behind the copy so the
-          bold aurora can stay vivid everywhere else without washing out text. */}
-      <div
-        className="pointer-events-none absolute inset-0 z-[5]"
-        aria-hidden
-        style={{
-          background:
-            "radial-gradient(120% 65% at 50% 42%, rgba(7,7,11,0.86) 0%, rgba(7,7,11,0.6) 30%, rgba(7,7,11,0.25) 55%, rgba(7,7,11,0) 80%)",
-        }}
-      />
 
       <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center">
         <motion.span {...rise(0)} className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5">
@@ -93,9 +82,19 @@ export default function Hero() {
               animate: { opacity: 1, y: 0 },
               transition: { duration: 0.9, delay: 0.34, ease: EASE },
             })}
-        className="relative z-10 mt-14 w-full max-w-2xl"
+        className="relative z-10 mt-16 w-full max-w-2xl"
       >
-        <VoiceDemo />
+        {/* soft halo so the product card reads as the floating centerpiece */}
+        <div
+          aria-hidden
+          className="absolute -inset-8 -z-10 opacity-70"
+          style={{
+            background:
+              "radial-gradient(55% 55% at 50% 30%, rgba(99,102,241,0.28), rgba(139,92,246,0.10) 45%, transparent 72%)",
+            filter: "blur(52px)",
+          }}
+        />
+        <ProductDemo />
       </motion.div>
     </section>
   );

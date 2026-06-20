@@ -1,7 +1,7 @@
 /**
- * Pure-CSS aurora — large, very-blurred radial orbs in the accent palette.
- * This is the base look and the graceful fallback when WebGL is unavailable,
- * reduced-motion is set, on small screens, or when FEATURE_3D_HERO is off.
+ * Calm hero background — clean near-black with a single soft accent glow and a
+ * faint secondary, kept low for an InboundIQ-style, product-forward feel. This
+ * is the base look now that the busy WebGL aurora is off (FEATURE_3D_HERO).
  */
 export default function AuroraFallback() {
   return (
@@ -9,36 +9,25 @@ export default function AuroraFallback() {
       className="pointer-events-none absolute inset-0 overflow-hidden"
       aria-hidden
     >
-      {/* indigo */}
+      {/* one soft accent glow, top-center */}
       <div
-        className="absolute left-1/2 top-[-10%] h-[60vh] w-[60vh] -translate-x-1/2 rounded-full opacity-[0.42] motion-safe:animate-float-slow"
+        className="absolute left-1/2 top-[-22%] h-[55vh] w-[85vh] -translate-x-1/2 rounded-full opacity-[0.28] motion-safe:animate-float-slow"
         style={{
           background:
-            "radial-gradient(circle at center, #6366F1 0%, rgba(99,102,241,0) 68%)",
-          filter: "blur(120px)",
+            "radial-gradient(circle at center, #6366F1 0%, rgba(99,102,241,0) 66%)",
+          filter: "blur(130px)",
         }}
       />
-      {/* violet */}
+      {/* faint violet, lower-left — just enough to avoid flat black */}
       <div
-        className="absolute left-[8%] top-[18%] h-[44vh] w-[44vh] rounded-full opacity-[0.30] motion-safe:animate-float-slow"
+        className="absolute left-[-6%] top-[40%] h-[40vh] w-[40vh] rounded-full opacity-[0.14]"
         style={{
           background:
             "radial-gradient(circle at center, #8B5CF6 0%, rgba(139,92,246,0) 70%)",
-          filter: "blur(120px)",
-          animationDelay: "-5s",
+          filter: "blur(140px)",
         }}
       />
-      {/* cyan */}
-      <div
-        className="absolute right-[6%] top-[8%] h-[40vh] w-[40vh] rounded-full opacity-[0.27] motion-safe:animate-float-slow"
-        style={{
-          background:
-            "radial-gradient(circle at center, #22D3EE 0%, rgba(34,211,238,0) 70%)",
-          filter: "blur(130px)",
-          animationDelay: "-9s",
-        }}
-      />
-      {/* fade the aurora into the page below the hero */}
+      {/* fade into the page below the hero */}
       <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent to-base-900" />
     </div>
   );

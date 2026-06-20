@@ -13,7 +13,7 @@ export const FEATURE_3D_HERO = true;
 export const product = {
   name: "Whispr",
   tagline: "Voice-to-text that never leaves your device.",
-  contactEmail: "hello@whispr.app",
+  contactEmail: "corkkam.info@gmail.com",
   // Keep this honest — you want to be able to defend it in the pitch.
   waitlistCount: "2,400+",
 } as const;
