@@ -12,22 +12,22 @@ Built to look like a funded, shipping product for a YC pitch.
 ## Quick start
 
 ```bash
-npm install
-npm run dev      # http://localhost:3000
+pnpm install
+pnpm run dev      # http://localhost:3000
 ```
 
 Production:
 
 ```bash
-npm run build && npm run start
+pnpm run build && pnpm run start
 ```
 
 The WebGL/3D deps are already in `package.json`. If you want the exact line for the
 3D module on its own:
 
 ```bash
-npm install three @react-three/fiber @react-three/drei
-npm install -D @types/three
+pnpm install three @react-three/fiber @react-three/drei
+pnpm install -D @types/three
 ```
 
 ---
