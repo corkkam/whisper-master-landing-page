@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { product } from "@/lib/config";
 import { Wordmark } from "./Wordmark";
+import { useJoin } from "./waitlist/JoinContext";
 
 const links = [
   { href: "#how-it-works", label: "How it works" },
@@ -12,6 +13,7 @@ const links = [
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const { open } = useJoin();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -50,12 +52,12 @@ export default function Nav() {
           ))}
         </div>
 
-        <a
-          href="#join"
+        <button
+          onClick={() => open()}
           className="inline-flex items-center justify-center rounded-xl bg-accent px-4 py-2 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-base-900"
         >
           Join Waitlist
-        </a>
+        </button>
       </nav>
     </header>
   );
