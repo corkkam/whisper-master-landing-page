@@ -2,8 +2,6 @@
 -- ledger, idempotent awards, referrals, and secure rank/leaderboard RPCs.
 -- Run AFTER 0001_init.sql.
 
-create extension if not exists pgcrypto;
-
 -- ── referral + signup metadata on entries ────────────────────────────────
 alter table public.waitlist_entries
   add column if not exists referral_code   text unique,
@@ -12,9 +10,11 @@ alter table public.waitlist_entries
   add column if not exists joined_position bigint;    -- ordinal at join (for "moved up +N")
 
 -- short, shareable code e.g. yourapp.com/r/AB12CD34
+-- core functions only (md5/random) — avoids the pgcrypto/search_path issue
+-- where gen_random_bytes lives in the `extensions` schema on Supabase.
 create or replace function public.new_referral_code()
 returns text language sql volatile as $$
-  select upper(substr(encode(gen_random_bytes(6), 'hex'), 1, 8));
+  select upper(substr(md5(random()::text || clock_timestamp()::text), 1, 8));
 $$;
 
 -- ── append-only points ledger (totalPoints = SUM; never a mutable counter) ─

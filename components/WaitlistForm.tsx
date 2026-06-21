@@ -2,6 +2,7 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { useJoin } from "./waitlist/JoinContext";
+import { EMAIL_AUTH_ENABLED } from "@/lib/config";
 import { ArrowRightIcon } from "./icons";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -30,6 +31,21 @@ export default function WaitlistForm({
       return;
     }
     open({ email: value }); // empty is fine — the modal collects it
+  }
+
+  // Google-only mode: a single CTA button (no misleading email field).
+  if (!EMAIL_AUTH_ENABLED) {
+    return (
+      <div className="w-full">
+        <button
+          onClick={() => open()}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-semibold text-white shadow-glow transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-base-900 sm:w-auto sm:px-8"
+        >
+          Join the waitlist
+          <ArrowRightIcon className="h-4 w-4" />
+        </button>
+      </div>
+    );
   }
 
   return (

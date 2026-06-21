@@ -11,8 +11,15 @@ import {
 } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
 
-// ── auth: passwordless email OTP (Turnstile-gated) ──────────────────────
-export async function sendEmailOtp(emailRaw: string, turnstileToken: string | null) {
+// ── auth: passwordless email magic link (Turnstile-gated) ───────────────
+// Uses the magic-link email (the default Supabase template, no SMTP needed).
+// Clicking the link lands on /auth/callback, which signs the user in and
+// redirects to the details step.
+export async function sendEmailLink(
+  emailRaw: string,
+  turnstileToken: string | null,
+  redirectTo: string
+) {
   const email = emailSchema.safeParse(emailRaw);
   if (!email.success) return { ok: false as const, error: "Enter a valid email." };
 
@@ -23,9 +30,16 @@ export async function sendEmailOtp(emailRaw: string, turnstileToken: string | nu
   const supabase = createClient();
   const { error } = await supabase.auth.signInWithOtp({
     email: email.data,
-    options: { shouldCreateUser: true },
+    options: { shouldCreateUser: true, emailRedirectTo: redirectTo || undefined },
   });
-  if (error) return { ok: false as const, error: "Couldn't send the code. Try again." };
+  if (error) {
+    // Log the real reason server-side; surface it to the client for now (dev).
+    console.error("[waitlist] signInWithOtp failed:", error.status, error.message);
+    return {
+      ok: false as const,
+      error: error.message || "Couldn't send the email. Try again.",
+    };
+  }
   return { ok: true as const };
 }
 
@@ -73,6 +87,21 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
     return { ok: false, error: "Please verify your email or sign in first." };
   }
 
+  // Self-heal: guarantee this user has a profile row before we reference it.
+  // The signup trigger covers fresh users, but an auth user can exist without
+  // a profile (created via an OTP attempt before the trigger, account-linking,
+  // etc.) — this makes the FK insert never fail for that reason.
+  const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
+  await supabase.from("profiles").upsert(
+    {
+      id: user.id,
+      email: user.email,
+      full_name: meta.full_name ?? meta.name ?? null,
+      avatar_url: meta.avatar_url ?? null,
+    },
+    { onConflict: "id" }
+  );
+
   // Referral only attaches on first join (not on re-submit).
   const cookieStore = cookies();
   const { data: existing } = await supabase
@@ -102,7 +131,11 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
     .single();
 
   if (error || !data) {
-    return { ok: false, error: "Couldn't save your spot — please try again." };
+    console.error("[waitlist] submitWaitlist failed:", error?.code, error?.message, error?.details);
+    return {
+      ok: false,
+      error: error?.message || "Couldn't save your spot — please try again.",
+    };
   }
 
   if (referredBy) {

@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import {
-  sendEmailOtp,
-  verifyEmailOtp,
+  sendEmailLink,
   submitWaitlist,
   getCurrentUserEmail,
   getDashboard,
@@ -17,6 +16,7 @@ import {
   REFERRAL_OPTIONS,
 } from "@/lib/waitlist/schema";
 import { MILESTONES, nextMilestone } from "@/lib/waitlist/points";
+import { EMAIL_AUTH_ENABLED } from "@/lib/config";
 import Turnstile from "./Turnstile";
 import { ArrowRightIcon, CheckIcon, XIcon } from "@/components/icons";
 
@@ -33,12 +33,13 @@ export default function JoinModal({
 }) {
   const [step, setStep] = useState<Step>(initialStep);
   const [email, setEmail] = useState(initialEmail);
-  const [otp, setOtp] = useState("");
   const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [copied, setCopied] = useState(false);
+  const [returning, setReturning] = useState(false);
+  const [initializing, setInitializing] = useState(true);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -49,15 +50,30 @@ export default function JoinModal({
     referralSource: "" as string,
   });
 
-  // Returning from Google OAuth lands on the details step.
+  // On open, figure out where to start:
+  //  • already has a waitlist entry  → "welcome back" dashboard
+  //  • signed in, no entry yet        → details form (prefilled email)
+  //  • not signed in                  → email step
   useEffect(() => {
-    if (initialStep === "details") {
-      getCurrentUserEmail().then((e) => {
-        if (e) setEmail(e);
-        else setStep("email");
-      });
-    }
-  }, [initialStep]);
+    (async () => {
+      const d = await getDashboard();
+      if (d) {
+        setDash(d);
+        setReturning(true);
+        setStep("success");
+      } else {
+        const e = await getCurrentUserEmail();
+        if (e) {
+          setEmail(e);
+          setStep("details");
+        } else {
+          setStep(initialStep === "details" ? "email" : initialStep);
+        }
+      }
+      setInitializing(false);
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Esc to close.
   useEffect(() => {
@@ -66,33 +82,23 @@ export default function JoinModal({
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function handleSendOtp(e: React.FormEvent) {
-    e.preventDefault();
+  async function sendLink(e?: React.FormEvent) {
+    e?.preventDefault();
     setError("");
     setLoading(true);
-    const res = await sendEmailOtp(email, token);
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    const res = await sendEmailLink(email, token, redirectTo);
     setLoading(false);
     if (res.ok) setStep("otp");
-    else setError(res.error);
-  }
-
-  async function handleVerify(e: React.FormEvent) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-    const res = await verifyEmailOtp(email, otp);
-    setLoading(false);
-    if (res.ok) setStep("details");
     else setError(res.error);
   }
 
   async function handleGoogle() {
     setError("");
     const supabase = createClient();
-    const next = encodeURIComponent("/?join=details");
     const { error: err } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback?next=${next}` },
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
     });
     if (err) setError("Couldn't start Google sign-in.");
   }
@@ -161,6 +167,14 @@ export default function JoinModal({
           <XIcon className="h-4 w-4" />
         </button>
 
+        {initializing && (
+          <div className="flex items-center justify-center py-20 text-accent-300">
+            <Spinner />
+          </div>
+        )}
+
+        {!initializing && (
+        <>
         {/* ── EMAIL ─────────────────────────────────────────────── */}
         {step === "email" && (
           <div>
@@ -171,63 +185,69 @@ export default function JoinModal({
 
             <button
               onClick={handleGoogle}
-              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08]"
+              disabled={!token}
+              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <GoogleIcon /> Continue with Google
             </button>
 
-            <div className="my-4 flex items-center gap-3 text-xs text-white/35">
-              <span className="h-px flex-1 bg-white/10" /> or <span className="h-px flex-1 bg-white/10" />
+            {/* Turnstile bot-check: when configured, the Google button stays
+                disabled until it's solved. Renders nothing (auto-passes) when
+                no site key is set. */}
+            <div className="mt-3 flex justify-center">
+              <Turnstile onToken={setToken} />
             </div>
 
-            <form onSubmit={handleSendOtp}>
-              <input
-                type="email"
-                autoFocus
-                required
-                placeholder="you@company.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-              />
-              <Turnstile onToken={setToken} />
-              <button
-                type="submit"
-                disabled={loading}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
-              >
-                {loading ? <Spinner /> : <>Email me a code <ArrowRightIcon className="h-4 w-4" /></>}
-              </button>
-            </form>
+            {EMAIL_AUTH_ENABLED && (
+              <>
+                <div className="my-4 flex items-center gap-3 text-xs text-white/35">
+                  <span className="h-px flex-1 bg-white/10" /> or <span className="h-px flex-1 bg-white/10" />
+                </div>
+                <form onSubmit={sendLink}>
+                  <input
+                    type="email"
+                    required
+                    placeholder="you@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={loading || !token}
+                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
+                  >
+                    {loading ? <Spinner /> : <>Email me a sign-in link <ArrowRightIcon className="h-4 w-4" /></>}
+                  </button>
+                </form>
+              </>
+            )}
             <Err error={error} />
           </div>
         )}
 
-        {/* ── OTP ───────────────────────────────────────────────── */}
+        {/* ── CHECK INBOX (magic link) ──────────────────────────── */}
         {step === "otp" && (
-          <div>
-            <h2 className="text-xl font-semibold text-white">Enter your code</h2>
-            <p className="mt-1 text-sm text-white/55">
-              We sent a 6-digit code to <strong className="text-white/80">{email}</strong>.
+          <div className="text-center">
+            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-300 ring-1 ring-accent/30">
+              <MailIcon className="h-6 w-6" />
+            </span>
+            <h2 className="mt-4 text-xl font-semibold text-white">Check your inbox</h2>
+            <p className="mt-2 text-sm leading-relaxed text-white/60">
+              We sent a sign-in link to <strong className="text-white/80">{email}</strong>.
+              Open it and click <strong className="text-white/80">Sign in</strong> — you&rsquo;ll
+              come right back here to finish.
             </p>
-            <form onSubmit={handleVerify} className="mt-5">
-              <input
-                inputMode="numeric"
-                autoFocus
-                maxLength={6}
-                placeholder="123456"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-                className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-center text-2xl tracking-[0.4em] text-white outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-              />
-              <button
-                type="submit"
-                disabled={loading || otp.length !== 6}
-                className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-60"
-              >
-                {loading ? <Spinner /> : "Verify & continue"}
-              </button>
-            </form>
+            <p className="mt-3 text-xs text-white/40">
+              Tip: open the link in <em>this</em> browser. Check spam if it&rsquo;s not there in a minute.
+            </p>
+            <button
+              onClick={() => sendLink()}
+              disabled={loading}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:opacity-60"
+            >
+              {loading ? <Spinner /> : "Resend link"}
+            </button>
             <button
               onClick={() => setStep("email")}
               className="mt-3 text-xs text-white/45 transition hover:text-white/70"
@@ -326,9 +346,15 @@ export default function JoinModal({
             <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
               <CheckIcon className="h-6 w-6" />
             </span>
-            <h2 className="mt-4 text-2xl font-semibold text-white">You&rsquo;re in! 🎉</h2>
+            <h2 className="mt-4 text-2xl font-semibold text-white">
+              {returning
+                ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
+                : "You’re in! 🎉"}
+            </h2>
             <p className="mt-1 text-sm text-white/55">
-              {dash.movedUp > 0
+              {returning
+                ? "You’re already on the list — here’s where you stand. Share your link to climb higher."
+                : dash.movedUp > 0
                 ? `You've already jumped +${dash.movedUp} spots.`
                 : "Invite friends to climb the line."}
             </p>
@@ -368,6 +394,8 @@ export default function JoinModal({
 
             <MilestoneTracker referrals={dash.referralsCount} />
           </div>
+        )}
+        </>
         )}
       </div>
     </div>
@@ -439,6 +467,24 @@ function Spinner() {
 function Err({ error }: { error: string }) {
   if (!error) return null;
   return <p className="mt-3 text-sm text-red-300">{error}</p>;
+}
+
+function MailIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </svg>
+  );
 }
 
 function GoogleIcon() {

@@ -69,6 +69,17 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- backfill profiles for any users created before this trigger existed
+insert into public.profiles (id, email, full_name, avatar_url, provider)
+select u.id, u.email,
+       coalesce(u.raw_user_meta_data ->> 'full_name', u.raw_user_meta_data ->> 'name'),
+       u.raw_user_meta_data ->> 'avatar_url',
+       u.raw_app_meta_data ->> 'provider'
+from auth.users u
+left join public.profiles p on p.id = u.id
+where p.id is null
+on conflict (id) do nothing;
+
 -- ── Row-Level Security: everyone touches only their own rows ─────────────
 alter table public.profiles        enable row level security;
 alter table public.waitlist_entries enable row level security;

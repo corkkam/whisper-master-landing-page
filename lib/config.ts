@@ -8,6 +8,11 @@
 // Flip to `false` to instantly disable the WebGL shader-aurora hero and fall
 // back to the pure-CSS aurora everywhere. Use this if a laptop chokes mid-pitch.
 export const FEATURE_3D_HERO = true;
+
+// Email magic-link sign-in needs reliable email (custom SMTP in Supabase).
+// Until that's set up, keep the waitlist Google-only by leaving this `false`.
+// Flip to `true` once SMTP is configured to re-enable the email path.
+export const EMAIL_AUTH_ENABLED = false;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const product = {
