@@ -14,9 +14,11 @@ Do these once, then the app runs locally and on Vercel.
    - `service_role` key (secret)
 
 ## 2. Create the database
-- **SQL Editor → New query** → paste all of [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql) → **Run**.
-- This creates `profiles` + `waitlist_entries`, the position counter, the
-  auto-profile trigger, and Row-Level Security.
+- **SQL Editor → New query** → run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
+  (profiles + waitlist_entries + position counter + auto-profile + RLS).
+- Then run [`supabase/migrations/0002_viral.sql`](supabase/migrations/0002_viral.sql)
+  (referral codes + points ledger + referrals + leaderboard RPCs). Review the
+  point values in it first — they mirror `lib/waitlist/points.ts`.
 
 ## 3. Enable Google sign-in
 1. **Google Cloud Console** → APIs & Services → Credentials → *Create OAuth client ID* → Web application.
@@ -29,6 +31,11 @@ Do these once, then the app runs locally and on Vercel.
 Email is enabled by default in Supabase Auth. The app uses 6-digit OTP
 (no password). Optionally customize the email template under
 **Authentication → Email Templates → Magic Link / OTP**.
+
+## 4b. Cloudflare Turnstile (bot check at signup)
+1. dash.cloudflare.com → **Turnstile** → Add site (your domain + `localhost`).
+2. Copy the **Site key** → `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and the
+   **Secret key** → `TURNSTILE_SECRET_KEY`.
 
 ## 5. Local env
 ```bash
