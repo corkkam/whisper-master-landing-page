@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import JoinProvider from "@/components/waitlist/JoinContext";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -47,7 +48,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={inter.variable}>
-      <body className="bg-base-900 font-sans antialiased">{children}</body>
+      <body className="bg-base-900 font-sans antialiased">
+        <JoinProvider>{children}</JoinProvider>
+      </body>
     </html>
   );
 }
