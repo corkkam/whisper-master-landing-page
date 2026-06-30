@@ -1,118 +1,102 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { motion, useReducedMotion } from "framer-motion";
-import { FEATURE_3D_HERO, product } from "@/lib/config";
-import AuroraFallback from "./AuroraFallback";
-import ProductDemo from "./ProductDemo";
+import { product } from "@/lib/config";
 import WaitlistForm from "./WaitlistForm";
+import VoiceDemo from "./VoiceDemo";
 
-// WebGL hero is client-only + lazy so it never blocks first paint or SSR.
-// Toggle FEATURE_3D_HERO in lib/config.ts to disable it instantly.
-const HeroCanvas = dynamic(() => import("./HeroCanvas"), { ssr: false });
+const reveal = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0 },
+};
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+const EASE = [0.16, 1, 0.3, 1] as const;
 
 export default function Hero() {
   const reduce = useReducedMotion();
 
-  const rise = (delay: number) =>
-    reduce
-      ? {}
-      : {
-          initial: { opacity: 0, y: 22 },
-          animate: { opacity: 1, y: 0 },
-          transition: { duration: 0.7, delay, ease: EASE },
-        };
-
   return (
-    <section
-      id="top"
-      className="relative isolate flex min-h-[100svh] flex-col items-center justify-center overflow-hidden px-5 pb-20 pt-28 sm:px-8 sm:pt-32"
-    >
-      {/* Aurora: CSS base always renders; WebGL layers on top when eligible. */}
-      <AuroraFallback />
-      {FEATURE_3D_HERO && <HeroCanvas />}
+    <section id="top" className="hero">
+      {/* Aurora blobs */}
+      <div className="aurora" aria-hidden="true">
+        <i className="aurora-one" />
+        <i className="aurora-two" />
+      </div>
+      <div className="grain" aria-hidden="true" />
 
-      <div className="relative z-10 mx-auto flex w-full max-w-3xl flex-col items-center text-center">
-        <motion.span {...rise(0)} className="eyebrow mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.03] px-3.5 py-1.5">
-          <span className="h-1.5 w-1.5 rounded-full bg-accent-300" />
-          On-device voice-to-text
-        </motion.span>
+      {/* Two-column hero copy */}
+      <motion.div
+        className="hero-copy"
+        initial={reduce ? false : "hidden"}
+        animate="visible"
+        variants={{
+          hidden: {},
+          visible: { transition: { staggerChildren: 0.1, delayChildren: 0.1 } },
+        }}
+      >
+        <div className="hero-left">
+          <motion.div className="eyebrow" variants={reveal}>
+            <span className="live-dot" />
+            PRIVATE DICTATION FOR MAC
+          </motion.div>
+          <motion.h1 variants={reveal}>
+            Say it <span className="messy-word">messy.</span>
+            <br />
+            It lands <em>polished.</em>
+          </motion.h1>
+        </div>
 
-        <motion.h1
-          {...rise(0.08)}
-          className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-white [text-shadow:0_2px_40px_rgba(5,5,10,0.55)] sm:text-6xl md:text-[4.25rem]"
-        >
-          Type at the speed of thought.{" "}
-          <span className="accent-gradient-text">Privately.</span>
-        </motion.h1>
-
-        <motion.p
-          {...rise(0.16)}
-          className="mt-6 max-w-xl text-balance text-lg leading-relaxed text-white/70 [text-shadow:0_1px_20px_rgba(5,5,10,0.6)] sm:text-xl"
-        >
-          {product.name} turns natural speech into clean, formatted text in any
-          app — transcribed entirely on your device. Nothing is uploaded,
-          stored, or trained on.
-        </motion.p>
-
-        <motion.div {...rise(0.24)} className="mt-9 w-full max-w-xl" id="join">
-          <WaitlistForm variant="hero" />
-          <div className="mt-3 flex flex-col items-center justify-center gap-2 text-sm text-white/45 sm:flex-row sm:gap-4">
-            <span>No spam. Early access invites roll out weekly.</span>
-            <span className="hidden h-1 w-1 rounded-full bg-white/20 sm:inline-block" />
-            <span className="inline-flex items-center gap-2">
-              <AvatarStack />
-              <strong className="font-semibold text-white/70">
-                {product.waitlistCount}
-              </strong>{" "}
-              already in line
-            </span>
+        <motion.div className="hero-right" variants={reveal}>
+          <p className="hero-subhead">
+            Speak at the speed you think. {product.name} removes the ums, finds
+            the structure, and writes cleanly in any app — privately on your Mac.
+          </p>
+          <div className="hero-form-wrap">
+            <WaitlistForm />
+            <div className="trust-row">
+              <div className="faces" aria-hidden="true">
+                <span>AM</span>
+                <span>JL</span>
+                <span>SK</span>
+              </div>
+              <span>{product.waitlistCount} early users already speaking</span>
+              <i />
+              <span>No spam. Ever.</span>
+            </div>
           </div>
         </motion.div>
-      </div>
-
-      {/* Signature visual: animated voice → text dictation. */}
-      <motion.div
-        {...(reduce
-          ? {}
-          : {
-              initial: { opacity: 0, y: 36 },
-              animate: { opacity: 1, y: 0 },
-              transition: { duration: 0.9, delay: 0.34, ease: EASE },
-            })}
-        className="relative z-10 mt-16 w-full max-w-2xl"
-      >
-        {/* soft halo so the product card reads as the floating centerpiece */}
-        <div
-          aria-hidden
-          className="absolute -inset-8 -z-10 opacity-70"
-          style={{
-            background:
-              "radial-gradient(55% 55% at 50% 30%, rgba(99,102,241,0.28), rgba(139,92,246,0.10) 45%, transparent 72%)",
-            filter: "blur(52px)",
-          }}
-        />
-        <ProductDemo />
       </motion.div>
-    </section>
-  );
-}
 
-function AvatarStack() {
-  const tones = ["#6366F1", "#8B5CF6", "#22D3EE"];
-  return (
-    <span className="flex -space-x-2" aria-hidden>
-      {tones.map((c, i) => (
-        <span
-          key={i}
-          className="h-5 w-5 rounded-full ring-2 ring-base-900"
-          style={{
-            background: `linear-gradient(135deg, ${c}, rgba(255,255,255,0.2))`,
-          }}
-        />
-      ))}
-    </span>
+      {/* Thought → polish strip */}
+      <motion.div
+        className="thought-refinery"
+        initial={reduce ? false : { opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
+        aria-label="Whispr turns rough speech into polished text"
+      >
+        <div className="rough-thought">
+          <span>YOU SAY</span>
+          <p>"um, could we maybe move the launch review to Tuesday?"</p>
+        </div>
+        <div className="refinery-line" aria-hidden="true">
+          <i className="refinery-signal" />
+          <span className="refinery-mark">
+            <span className="brand-mark" aria-hidden="true">
+              <i />
+              <i />
+              <i />
+              <i />
+            </span>
+          </span>
+        </div>
+        <div className="clean-thought">
+          <span>WHISPR WRITES · 0.8 SEC</span>
+          <p>"Could we move the launch review to Tuesday?"</p>
+        </div>
+      </motion.div>
+
+      <VoiceDemo />
+    </section>
   );
 }

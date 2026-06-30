@@ -1,14 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Manrope, DM_Mono } from "next/font/google";
 import "./globals.css";
 import JoinProvider from "@/components/waitlist/JoinContext";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const inter = Inter({
+const manrope = Manrope({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-manrope",
+});
+
+const dmMono = DM_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
+  variable: "--font-dm-mono",
 });
 
 export const metadata: Metadata = {
@@ -38,7 +45,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0A0A0F",
+  themeColor: "#0b0c0b",
   width: "device-width",
   initialScale: 1,
 };
@@ -49,8 +56,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={inter.variable}>
-      <body className="bg-base-900 font-sans antialiased">
+    <html lang="en" className={`${manrope.variable} ${dmMono.variable}`}>
+      <body className="bg-base font-sans antialiased">
         <JoinProvider>{children}</JoinProvider>
         <SpeedInsights />
         <Analytics />

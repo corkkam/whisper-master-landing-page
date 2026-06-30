@@ -3,14 +3,9 @@
 import { useId, useState, type FormEvent } from "react";
 import { useJoin } from "./waitlist/JoinContext";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
-import { ArrowRightIcon } from "./icons";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-/**
- * Hero / CTA email capture. Validates lightly, then hands off to the multi-step
- * JoinModal (auth → details → success) prefilled with whatever was typed.
- */
 export default function WaitlistForm({
   id,
 }: {
@@ -27,65 +22,52 @@ export default function WaitlistForm({
     e.preventDefault();
     const value = email.trim();
     if (value && !EMAIL_RE.test(value)) {
-      setError("Please enter a valid email address.");
+      setError("Enter a valid email address.");
       return;
     }
-    open({ email: value }); // empty is fine — the modal collects it
+    open({ email: value });
   }
 
-  // Google-only mode: a single CTA button (no misleading email field).
+  // Google-only mode: single CTA button, no misleading email field.
   if (!EMAIL_AUTH_ENABLED) {
     return (
-      <div className="w-full">
-        <button
-          onClick={() => open()}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-accent px-6 py-4 text-base font-semibold text-white shadow-glow transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-base-900 sm:w-auto sm:px-8"
-        >
-          Join the waitlist
-          <ArrowRightIcon className="h-4 w-4" />
+      <div className="waitlist-btn-wrap">
+        <button className="waitlist-btn" onClick={() => open()}>
+          Get early access <span aria-hidden="true">↗</span>
         </button>
       </div>
     );
   }
 
   return (
-    <div className="w-full">
-      <form onSubmit={handleSubmit} noValidate className="w-full">
-        <label htmlFor={inputId} className="sr-only">
-          Email address
+    <div>
+      <form className="waitlist-form" onSubmit={handleSubmit} noValidate>
+        <label className="sr-only" htmlFor={inputId}>
+          Work email
         </label>
-        <div className="glass group flex flex-col gap-2 rounded-2xl p-2 transition-shadow focus-within:shadow-glow sm:flex-row sm:items-center">
-          <input
-            id={inputId}
-            name="email"
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            placeholder="you@company.com"
-            value={email}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              if (error) setError("");
-            }}
-            className="w-full flex-1 rounded-xl bg-transparent px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
-          />
-          <button
-            type="submit"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-300 focus-visible:ring-offset-2 focus-visible:ring-offset-base-900"
-          >
-            Join the waitlist
-            <ArrowRightIcon className="h-4 w-4" />
-          </button>
-        </div>
-        <p
-          aria-live="polite"
-          className={`mt-2 min-h-[1.25rem] px-1 text-sm ${
-            error ? "text-red-300" : "text-transparent"
-          }`}
-        >
-          {error || "."}
-        </p>
+        <input
+          id={inputId}
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          placeholder="you@company.com"
+          value={email}
+          aria-invalid={!!error}
+          aria-describedby={error ? "email-error" : undefined}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            if (error) setError("");
+          }}
+        />
+        <button type="submit">
+          Get early access <span aria-hidden="true">↗</span>
+        </button>
       </form>
+      {error && (
+        <p className="form-error" id="email-error">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
