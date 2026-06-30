@@ -10,9 +10,11 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 
-// Lazy — keeps the Supabase client + modal out of the initial page bundle;
-// it only loads when someone actually opens the join flow.
-const JoinModal = dynamic(() => import("./JoinModal"), { ssr: false });
+// Clerk native waitlist component — no custom auth hooks needed.
+const ClerkWaitlistModal = dynamic(() => import("./ClerkWaitlistModal"), { ssr: false });
+
+// Custom gamified modal (points, referrals, donations) — kept for later.
+// const JoinModal = dynamic(() => import("./JoinModal"), { ssr: false });
 
 type Step = "email" | "otp" | "details" | "success";
 type OpenOpts = { email?: string; step?: Step };
@@ -57,7 +59,8 @@ export default function JoinProvider({ children }: { children: ReactNode }) {
   return (
     <JoinCtx.Provider value={{ open: openModal, close }}>
       {children}
-      {open && <JoinModal initialEmail={email} initialStep={step} onClose={close} />}
+      {open && <ClerkWaitlistModal onClose={close} />}
+      {/* {open && <JoinModal initialEmail={email} initialStep={step} onClose={close} />} */}
     </JoinCtx.Provider>
   );
 }

@@ -9,10 +9,9 @@
 // back to the pure-CSS aurora everywhere. Use this if a laptop chokes mid-pitch.
 export const FEATURE_3D_HERO = true;
 
-// Email magic-link sign-in needs reliable email (custom SMTP in Supabase).
-// Until that's set up, keep the waitlist Google-only by leaving this `false`.
-// Flip to `true` once SMTP is configured to re-enable the email path.
-export const EMAIL_AUTH_ENABLED = false;
+// Clerk handles email OTP natively — no custom SMTP required.
+// Set to false to make the waitlist Google-only.
+export const EMAIL_AUTH_ENABLED = true;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const product = {

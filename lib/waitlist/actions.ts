@@ -1,74 +1,21 @@
 "use server";
 
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/supabase/server";
-import { verifyTurnstile } from "@/lib/turnstile";
-import {
-  waitlistSchema,
-  emailSchema,
-  otpSchema,
-  type WaitlistInput,
-} from "./schema";
+import { createAdminClient } from "@/lib/supabase/server";
+import { waitlistSchema, type WaitlistInput } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
+import type { DonationTierKey } from "./points";
 
-// ── auth: passwordless email magic link (Turnstile-gated) ───────────────
-// Uses the magic-link email (the default Supabase template, no SMTP needed).
-// Clicking the link lands on /auth/callback, which signs the user in and
-// redirects to the details step.
-export async function sendEmailLink(
-  emailRaw: string,
-  turnstileToken: string | null,
-  redirectTo: string
-) {
-  const email = emailSchema.safeParse(emailRaw);
-  if (!email.success) return { ok: false as const, error: "Enter a valid email." };
-
-  if (!(await verifyTurnstile(turnstileToken))) {
-    return { ok: false as const, error: "Bot check failed — please retry." };
-  }
-
-  const supabase = createClient();
-  const { error } = await supabase.auth.signInWithOtp({
-    email: email.data,
-    options: { shouldCreateUser: true, emailRedirectTo: redirectTo || undefined },
-  });
-  if (error) {
-    // Log the real reason server-side; surface it to the client for now (dev).
-    console.error("[waitlist] signInWithOtp failed:", error.status, error.message);
-    return {
-      ok: false as const,
-      error: error.message || "Couldn't send the email. Try again.",
-    };
-  }
-  return { ok: true as const };
-}
-
-export async function verifyEmailOtp(emailRaw: string, tokenRaw: string) {
-  const email = emailSchema.safeParse(emailRaw);
-  const token = otpSchema.safeParse(tokenRaw);
-  if (!email.success || !token.success) {
-    return { ok: false as const, error: "Check the email and the 6-digit code." };
-  }
-
-  const supabase = createClient();
-  const { error } = await supabase.auth.verifyOtp({
-    email: email.data,
-    token: token.data,
-    type: "email",
-  });
-  if (error) return { ok: false as const, error: "Invalid or expired code." };
-  return { ok: true as const };
-}
+// ── identity ─────────────────────────────────────────────────────────────────
 
 export async function getCurrentUserEmail() {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return user?.email ?? null;
+  const user = await currentUser();
+  return user?.emailAddresses[0]?.emailAddress ?? null;
 }
 
-// ── waitlist write (auth-checked, RLS-enforced, referral-aware) ─────────
+// ── waitlist write (Clerk-verified, referral-aware) ───────────────────────────
+
 export type SubmitResult =
   | { ok: true; position: number; status: string }
   | { ok: false; error: string };
@@ -79,42 +26,28 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
     return { ok: false, error: "Please check the highlighted fields and try again." };
   }
 
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user?.email) {
-    return { ok: false, error: "Please verify your email or sign in first." };
-  }
+  const { userId } = await auth();
+  if (!userId) return { ok: false, error: "Please sign in first." };
 
-  // Self-heal: guarantee this user has a profile row before we reference it.
-  // The signup trigger covers fresh users, but an auth user can exist without
-  // a profile (created via an OTP attempt before the trigger, account-linking,
-  // etc.) — this makes the FK insert never fail for that reason.
-  const meta = (user.user_metadata ?? {}) as Record<string, string | undefined>;
-  await supabase.from("profiles").upsert(
-    {
-      id: user.id,
-      email: user.email,
-      full_name: meta.full_name ?? meta.name ?? null,
-      avatar_url: meta.avatar_url ?? null,
-    },
-    { onConflict: "id" }
-  );
+  const clerkUser = await currentUser();
+  const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
+  if (!userEmail) return { ok: false, error: "No email address found on your account." };
+
+  const supabase = createAdminClient();
 
   // Referral only attaches on first join (not on re-submit).
   const cookieStore = cookies();
   const { data: existing } = await supabase
     .from("waitlist_entries")
     .select("id")
-    .eq("user_id", user.id)
+    .eq("user_id", userId)
     .maybeSingle();
   const referredBy = existing ? null : cookieStore.get(REFERRAL_COOKIE)?.value ?? null;
 
   const d = parsed.data;
   const payload: Record<string, unknown> = {
-    user_id: user.id,
-    email: user.email,
+    user_id: userId,
+    email: userEmail,
     full_name: d.fullName,
     company: d.company || null,
     role: d.role,
@@ -131,7 +64,7 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
     .single();
 
   if (error || !data) {
-    console.error("[waitlist] submitWaitlist failed:", error?.code, error?.message, error?.details);
+    console.error("[waitlist] submitWaitlist failed:", error?.code, error?.message);
     return {
       ok: false,
       error: error?.message || "Couldn't save your spot — please try again.",
@@ -144,18 +77,86 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
   return { ok: true, position: data.position, status: data.status };
 }
 
-// ── social share points (capped once per network, server-enforced) ─────
+// ── social share points ───────────────────────────────────────────────────────
+
 export async function claimSocial(network: "x" | "linkedin") {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { ok: false as const };
-  const { error } = await supabase.rpc("claim_social", { p_network: network });
+  const { userId } = await auth();
+  if (!userId) return { ok: false as const };
+
+  const supabase = createAdminClient();
+  // NOTE: The claim_social RPC uses auth.uid() and won't fire with service role.
+  // Run this migration in Supabase SQL editor to fix it:
+  //
+  //   CREATE OR REPLACE FUNCTION claim_social(p_network TEXT, p_user_id TEXT)
+  //   RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
+  //   BEGIN
+  //     INSERT INTO social_claims (user_id, network)
+  //     VALUES (p_user_id, p_network)
+  //     ON CONFLICT (user_id, network) DO NOTHING;
+  //     -- Award points only on first claim
+  //     IF FOUND THEN
+  //       UPDATE waitlist_entries
+  //       SET points = points + 25
+  //       WHERE user_id = p_user_id;
+  //     END IF;
+  //   END;
+  //   $$;
+  //
+  const { error } = await supabase.rpc("claim_social", {
+    p_network: network,
+    p_user_id: userId,
+  });
   return { ok: !error };
 }
 
-// ── reads ────────────────────────────────────────────────────────────────
+// ── donation / payment support (placeholder — wire payment webhook here) ──────
+
+export type DonationResult =
+  | { ok: true; checkoutUrl: string }
+  | { ok: false; error: string };
+
+/**
+ * Initiates a donation/support checkout session.
+ * TODO: Replace the stub below with your payment provider (Stripe, Polar, etc.).
+ * On payment success, the webhook should call `awardDonationPoints(userId, tier)`.
+ */
+export async function startDonationCheckout(
+  tier: DonationTierKey
+): Promise<DonationResult> {
+  const { userId } = await auth();
+  if (!userId) return { ok: false, error: "Please sign in first." };
+
+  // STUB — swap with real Stripe / Polar checkout URL
+  console.log(`[waitlist] donation checkout initiated: ${tier} for ${userId}`);
+  return {
+    ok: false,
+    error: "Payment integration coming soon — stay tuned!",
+  };
+}
+
+/**
+ * Awards donation points after a confirmed payment webhook.
+ * Call this from your /api/webhooks/payment route handler, not from the client.
+ */
+export async function awardDonationPoints(userId: string, points: number) {
+  const supabase = createAdminClient();
+  const { data, error: fetchErr } = await supabase
+    .from("waitlist_entries")
+    .select("points")
+    .eq("user_id", userId)
+    .single();
+
+  if (fetchErr || !data) return { ok: false };
+
+  const { error } = await supabase
+    .from("waitlist_entries")
+    .update({ points: ((data as Record<string, unknown>).points as number ?? 0) + points })
+    .eq("user_id", userId);
+  return { ok: !error };
+}
+
+// ── reads ────────────────────────────────────────────────────────────────────
+
 export type Dashboard = {
   rank: number | null;
   totalPoints: number;
@@ -166,29 +167,35 @@ export type Dashboard = {
 };
 
 export async function getDashboard(): Promise<Dashboard | null> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return null;
+  const { userId } = await auth();
+  if (!userId) return null;
 
-  const { data: statusRows } = await supabase.rpc("my_status");
-  const s = Array.isArray(statusRows) ? statusRows[0] : statusRows;
+  const supabase = createAdminClient();
 
   const { data: entry } = await supabase
     .from("waitlist_entries")
-    .select("referral_code, full_name")
-    .eq("user_id", user.id)
+    .select("position, referral_code, full_name, points, moved_up")
+    .eq("user_id", userId)
     .maybeSingle();
 
   if (!entry) return null;
+
+  // Count referrals made through this user's referral code.
+  const referralCode = (entry as Record<string, unknown>).referral_code as string | null;
+  const { count: referralsCount } = referralCode
+    ? await supabase
+        .from("waitlist_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("referred_by", referralCode)
+    : { count: 0 };
+
   return {
-    rank: s?.rank ?? null,
-    totalPoints: s?.total_points ?? 0,
-    referralsCount: s?.referrals_count ?? 0,
-    movedUp: s?.moved_up ?? 0,
-    referralCode: entry.referral_code ?? null,
-    fullName: entry.full_name ?? null,
+    rank: (entry as Record<string, unknown>).position as number | null,
+    totalPoints: ((entry as Record<string, unknown>).points as number) ?? 0,
+    referralsCount: referralsCount ?? 0,
+    movedUp: ((entry as Record<string, unknown>).moved_up as number) ?? 0,
+    referralCode,
+    fullName: (entry as Record<string, unknown>).full_name as string | null,
   };
 }
 
@@ -200,7 +207,7 @@ export type LeaderRow = {
 };
 
 export async function getLeaderboard(limit = 10): Promise<LeaderRow[]> {
-  const supabase = createClient();
+  const supabase = createAdminClient();
   const { data } = await supabase.rpc("top_leaderboard", { p_limit: limit });
   return (data as LeaderRow[] | null) ?? [];
 }
