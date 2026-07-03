@@ -45,7 +45,7 @@ const personas: { icon: IconName; role: string; n: string; line: string }[] = [
     icon: "pen",
     role: "For writers",
     n: "02",
-    line: "Catch the thought at full speed, then let Whispr clean the edges.",
+    line: "Catch the thought at full speed, then let Whisper Master clean the edges.",
   },
   {
     icon: "headset",

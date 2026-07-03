@@ -2,6 +2,8 @@
 
 import { useId, useState, type FormEvent } from "react";
 import { useJoin } from "./waitlist/JoinContext";
+import { useWaitlistStatus } from "./waitlist/useWaitlistStatus";
+import { nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -15,6 +17,7 @@ export default function WaitlistForm({
   const reactId = useId();
   const inputId = id ?? `waitlist-${reactId}`;
   const { open } = useJoin();
+  const { dash, ready, isSignedIn } = useWaitlistStatus();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
 
@@ -26,6 +29,47 @@ export default function WaitlistForm({
       return;
     }
     open({ email: value });
+  }
+
+  // Already on the list (same browser, Clerk session cached) — no email input,
+  // just their spot and how far the next referral reward is.
+  if (dash) {
+    const next = nextMilestone(dash.referralsCount);
+    const remaining = next ? next.referrals - dash.referralsCount : 0;
+    return (
+      <div className="waitlist-status">
+        <div className="waitlist-status-rank">
+          <strong>{dash.rank ? `#${dash.rank}` : "—"}</strong>
+          <span>Your spot</span>
+        </div>
+        <div className="waitlist-status-info">
+          <p>
+            You&apos;re on the list
+            {dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""}.
+          </p>
+          <p className="waitlist-status-next">
+            {next
+              ? `${remaining} referral${remaining === 1 ? "" : "s"} away from ${next.label}`
+              : "All rewards unlocked 🏆"}
+          </p>
+        </div>
+        <button className="waitlist-btn" onClick={() => open()}>
+          Boost my spot <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    );
+  }
+
+  // Signed in but never finished joining — skip the email field, the modal
+  // resumes at the details step.
+  if (isSignedIn && ready) {
+    return (
+      <div className="waitlist-btn-wrap">
+        <button className="waitlist-btn" onClick={() => open()}>
+          Finish claiming your spot <span aria-hidden="true">↗</span>
+        </button>
+      </div>
+    );
   }
 
   // Google-only mode: single CTA button, no misleading email field.

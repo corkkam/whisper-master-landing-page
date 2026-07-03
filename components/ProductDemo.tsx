@@ -6,7 +6,7 @@ import { MicIcon, CheckIcon } from "./icons";
 
 /**
  * The hero's concrete product mockup — shows the actual value in one glance:
- * your rambly spoken line on top, Whispr's polished output below, dropped into
+ * your rambly spoken line on top, Whisper Master's polished output below, dropped into
  * a real app. Cycles through examples; the output types in for a live feel.
  */
 const examples = [
@@ -84,7 +84,7 @@ export default function ProductDemo() {
             <span className="h-3 w-3 rounded-full bg-[#28c840]/80" />
           </span>
           <span className="ml-2 text-xs font-semibold tracking-tight text-white/70">
-            Whispr
+            Whisper Master
           </span>
           <span className="ml-auto flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-medium text-accent-300 ring-1 ring-accent/25">
             <span
@@ -141,15 +141,15 @@ export default function ProductDemo() {
             <span className="h-px flex-1 bg-white/[0.07]" />
             <span className="flex items-center gap-1.5 rounded-full border border-white/[0.08] bg-white/[0.03] px-2.5 py-1 text-[11px] font-medium text-white/55">
               <DownArrow />
-              Whispr cleans it up
+              Whisper Master cleans it up
             </span>
             <span className="h-px flex-1 bg-white/[0.07]" />
           </div>
 
-          {/* OUTPUT — what Whispr wrote */}
+          {/* OUTPUT — what Whisper Master wrote */}
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold uppercase tracking-eyebrow text-accent-300">
-              Whispr wrote
+              Whisper Master wrote
             </span>
           </div>
           <div className="mt-2 min-h-[3.25rem]">

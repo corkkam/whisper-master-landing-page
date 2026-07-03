@@ -20,10 +20,10 @@ const dmMono = DM_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://whispr.app"),
-  title: "Whispr — Type at the speed of thought, privately",
+  metadataBase: new URL("https://whispermaster.app"),
+  title: "Whisper Master — Type at the speed of thought, privately",
   description:
-    "Whispr turns natural speech into clean, formatted text in any app — transcribed 100% on your device. Nothing is uploaded, stored, or trained on. Join the waitlist.",
+    "Whisper Master turns natural speech into clean, formatted text in any app — transcribed 100% on your device. Nothing is uploaded, stored, or trained on. Join the waitlist.",
   keywords: [
     "voice to text",
     "dictation",
@@ -32,15 +32,15 @@ export const metadata: Metadata = {
     "voice productivity",
   ],
   openGraph: {
-    title: "Whispr — Type at the speed of thought, privately",
+    title: "Whisper Master — Type at the speed of thought, privately",
     description:
       "Voice-to-text that never leaves your device. Join the waitlist for early access.",
     type: "website",
-    siteName: "Whispr",
+    siteName: "Whisper Master",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Whispr — Type at the speed of thought, privately",
+    title: "Whisper Master — Type at the speed of thought, privately",
     description: "Voice-to-text that never leaves your device.",
   },
 };

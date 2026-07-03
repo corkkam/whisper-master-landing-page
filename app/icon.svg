@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Whisper Master favicon — the nav waveform brand mark (4 bars, lime on dark) -->
+  <rect width="64" height="64" rx="16" fill="#0b0c0b" />
+  <rect width="64" height="64" rx="16" fill="#d7ff65" opacity="0.08" />
+  <g fill="#d7ff65">
+    <rect x="14.5" y="24"   width="5" height="16" rx="2.5" />
+    <rect x="24.5" y="15"   width="5" height="34" rx="2.5" />
+    <rect x="34.5" y="20.5" width="5" height="23" rx="2.5" />
+    <rect x="44.5" y="24"   width="5" height="16" rx="2.5" />
+  </g>
+</svg>

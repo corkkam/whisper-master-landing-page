@@ -1,6 +1,6 @@
-# Whispr — Waitlist Landing Page
+# Whisper Master — Waitlist Landing Page
 
-Dark, premium "calm tech" landing page for **Whispr**, an on-device voice-to-text app.
+Dark, premium "calm tech" landing page for **Whisper Master**, an on-device voice-to-text app.
 Built to look like a funded, shipping product for a YC pitch.
 
 **Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Framer Motion · React Three Fiber.
@@ -50,7 +50,7 @@ components/
   HowItWorks.tsx      # 01 / 02 / 03 steps
   Features.tsx        # 6-card feature grid (privacy highlighted)
   UseCases.tsx        # 3 personas
-  Comparison.tsx      # typing vs Whispr table
+  Comparison.tsx      # typing vs Whisper Master table
   FinalCTA.tsx        # closing waitlist band
   Footer.tsx
   motion.tsx          # Reveal / Stagger / Item — scroll fade-up (reduced-motion aware)

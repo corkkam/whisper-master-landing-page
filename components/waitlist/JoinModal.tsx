@@ -16,7 +16,15 @@ import {
 } from "@/lib/waitlist/schema";
 import { MILESTONES, DONATION_TIERS, nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
-import { ArrowRightIcon, CheckIcon, XIcon } from "@/components/icons";
+import { publishDashboard } from "./useWaitlistStatus";
+import { track } from "@vercel/analytics";
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  XIcon,
+  XBrandIcon,
+  LinkedInIcon,
+} from "@/components/icons";
 
 type Step = "email" | "otp" | "details" | "success";
 
@@ -64,6 +72,7 @@ export default function JoinModal({
         const d = await getDashboard();
         if (d) {
           setDash(d);
+          publishDashboard(d);
           setReturning(true);
           setStep("success");
         } else {
@@ -115,7 +124,7 @@ export default function JoinModal({
     });
 
     if (createErr) {
-      setError((createErr as { longMessage?: string }).longMessage ?? "Couldn't send the code. Try again.");
+      setError((createErr as { longMessage?: string; message?: string }).longMessage ?? (createErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
       setLoading(false);
       return;
     }
@@ -124,14 +133,14 @@ export default function JoinModal({
       // New user — transfer identifier to a sign-up and send the code.
       const { error: transferErr } = await signUp.create({ transfer: true });
       if (transferErr) {
-        setError((transferErr as { longMessage?: string }).longMessage ?? "Couldn't create account. Try again.");
+        setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
         setLoading(false);
         return;
       }
       // SignUpFutureResource uses verifications.sendEmailCode() (not emailCode.sendCode)
       const { error: sendErr } = await signUp.verifications.sendEmailCode();
       if (sendErr) {
-        setError((sendErr as { longMessage?: string }).longMessage ?? "Couldn't send the code. Try again.");
+        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
       } else {
         setOtpFlow("signUp");
         setStep("otp");
@@ -140,7 +149,7 @@ export default function JoinModal({
       // Existing user — send email code for sign-in.
       const { error: sendErr } = await signIn.emailCode.sendCode();
       if (sendErr) {
-        setError((sendErr as { longMessage?: string }).longMessage ?? "Couldn't send the code. Try again.");
+        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
       } else {
         setOtpFlow("signIn");
         setStep("otp");
@@ -160,8 +169,19 @@ export default function JoinModal({
 
     if (otpFlow === "signIn") {
       const { error: verifyErr } = await signIn.emailCode.verifyCode({ code: otp });
-      if (verifyErr) {
-        setError((verifyErr as { longMessage?: string }).longMessage ?? "Invalid or expired code. Try again.");
+      // New user: the code was verified against a sign-in attempt created with
+      // signUpIfMissing, which Clerk marks transferable only after verification.
+      // Complete the account by transferring the verified attempt to a sign-up.
+      if (signIn.isTransferable) {
+        const { error: transferErr } = await signUp.create({ transfer: true });
+        if (transferErr) {
+          setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
+        } else {
+          await signUp.finalize();
+          setStep("details");
+        }
+      } else if (verifyErr) {
+        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
       } else {
         await signIn.finalize();
         setStep("details");
@@ -170,7 +190,7 @@ export default function JoinModal({
       // SignUpFutureResource uses verifications.verifyEmailCode() (not emailCode.verifyCode)
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: otp });
       if (verifyErr) {
-        setError((verifyErr as { longMessage?: string }).longMessage ?? "Invalid or expired code. Try again.");
+        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
       } else {
         await signUp.finalize();
         setStep("details");
@@ -195,7 +215,9 @@ export default function JoinModal({
       referralSource: (form.referralSource || undefined) as never,
     });
     if (res.ok) {
-      setDash(await getDashboard());
+      const d = await getDashboard();
+      setDash(d);
+      publishDashboard(d);
       setStep("success");
     } else {
       setError(res.error);
@@ -210,6 +232,8 @@ export default function JoinModal({
       ? `${window.location.origin}/r/${dash.referralCode}`
       : "";
 
+  const nextReward = dash ? nextMilestone(dash.referralsCount) : null;
+
   async function copyLink() {
     if (!referralLink) return;
     await navigator.clipboard.writeText(referralLink);
@@ -219,19 +243,22 @@ export default function JoinModal({
 
   async function share(network: "x" | "linkedin") {
     const text =
-      "I just joined the Whispr waitlist — talk, and it types. Join with my link:";
+      "I just joined the Whisper Master waitlist — talk, and it types. Join with my link:";
     const url =
       network === "x"
         ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`
         : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=600,height=560");
+    window.open(url, "_blank", "noopener,noreferrer");
     await claimSocial(network);
-    setDash(await getDashboard());
+    const d = await getDashboard();
+    setDash(d);
+    publishDashboard(d);
   }
 
   // ── Donation / payment ──────────────────────────────────────────────────────
 
   async function handleDonate(tierKey: string) {
+    track("payment_interest", { tier: tierKey });
     setDonationLoading(tierKey);
     const tier = tierKey as Parameters<typeof startDonationCheckout>[0];
     const res = await startDonationCheckout(tier);
@@ -253,11 +280,20 @@ export default function JoinModal({
         onClick={onClose}
         aria-hidden
       />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="glass relative z-10 w-full max-w-md overflow-hidden rounded-2xl p-6 shadow-glass"
-      >
+      <div className="relative z-10 w-full max-w-md">
+        {/* Referral rewards — companion panel tucked under the main card's left edge */}
+        {step === "success" && dash && !initializing && (
+          <aside className="absolute right-full top-1/2 hidden w-72 -translate-y-1/2 translate-x-14 lg:block">
+            <div className="rounded-2xl border border-white/10 bg-[#13150f]/[0.97] p-5 pr-16 backdrop-blur-xl [box-shadow:inset_0_1px_rgba(255,255,255,0.05),0_18px_50px_rgba(0,0,0,0.45)]">
+              <RewardsList referrals={dash.referralsCount} next={nextReward} />
+            </div>
+          </aside>
+        )}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="glass relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl p-6 shadow-glass"
+        >
         <button
           onClick={onClose}
           aria-label="Close"
@@ -303,12 +339,15 @@ export default function JoinModal({
                         placeholder="you@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                        className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25"
                       />
+                      {/* Mount point for Clerk's smart CAPTCHA (bot protection is
+                          enabled on the instance; required for custom sign-up flows). */}
+                      <div id="clerk-captcha" className="mt-3 empty:hidden" />
                       <button
                         type="submit"
                         disabled={loading || !signIn || !signUp}
-                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
                       >
                         {loading ? (
                           <Spinner />
@@ -355,7 +394,7 @@ export default function JoinModal({
                   <button
                     type="submit"
                     disabled={loading || otp.length < 6}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
                   >
                     {loading ? <Spinner /> : "Verify code"}
                   </button>
@@ -439,7 +478,7 @@ export default function JoinModal({
                       </select>
                     </Field>
                   </div>
-                  <Field label="What will you use Whispr for? (optional)">
+                  <Field label="What will you use Whisper Master for? (optional)">
                     <textarea
                       rows={2}
                       value={form.useCase}
@@ -471,7 +510,7 @@ export default function JoinModal({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
                   >
                     {loading ? <Spinner /> : "Claim my spot"}
                   </button>
@@ -482,103 +521,140 @@ export default function JoinModal({
 
             {/* ── SUCCESS ────────────────────────────────────────────── */}
             {step === "success" && dash && (
-              <div className="text-center">
-                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
-                  <CheckIcon className="h-6 w-6" />
-                </span>
-                <h2 className="mt-4 text-2xl font-semibold text-white">
-                  {returning
-                    ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
-                    : "You're in! 🎉"}
-                </h2>
-                <p className="mt-1 text-sm text-white/55">
-                  {returning
-                    ? "You're already on the list — share your link or support us to climb higher."
-                    : dash.movedUp > 0
-                    ? `You've already jumped +${dash.movedUp} spots.`
-                    : "Invite friends or support us to climb the line."}
-                </p>
-
-                {/* Stats */}
-                <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-                  <Stat
-                    label="Your spot"
-                    value={dash.rank ? `#${dash.rank}` : "—"}
-                  />
-                  <Stat label="Points" value={String(dash.totalPoints)} />
-                  <Stat label="Referrals" value={String(dash.referralsCount)} />
+              <div>
+                <div className="text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
+                    <CheckIcon className="h-6 w-6" />
+                  </span>
+                  <h2 className="mt-4 text-2xl font-semibold text-white">
+                    {returning
+                      ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
+                      : "You're in! 🎉"}
+                  </h2>
+                  <p className="mt-1 text-sm text-white/55">
+                    {returning
+                      ? "You're already on the list — share your link or support us to climb higher."
+                      : dash.movedUp > 0
+                      ? `You've already jumped +${dash.movedUp} spots.`
+                      : "Invite friends or support us to climb the line."}
+                  </p>
                 </div>
 
-                {/* Referral link */}
-                <div className="mt-5 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
-                    Your referral link
-                  </p>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      readOnly
-                      value={referralLink}
-                      className="w-full truncate rounded-lg border border-white/10 bg-base-900/60 px-3 py-2 text-sm text-white/70"
-                    />
-                    <button
-                      onClick={copyLink}
-                      className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-accent-600"
-                    >
-                      {copied ? "Copied" : "Copy"}
-                    </button>
+                <div className="mt-5 space-y-4 text-left">
+                  {/* Rank */}
+                  <div className="glass-soft flex items-center justify-around rounded-xl px-4 py-3 text-center">
+                    <div>
+                      <p className="text-2xl font-semibold tracking-tight text-white">
+                        {dash.rank ? `#${dash.rank}` : "—"}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Your spot
+                      </p>
+                    </div>
+                    <div className="h-9 w-px bg-white/[0.08]" />
+                    <div>
+                      <p className="text-2xl font-semibold tracking-tight text-white">
+                        {dash.referralsCount}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Referrals
+                      </p>
+                    </div>
                   </div>
-                  <div className="mt-2 flex gap-2">
-                    <button onClick={() => share("x")} className={shareCls}>
-                      Share on X <span className="text-white/40">+25</span>
-                    </button>
-                    <button
-                      onClick={() => share("linkedin")}
-                      className={shareCls}
-                    >
-                      LinkedIn <span className="text-white/40">+25</span>
-                    </button>
-                  </div>
-                </div>
+                    {/* Referral link + share */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Your referral link
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={referralLink}
+                          className="w-full truncate rounded-lg border border-white/10 bg-base-900/60 px-3 py-2 text-sm text-white/70"
+                        />
+                        <button
+                          onClick={copyLink}
+                          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-dark transition hover:bg-accent-300"
+                        >
+                          {copied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      {/* Share — the main action we want */}
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-accent/[0.07] px-4 py-3 ring-1 ring-accent/20">
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            Share it — earn more points
+                          </p>
+                          <p className="mt-0.5 text-xs text-white/50">
+                            Every friend who joins moves you up.
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            onClick={() => share("x")}
+                            aria-label="Share on X"
+                            className={shareIconCls}
+                          >
+                            <XBrandIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => share("linkedin")}
+                            aria-label="Share on LinkedIn"
+                            className={shareIconCls}
+                          >
+                            <LinkedInIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
 
-                <MilestoneTracker referrals={dash.referralsCount} />
+                    {/* Donation / skip-the-queue — compact */}
+                    <div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                            Skip the queue
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-white/40">
+                            One-time support = instant spot bump.
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1.5">
+                          {DONATION_TIERS.map((tier) => (
+                            <button
+                              key={tier.key}
+                              onClick={() => handleDonate(tier.key)}
+                              disabled={donationLoading === tier.key}
+                              title={`${tier.label} — ${tier.perk}`}
+                              className={`rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold transition hover:border-accent/25 hover:bg-white/[0.06] disabled:opacity-60 ${tier.color}`}
+                            >
+                              {donationLoading === tier.key ? (
+                                <Spinner />
+                              ) : (
+                                `$${tier.amount}`
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {error && (
+                        <p className="mt-2 text-center text-xs text-white/50">{error}</p>
+                      )}
+                    </div>
 
-                {/* Donation / skip-the-queue */}
-                <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 text-left">
-                  <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
-                    Skip the queue — support Whispr
-                  </p>
-                  <p className="mt-1 text-xs text-white/50">
-                    One-time contribution = instant spot bump.
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {DONATION_TIERS.map((tier) => (
-                      <button
-                        key={tier.key}
-                        onClick={() => handleDonate(tier.key)}
-                        disabled={donationLoading === tier.key}
-                        className="flex flex-col items-center gap-1 rounded-lg border border-white/10 bg-white/[0.03] px-2 py-3 text-center transition hover:bg-white/[0.07] disabled:opacity-60"
-                      >
-                        <span className={`text-sm font-semibold ${tier.color}`}>
-                          ${tier.amount}
-                        </span>
-                        <span className="text-[10px] font-medium text-white/70">
-                          {tier.label}
-                        </span>
-                        <span className="text-[10px] text-white/40">
-                          {tier.perk}
-                        </span>
-                        {donationLoading === tier.key && <Spinner />}
-                      </button>
-                    ))}
-                  </div>
-                  {error && (
-                    <p className="mt-2 text-center text-xs text-white/50">{error}</p>
-                  )}
+                    {/* Rewards — inline fallback when the side panel is hidden */}
+                    <div className="glass-soft rounded-xl p-4 lg:hidden">
+                      <RewardsList
+                        referrals={dash.referralsCount}
+                        next={nextReward}
+                      />
+                    </div>
                 </div>
               </div>
             )}
           </>
         )}
+        </div>
       </div>
     </div>
   );
@@ -587,9 +663,9 @@ export default function JoinModal({
 // ── Styles ────────────────────────────────────────────────────────────────────
 
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-base-900/60 px-3 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50";
-const shareCls =
-  "flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/[0.08]";
+  "w-full rounded-lg border border-white/10 bg-base-900/60 px-3 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25";
+const shareIconCls =
+  "flex h-10 w-10 items-center justify-center rounded-lg text-accent transition hover:bg-accent/15 hover:scale-105";
 
 // ── Small components ──────────────────────────────────────────────────────────
 
@@ -608,47 +684,53 @@ function Field({
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function RewardsList({
+  referrals,
+  next,
+}: {
+  referrals: number;
+  next: ReturnType<typeof nextMilestone>;
+}) {
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] py-3">
-      <div className="text-lg font-semibold text-white">{value}</div>
-      <div className="text-[11px] text-white/45">{label}</div>
-    </div>
-  );
-}
-
-function MilestoneTracker({ referrals }: { referrals: number }) {
-  const next = nextMilestone(referrals);
-  return (
-    <div className="mt-4 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 text-left">
-      <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-accent-300">
+    <>
+      <p className="rounded-lg bg-accent/10 px-3 py-2 text-xs font-medium text-accent-300 ring-1 ring-accent/20">
         {next
-          ? `Next: ${next.referrals - referrals} more referral${next.referrals - referrals === 1 ? "" : "s"} → ${next.label}`
-          : "All milestones unlocked 🏆"}
+          ? `${next.referrals - referrals} more referral${next.referrals - referrals === 1 ? "" : "s"} → ${next.label}`
+          : "All rewards unlocked 🏆"}
       </p>
-      <ul className="mt-2 space-y-1.5">
+      <p className="mt-4 text-xs text-white/45">Invite friends to unlock:</p>
+      <ul className="mt-3 space-y-2.5">
         {MILESTONES.map((m) => {
           const hit = referrals >= m.referrals;
+          const isNext = !hit && next?.key === m.key;
           return (
-            <li key={m.key} className="flex items-center gap-2 text-xs">
+            <li key={m.key} className="flex items-center gap-2.5 text-xs">
               <span
-                className={`flex h-4 w-4 items-center justify-center rounded-full ${
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
                   hit
                     ? "bg-accent/25 text-accent-300"
-                    : "bg-white/[0.05] text-white/30"
+                    : isNext
+                    ? "bg-accent/10 ring-1 ring-accent/30"
+                    : "bg-white/[0.05]"
                 }`}
               >
                 {hit ? <CheckIcon className="h-2.5 w-2.5" /> : null}
               </span>
-              <span className={hit ? "text-white/80" : "text-white/45"}>
-                {m.referrals} referral{m.referrals === 1 ? "" : "s"} →{" "}
+              <span className={hit || isNext ? "text-white/85" : "text-white/50"}>
                 {m.label}
+              </span>
+              <span
+                className={`ml-auto font-mono text-[10px] ${
+                  isNext ? "text-accent-300/80" : "text-white/30"
+                }`}
+              >
+                {m.referrals}
               </span>
             </li>
           );
         })}
       </ul>
-    </div>
+    </>
   );
 }
 

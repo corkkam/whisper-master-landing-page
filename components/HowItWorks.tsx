@@ -39,20 +39,20 @@ const steps: { icon: IconName; n: string; title: string; body: string }[] = [
   {
     icon: "key",
     n: "01",
-    title: "Press one shortcut",
-    body: "Hold ⌥ Space from anywhere. No app-switching, no little floating windows to manage.",
+    title: "Hold one key",
+    body: "Hold Right ⌥ from anywhere — or pick your own key, or tap once to toggle. No app-switching, nothing to manage.",
   },
   {
     icon: "voice",
     n: "02",
     title: "Say it your way",
-    body: "Pause, restart, change your mind. Whispr follows the thought — not just the transcript.",
+    body: "Pause, restart, change your mind. Whisper Master follows the thought — not just the transcript.",
   },
   {
     icon: "text",
     n: "03",
     title: "Get polished text",
-    body: "Filler words disappear. Grammar, tone, and formatting fit the app you're working in.",
+    body: "The ums disappear, punctuation lands on its own, and numbers, emails, and symbols arrive the way you'd type them.",
   },
 ];
 

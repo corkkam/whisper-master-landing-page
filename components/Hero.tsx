@@ -12,7 +12,11 @@ const reveal = {
 
 const EASE = [0.16, 1, 0.3, 1] as const;
 
-export default function Hero() {
+export default function Hero({
+  waitlistCount = product.waitlistCount,
+}: {
+  waitlistCount?: string;
+}) {
   const reduce = useReducedMotion();
 
   return (
@@ -59,7 +63,7 @@ export default function Hero() {
                 <span>JL</span>
                 <span>SK</span>
               </div>
-              <span>{product.waitlistCount} early users already speaking</span>
+              <span>{waitlistCount} early users already speaking</span>
               <i />
               <span>No spam. Ever.</span>
             </div>
@@ -73,7 +77,7 @@ export default function Hero() {
         initial={reduce ? false : { opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
-        aria-label="Whispr turns rough speech into polished text"
+        aria-label="Whisper Master turns rough speech into polished text"
       >
         <div className="rough-thought">
           <span>YOU SAY</span>
@@ -91,7 +95,7 @@ export default function Hero() {
           </span>
         </div>
         <div className="clean-thought">
-          <span>WHISPR WRITES · 0.8 SEC</span>
+          <span>WHISPER MASTER WRITES · 0.8 SEC</span>
           <p>"Could we move the launch review to Tuesday?"</p>
         </div>
       </motion.div>

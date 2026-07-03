@@ -1,5 +1,5 @@
 /**
- * Whispr — single source of truth for product copy + feature flags.
+ * Whisper Master — single source of truth for product copy + feature flags.
  * Edit this file to rebrand or retune without touching components.
  */
 
@@ -15,7 +15,7 @@ export const EMAIL_AUTH_ENABLED = true;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const product = {
-  name: "Whispr",
+  name: "Whisper Master",
   tagline: "Voice-to-text that never leaves your device.",
   contactEmail: "corkkam.info@gmail.com",
   // Keep this honest — you want to be able to defend it in the pitch.

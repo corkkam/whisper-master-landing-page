@@ -152,7 +152,7 @@ export default function VoiceDemo() {
               <SparkIcon />
             </span>
             <div>
-              <small>WHISPR CLEANUP</small>
+              <small>WHISPER MASTER CLEANUP</small>
               <AnimatePresence mode="wait">
                 <motion.p
                   key={activeMoment.cleanup}

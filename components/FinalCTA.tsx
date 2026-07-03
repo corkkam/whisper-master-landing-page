@@ -2,7 +2,11 @@ import { Reveal } from "./motion";
 import { product } from "@/lib/config";
 import WaitlistForm from "./WaitlistForm";
 
-export default function FinalCTA() {
+export default function FinalCTA({
+  waitlistCount = product.waitlistCount,
+}: {
+  waitlistCount?: string;
+}) {
   return (
     <section className="final-cta" id="pricing">
       <div className="cta-glow" aria-hidden="true" />
@@ -20,12 +24,12 @@ export default function FinalCTA() {
       </h2>
       <p>
         Join the private beta for Mac. New invites go out every Friday.
-        {product.waitlistCount} people already waiting.
+        {waitlistCount} people already waiting.
       </p>
       <Reveal>
         <WaitlistForm id="join-final" />
       </Reveal>
-      <small>Free during beta · macOS 14+ · Cancel nothing</small>
+      <small>Free during beta · Apple Silicon Macs · Cancel nothing</small>
     </section>
   );
 }

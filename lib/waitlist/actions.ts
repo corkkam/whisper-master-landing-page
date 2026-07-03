@@ -84,24 +84,6 @@ export async function claimSocial(network: "x" | "linkedin") {
   if (!userId) return { ok: false as const };
 
   const supabase = createAdminClient();
-  // NOTE: The claim_social RPC uses auth.uid() and won't fire with service role.
-  // Run this migration in Supabase SQL editor to fix it:
-  //
-  //   CREATE OR REPLACE FUNCTION claim_social(p_network TEXT, p_user_id TEXT)
-  //   RETURNS void LANGUAGE plpgsql SECURITY DEFINER AS $$
-  //   BEGIN
-  //     INSERT INTO social_claims (user_id, network)
-  //     VALUES (p_user_id, p_network)
-  //     ON CONFLICT (user_id, network) DO NOTHING;
-  //     -- Award points only on first claim
-  //     IF FOUND THEN
-  //       UPDATE waitlist_entries
-  //       SET points = points + 25
-  //       WHERE user_id = p_user_id;
-  //     END IF;
-  //   END;
-  //   $$;
-  //
   const { error } = await supabase.rpc("claim_social", {
     p_network: network,
     p_user_id: userId,
@@ -125,6 +107,17 @@ export async function startDonationCheckout(
 ): Promise<DonationResult> {
   const { userId } = await auth();
   if (!userId) return { ok: false, error: "Please sign in first." };
+
+  // Record payment interest — even before the provider is wired up, every
+  // tier click tells us how many users would pay. Best-effort: never blocks
+  // the checkout path.
+  const supabase = createAdminClient();
+  const { error: trackErr } = await supabase
+    .from("payment_clicks")
+    .insert({ user_id: userId, tier });
+  if (trackErr) {
+    console.error("[waitlist] payment_clicks insert failed:", trackErr.message);
+  }
 
   // STUB — swap with real Stripe / Polar checkout URL
   console.log(`[waitlist] donation checkout initiated: ${tier} for ${userId}`);
@@ -197,6 +190,25 @@ export async function getDashboard(): Promise<Dashboard | null> {
     referralCode,
     fullName: (entry as Record<string, unknown>).full_name as string | null,
   };
+}
+
+/** Total signups — drives the live social-proof number on the landing page. */
+export async function getWaitlistCount(): Promise<number | null> {
+  try {
+    const supabase = createAdminClient();
+    const { count, error } = await supabase
+      .from("waitlist_entries")
+      .select("id", { count: "exact", head: true });
+    if (error) {
+      console.error("[waitlist] getWaitlistCount failed:", error.message);
+      return null;
+    }
+    return count;
+  } catch (e) {
+    // e.g. missing env at build time — fall back to the static copy.
+    console.error("[waitlist] getWaitlistCount failed:", e);
+    return null;
+  }
 }
 
 export type LeaderRow = {
