@@ -10,9 +10,11 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 
-// Lazy — keeps the Supabase client + modal out of the initial page bundle;
-// it only loads when someone actually opens the join flow.
+// Gamified modal (points, referrals, milestones) — Clerk auth + Supabase backend.
 const JoinModal = dynamic(() => import("./JoinModal"), { ssr: false });
+
+// Clerk native waitlist component — plain email capture, kept as a fallback.
+// const ClerkWaitlistModal = dynamic(() => import("./ClerkWaitlistModal"), { ssr: false });
 
 type Step = "email" | "otp" | "details" | "success";
 type OpenOpts = { email?: string; step?: Step };
@@ -58,6 +60,7 @@ export default function JoinProvider({ children }: { children: ReactNode }) {
     <JoinCtx.Provider value={{ open: openModal, close }}>
       {children}
       {open && <JoinModal initialEmail={email} initialStep={step} onClose={close} />}
+      {/* {open && <ClerkWaitlistModal onClose={close} />} */}
     </JoinCtx.Provider>
   );
 }

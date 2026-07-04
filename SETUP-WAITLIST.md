@@ -1,73 +1,83 @@
 # Waitlist backend — setup
 
-Stack: **Supabase** (Postgres + Auth) with passwordless verified capture
-(Google OAuth **or** email OTP). One entry per person; the same sign-in lets
-them return to see their position.
+Stack: **Clerk** (auth: Google OAuth + email OTP) + **Supabase** (plain
+Postgres via the service-role key — no Supabase Auth). One entry per person;
+signing in again shows your position, points, and referral link.
 
 Do these once, then the app runs locally and on Vercel.
 
-## 1. Create the Supabase project
+## 1. Clerk (auth)
+
+1. dashboard.clerk.com → your app → **API Keys** — copy the publishable +
+   secret keys into `.env.local` (see `.env.local.example`).
+2. **User & Authentication → Email, Phone, Username** — enable **Email
+   verification code** (OTP sign-in, no password).
+3. **User & Authentication → Social connections** — enable **Google**.
+4. **Restrictions → Sign-up mode: Public.** Do NOT use Clerk's "Waitlist"
+   mode — it blocks the `signUp.create()` calls the join modal relies on.
+   Gating access to the actual app is handled by the `status` column in
+   Supabase (`pending → invited → accepted`), not by Clerk.
+
+## 2. Supabase (database)
+
 1. supabase.com → New project. Pick a region close to you.
-2. **Settings → API** — copy:
-   - `Project URL`
-   - `anon` `public` key
-   - `service_role` key (secret)
+2. **Settings → API** — copy `Project URL` and the `service_role` key
+   (secret) into `.env.local`. The anon key is not used.
+3. **SQL Editor → New query** → run
+   [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql).
+   It creates `waitlist_entries` (+ `social_claims`, `referrals`), the
+   referral-code and points triggers, and the rank recompute. Point values
+   mirror [`lib/waitlist/points.ts`](lib/waitlist/points.ts) — if you change
+   them, change both places.
+4. Run [`supabase/migrations/0002_payment_clicks.sql`](supabase/migrations/0002_payment_clicks.sql)
+   the same way — it creates `payment_clicks`, which records every click on a
+   "skip the queue" donation tier (payment-interest analytics).
 
-## 2. Create the database
-- **SQL Editor → New query** → run [`supabase/migrations/0001_init.sql`](supabase/migrations/0001_init.sql)
-  (profiles + waitlist_entries + position counter + auto-profile + RLS).
-- Then run [`supabase/migrations/0002_viral.sql`](supabase/migrations/0002_viral.sql)
-  (referral codes + points ledger + referrals + leaderboard RPCs). Review the
-  point values in it first — they mirror `lib/waitlist/points.ts`.
+## 3. Local env
 
-## 3. Enable Google sign-in
-1. **Google Cloud Console** → APIs & Services → Credentials → *Create OAuth client ID* → Web application.
-2. Authorized redirect URI: `https://YOUR-PROJECT-REF.supabase.co/auth/v1/callback`
-   (shown in Supabase under Auth → Providers → Google).
-3. Copy the **Client ID** + **Client secret**.
-4. Supabase → **Authentication → Providers → Google** → paste both → enable.
-
-## 4. (Email OTP) — already on
-Email is enabled by default in Supabase Auth. The app uses 6-digit OTP
-(no password). Optionally customize the email template under
-**Authentication → Email Templates → Magic Link / OTP**.
-
-## 4b. Cloudflare Turnstile (bot check at signup)
-1. dash.cloudflare.com → **Turnstile** → Add site (your domain + `localhost`).
-2. Copy the **Site key** → `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, and the
-   **Secret key** → `TURNSTILE_SECRET_KEY`.
-
-## 5. Local env
 ```bash
 cp .env.local.example .env.local
 ```
-Fill in `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+
+Fill in the Clerk keys, `NEXT_PUBLIC_SUPABASE_URL`,
 `SUPABASE_SERVICE_ROLE_KEY`, and `NEXT_PUBLIC_SITE_URL=http://localhost:3000`.
 
-## 6. Redirect URLs (Supabase → Authentication → URL Configuration)
-- **Site URL:** `http://localhost:3000` (and your Vercel URL in prod)
-- **Redirect URLs:** add `http://localhost:3000/auth/callback` and the prod equivalent.
+## 4. Run
 
-## 7. Run
 ```bash
 npm run dev
 ```
 
+Test the loop: join → success screen shows your spot + referral link → open
+the `/r/CODE` link in a private window → join with a second account → first
+account gains +200 points and moves up.
+
 ## Deploy (Vercel)
-Add the same env vars in the Vercel project settings, set
-`NEXT_PUBLIC_SITE_URL` to your production URL, and add that URL to Supabase
-Site URL + Redirect URLs.
+
+Add the same env vars in the Vercel project settings and set
+`NEXT_PUBLIC_SITE_URL` to your production URL. In Clerk, create a
+**production instance** for the real domain (dev instances show a banner and
+cap MAUs) and swap the keys.
 
 ---
 
 ### What's wired
-- `supabase/migrations/0001_init.sql` — schema + RLS + triggers
-- `lib/supabase/{client,server}.ts` — browser + server (+ admin) clients
-- `lib/waitlist/schema.ts` — Zod validation + form field options
-- `lib/waitlist/actions.ts` — `submitWaitlist`, `getMyEntry` (server actions)
-- `app/auth/callback/route.ts` — Google OAuth callback
 
-### Next (the join UI)
-The join flow (auth step → details step → success with position), wired to the
-hero CTA, comes next — it'll use the browser client for Google/OTP and the
-`submitWaitlist` action to persist.
+- `supabase/migrations/0001_init.sql` — schema + triggers + rank recompute
+- `supabase/migrations/0002_payment_clicks.sql` — payment-interest click tracking
+- `lib/supabase/server.ts` — service-role admin client (server-only)
+- `lib/waitlist/schema.ts` — Zod validation + form field options
+- `lib/waitlist/actions.ts` — `submitWaitlist`, `getDashboard`,
+  `claimSocial`, `getLeaderboard` (server actions)
+- `lib/waitlist/points.ts` — display-side point values + milestones
+- `app/r/[code]/route.ts` — referral links (30-day cookie → attached on join)
+- `components/waitlist/JoinModal.tsx` — Google/OTP auth → details → success
+  dashboard (position, points, referral link, share buttons, milestones)
+
+### Not wired yet
+
+- **Donations / skip-the-queue** — checkout is a stub
+  (`startDonationCheckout`); wire Stripe/Polar and call
+  `awardDonationPoints` from the payment webhook, or hide the panel.
+- **Turnstile** — components exist (`components/waitlist/Turnstile.tsx`)
+  but are not mounted in the join flow.

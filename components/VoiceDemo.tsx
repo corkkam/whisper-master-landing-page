@@ -1,139 +1,193 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useReducedMotion } from "framer-motion";
-import { demoLines } from "@/lib/config";
-import { MicIcon } from "./icons";
+import { PointerEvent, useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
-// Fixed bar heights so the waveform looks intentional, not random noise.
-const BAR_HEIGHTS = [
-  0.4, 0.7, 1, 0.55, 0.85, 0.35, 0.95, 0.6, 0.45, 0.8, 1, 0.5, 0.7, 0.3, 0.9,
-  0.55, 0.75, 0.4, 1, 0.65, 0.5, 0.85, 0.35, 0.7, 0.95, 0.45, 0.6, 0.8,
+const waveform = [
+  12, 18, 8, 27, 18, 38, 23, 54, 34, 62, 48, 75, 42, 58, 32, 70, 51, 82,
+  58, 72, 45, 63, 38, 52, 29, 61, 37, 46, 24, 39, 18, 28, 14, 21, 10,
 ];
 
-export default function VoiceDemo() {
-  const reduce = useReducedMotion();
-  const [lineIndex, setLineIndex] = useState(0);
-  const [wordCount, setWordCount] = useState(reduce ? Infinity : 0);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+const demoMoments = [
+  {
+    app: "Notes",
+    meta: "FRIDAY, 9:41 AM",
+    text: "Let's move the launch review to Tuesday morning so everyone has time to test the new onboarding flow.",
+    cleanup: "Removed 3 filler words · Fixed punctuation",
+  },
+  {
+    app: "Slack",
+    meta: "TEAM UPDATE",
+    text: "Quick update — the new recording flow is live. Try it today and drop anything strange in the feedback channel.",
+    cleanup: "Matched your team tone · Added structure",
+  },
+  {
+    app: "Mail",
+    meta: "DRAFT REPLY",
+    text: "Thanks for the thoughtful notes. We've addressed the main concerns and I'll send a revised proposal before noon.",
+    cleanup: "Made concise · Adjusted tone",
+  },
+] as const;
 
-  const words = useMemo(
-    () => demoLines[lineIndex].split(" "),
-    [lineIndex]
+function SparkIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.7}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M12 2.5c.5 4.7 2.8 7 7.5 7.5-4.7.5-7 2.8-7.5 7.5-.5-4.7-2.8-7-7.5-7.5 4.7-.5 7-2.8 7.5-7.5Z" />
+      <path d="M19 16.5c.2 2 1.2 3 3 3-1.8.2-2.8 1.2-3 3-.2-1.8-1.2-2.8-3-3 1.8-.2 2.8-1.2 3-3Z" />
+    </svg>
   );
-  const done = wordCount >= words.length;
+}
 
-  // Word-by-word dictation loop. Disabled under prefers-reduced-motion.
+export default function VoiceDemo() {
+  const reduceMotion = useReducedMotion();
+  const [momentIndex, setMomentIndex] = useState(0);
+  const activeMoment = demoMoments[momentIndex];
+
   useEffect(() => {
-    if (reduce) return;
-    const clearAll = () => {
-      timers.current.forEach(clearTimeout);
-      timers.current = [];
-    };
+    if (reduceMotion) return;
+    const interval = window.setInterval(() => {
+      setMomentIndex((i) => (i + 1) % demoMoments.length);
+    }, 5600);
+    return () => window.clearInterval(interval);
+  }, [reduceMotion]);
 
-    if (!done) {
-      const t = setTimeout(
-        () => setWordCount((c) => c + 1),
-        // first word lands a touch slower (feels like speech ramping up)
-        wordCount === 0 ? 520 : 230
-      );
-      timers.current.push(t);
-    } else {
-      // Hold the finished sentence, then reset to the next line.
-      const hold = setTimeout(() => {
-        setWordCount(0);
-        setLineIndex((i) => (i + 1) % demoLines.length);
-      }, 2600);
-      timers.current.push(hold);
-    }
-    return clearAll;
-  }, [wordCount, done, reduce]);
+  function tiltDemo(e: PointerEvent<HTMLDivElement>) {
+    if (reduceMotion || e.pointerType === "touch") return;
+    const bounds = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (e.clientY - bounds.top) / bounds.height - 0.5;
+    e.currentTarget.style.setProperty("--demo-rotate-y", `${x * 3}deg`);
+    e.currentTarget.style.setProperty("--demo-rotate-x", `${y * -2.2}deg`);
+  }
 
-  const recording = !reduce && !done;
-  const shown = reduce ? words.join(" ") : words.slice(0, wordCount).join(" ");
+  function resetTilt(e: PointerEvent<HTMLDivElement>) {
+    e.currentTarget.style.setProperty("--demo-rotate-y", "0deg");
+    e.currentTarget.style.setProperty("--demo-rotate-x", "0deg");
+  }
 
   return (
-    <div
-      className="glass relative w-full overflow-hidden rounded-2xl p-1.5 shadow-glass"
-      role="img"
-      aria-label={`Whispr dictating into an app: "${demoLines[lineIndex]}"`}
+    <motion.div
+      className="demo-stage"
+      initial={reduceMotion ? false : { opacity: 0, y: 28, rotateX: 3 }}
+      animate={{ opacity: 1, y: 0, rotateX: 0 }}
+      transition={{ duration: 0.9, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      onPointerMove={tiltDemo}
+      onPointerLeave={resetTilt}
     >
-      <div className="rounded-xl bg-base-800/80 ring-1 ring-white/[0.04]">
+      <div className="sound-ripples" aria-hidden="true">
+        <i />
+        <i />
+        <i />
+      </div>
+
+      <div className="demo-shell">
+        <div className="demo-sheen" aria-hidden="true" />
+
         {/* Window chrome */}
-        <div className="flex items-center gap-2 border-b border-white/[0.06] px-4 py-3">
-          <span className="flex gap-1.5" aria-hidden>
-            <span className="h-3 w-3 rounded-full bg-[#ff5f57]/80" />
-            <span className="h-3 w-3 rounded-full bg-[#febc2e]/80" />
-            <span className="h-3 w-3 rounded-full bg-[#28c840]/80" />
-          </span>
-          <span className="ml-2 truncate text-xs font-medium text-white/40">
-            #engineering — Slack
-          </span>
-          <span className="ml-auto flex items-center gap-1.5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-medium text-accent-300 ring-1 ring-accent/25">
-            <span
-              className={`h-1.5 w-1.5 rounded-full bg-accent-300 ${
-                recording ? "animate-pulse" : ""
-              }`}
-            />
-            On-device
-          </span>
+        <div className="demo-topbar">
+          <div className="traffic" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              className="demo-title"
+              key={activeMoment.app}
+              initial={reduceMotion ? false : { opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.28 }}
+            >
+              {activeMoment.app}
+            </motion.div>
+          </AnimatePresence>
+          <div className="privacy-pill">
+            <span />
+            ON DEVICE
+          </div>
         </div>
 
-        {/* Dictation surface */}
-        <div className="px-5 py-6">
-          <div className="min-h-[5.5rem] sm:min-h-[5rem]">
-            <p className="text-balance text-left text-[15px] leading-relaxed text-white/90 sm:text-base">
-              {shown}
-              {recording && (
-                <span
-                  className="ml-0.5 inline-block h-[1.05em] w-[2px] translate-y-[2px] bg-accent-300 align-middle motion-safe:animate-blink"
-                  aria-hidden
-                />
-              )}
-            </p>
+        {/* Content area */}
+        <div className="demo-body">
+          <div className="doc-meta">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={activeMoment.meta}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                {activeMoment.meta}
+              </motion.span>
+            </AnimatePresence>
+            <span>{activeMoment.app.toUpperCase()}</span>
           </div>
 
-          {/* Mic + waveform footer */}
-          <div className="mt-5 flex items-center gap-3 border-t border-white/[0.06] pt-4">
-            <span className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
-              {recording && (
-                <span
-                  className="absolute inset-0 rounded-full bg-accent/40 motion-safe:animate-pulse-ring"
-                  aria-hidden
-                />
-              )}
-              <MicIcon className="relative h-4 w-4" />
-            </span>
+          <div className="dictated-copy" aria-live="polite">
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={activeMoment.text}
+                initial={reduceMotion ? false : { opacity: 0, filter: "blur(5px)", y: 8 }}
+                animate={{ opacity: 1, filter: "blur(0px)", y: 0 }}
+                exit={{ opacity: 0, filter: "blur(5px)", y: -8 }}
+                transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {activeMoment.text}
+                <span className="caret" aria-hidden="true" />
+              </motion.p>
+            </AnimatePresence>
+          </div>
 
-            <div
-              className="flex h-8 flex-1 items-center gap-[3px]"
-              aria-hidden
-            >
-              {BAR_HEIGHTS.map((h, i) => (
-                <span
-                  key={i}
-                  className="w-full max-w-[6px] flex-1 rounded-full bg-gradient-to-t from-accent/40 to-accent-300/90"
-                  style={{
-                    height: `${Math.round(h * 100)}%`,
-                    transformOrigin: "center",
-                    animation: recording
-                      ? `waveform ${0.9 + (i % 5) * 0.12}s ease-in-out ${
-                          (i % 7) * 0.08
-                        }s infinite`
-                      : "none",
-                    opacity: recording ? 1 : 0.4,
-                    transform: recording ? undefined : `scaleY(${h})`,
-                  }}
-                />
-              ))}
+          <div className="suggestion">
+            <span className="suggestion-icon">
+              <SparkIcon />
+            </span>
+            <div>
+              <small>WHISPER MASTER CLEANUP</small>
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={activeMoment.cleanup}
+                  initial={reduceMotion ? false : { opacity: 0, x: -4 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0 }}
+                >
+                  {activeMoment.cleanup}
+                </motion.p>
+              </AnimatePresence>
             </div>
-
-            <span className="shrink-0 text-[11px] font-medium tabular-nums text-white/35">
-              {recording ? "Listening…" : "Inserted ✓"}
-            </span>
+            <button aria-label="Accept cleanup suggestion">Accept</button>
           </div>
+        </div>
+
+        {/* Recording dock */}
+        <div className="voice-dock">
+          <div className="record-dot" aria-hidden="true" />
+          <div className="waveform" aria-label="Voice is being captured">
+            {waveform.map((height, i) => (
+              <i
+                key={i}
+                style={
+                  {
+                    "--bar-height": `${height}%`,
+                    "--delay": `${i * -0.045}s`,
+                  } as React.CSSProperties
+                }
+              />
+            ))}
+          </div>
+          <div className="timer">LIVE</div>
+          <kbd>⌥ Space</kbd>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

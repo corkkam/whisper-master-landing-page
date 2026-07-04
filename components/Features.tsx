@@ -1,156 +1,142 @@
-import { Section, SectionHeading } from "./ui";
 import { Stagger, Item } from "./motion";
-import { CommandModeDemo, LanguageCycle } from "./FeatureDemos";
-import {
-  AppsIcon,
-  ShieldIcon,
-  FormatIcon,
-  CommandIcon,
-  GlobeIcon,
-  WhisperIcon,
-  CheckIcon,
-  XIcon,
-} from "./icons";
 
-const apps = ["Slack", "Gmail", "Notion", "Cursor", "VS Code", "Terminal", "Docs"];
+type IconName = "waveform" | "apps" | "spark" | "book" | "phone" | "lock";
 
-const tileBase =
-  "group relative flex h-full flex-col overflow-hidden rounded-2xl p-6 transition duration-300 hover:-translate-y-1";
+function Icon({ name }: { name: IconName }) {
+  const props = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true as const,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  const paths: Record<IconName, React.ReactNode> = {
+    waveform: (
+      <path d="M4 12h2M9 8v8M13 5v14M17 8v8M21 11v2" />
+    ),
+    apps: (
+      <>
+        <rect x="3" y="3" width="7" height="7" rx="2" />
+        <rect x="14" y="3" width="7" height="7" rx="2" />
+        <rect x="3" y="14" width="7" height="7" rx="2" />
+        <rect x="14" y="14" width="7" height="7" rx="2" />
+      </>
+    ),
+    spark: (
+      <>
+        <path d="M12 2.5c.5 4.7 2.8 7 7.5 7.5-4.7.5-7 2.8-7.5 7.5-.5-4.7-2.8-7-7.5-7.5 4.7-.5 7-2.8 7.5-7.5Z" />
+        <path d="M19 16.5c.2 2 1.2 3 3 3-1.8.2-2.8 1.2-3 3-.2-1.8-1.2-2.8-3-3 1.8-.2 2.8-1.2 3-3Z" />
+      </>
+    ),
+    book: (
+      <>
+        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V4H6.5A2.5 2.5 0 0 0 4 6.5v13Z" />
+        <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5M9 9h6" />
+      </>
+    ),
+    phone: (
+      <>
+        <rect x="7" y="2.5" width="10" height="19" rx="2.5" />
+        <path d="M11 18.5h2M12 6v5M10 9.2a3.5 3.5 0 0 0 4 0" />
+      </>
+    ),
+    lock: (
+      <>
+        <rect x="4" y="10" width="16" height="11" rx="3" />
+        <path d="M8 10V7a4 4 0 0 1 8 0v3M12 14v3" />
+      </>
+    ),
+  };
+
+  return <svg {...props}>{paths[name]}</svg>;
+}
+
+const features: { icon: IconName; title: string; copy: string; tag?: string }[] = [
+  {
+    icon: "waveform",
+    title: "Words appear as you speak",
+    copy: "Live streaming transcription — partial words show up in real time and lock in as you go. No wait-then-dump at the end.",
+    tag: "REAL-TIME",
+  },
+  {
+    icon: "apps",
+    title: "Every app, instantly",
+    copy: "Hold one key and talk. The text lands right at your cursor in Mail, Slack, Notion, VS Code — anywhere you can type.",
+  },
+  {
+    icon: "spark",
+    title: "Clean text, not a transcript",
+    copy: "The ums drop out, punctuation and capitals land on their own, and “twenty five dollars” arrives as $25.",
+    tag: "SMART FORMATTING",
+  },
+  {
+    icon: "book",
+    title: "Teach it your words",
+    copy: "Add the jargon, acronyms, and names you actually use — “RAG,” “Kubernetes,” a client's name — and dictation gets them right.",
+    tag: "CUSTOM VOCABULARY",
+  },
+  {
+    icon: "phone",
+    title: "Your iPhone is the mic",
+    copy: "The companion app turns your phone into a wireless mic and dictation keyboard, streamed to your Mac over local Wi-Fi.",
+    tag: "COMPANION APP",
+  },
+  {
+    icon: "lock",
+    title: "Private by design",
+    copy: "NVIDIA Parakeet runs on your Mac — no cloud, no accounts, works offline. Your voice never leaves your devices.",
+    tag: "ON-DEVICE",
+  },
+];
+
+const alsoInTheBox = [
+  "Transcript history + daily word count",
+  "Hold-to-talk or tap to toggle",
+  "Auto-paste with clipboard fallback",
+  "Bluetooth quality guard for earbuds",
+  "Optional Apple Intelligence polish",
+  "Works fully offline",
+];
 
 export default function Features() {
   return (
-    <Section id="features">
-      <div className="flex flex-col items-center">
-        <SectionHeading
-          eyebrow="Features"
-          title="Everything you need to stop typing."
-          subtitle="Purpose-built for speed and privacy — not a wrapper around someone else's cloud API."
-        />
+    <section className="section features-section" id="features">
+      <div className="section-heading split">
+        <div>
+          <div className="kicker">BUILT TO DISAPPEAR</div>
+          <h2>
+            Less interface.
+            <br />
+            More momentum.
+          </h2>
+        </div>
+        <p>
+          The best productivity tool is the one you stop noticing. Whisper Master stays
+          out of the way until you speak.
+        </p>
       </div>
 
-      {/* Asymmetric bento — the privacy wedge anchors it; live tiles carry it. */}
-      <Stagger className="mt-14 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:auto-rows-[minmax(196px,auto)]">
-        {/* 1 — PRIVACY (hero tile, 2×2) */}
-        <Item className={`${tileBase} glass border-accent/20 shadow-glow sm:col-span-2 lg:col-span-2 lg:row-span-2`}>
-          <span className="absolute right-5 top-5 rounded-full bg-accent/15 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-accent-300 ring-1 ring-accent/25">
-            The wedge
-          </span>
-          <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-accent/20 text-accent-300 ring-1 ring-accent/30">
-            <ShieldIcon className="h-6 w-6" />
-          </span>
-          <h3 className="mt-5 text-2xl font-semibold tracking-tight text-white">
-            100% on-device
-          </h3>
-          <p className="mt-2 max-w-md text-[15px] leading-relaxed text-white/60">
-            Transcription runs locally on your Mac. Your voice never touches a
-            server — and that&rsquo;s the whole point. Zero upload, zero
-            retention, nothing to leak.
-          </p>
-
-          <div className="mt-auto pt-6">
-            <div className="mb-3 inline-flex items-center gap-2 text-[12px] font-medium text-accent-300">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent-300/70" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-accent-300" />
-              </span>
-              Processing locally
+      <Stagger className="feature-grid">
+        {features.map((f) => (
+          <Item key={f.title} className="feature-card">
+            <div className="feature-icon">
+              <Icon name={f.icon} />
             </div>
-            <div className="flex flex-col gap-2 rounded-xl border border-white/[0.06] bg-base-900/50 p-3 text-[13px]">
-              <div className="flex items-center gap-2 text-white/80">
-                <CheckIcon className="h-4 w-4 shrink-0 text-accent-300" />
-                Transcribed on your device
-              </div>
-              <div className="flex items-center gap-2 text-white/35">
-                <XIcon className="h-4 w-4 shrink-0 text-white/25" />
-                <span className="line-through">Uploaded, stored, or trained on</span>
-              </div>
-            </div>
-          </div>
-        </Item>
-
-        {/* 2 — WORKS IN EVERY APP (wide) */}
-        <Item className={`${tileBase} glass-soft hover:border-white/[0.14] sm:col-span-2 lg:col-span-2`}>
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-white/80 ring-1 ring-white/10">
-              <AppsIcon className="h-6 w-6" />
-            </span>
-            <h3 className="text-lg font-semibold text-white">Works in every app</h3>
-          </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/55">
-            If you can type there, you can talk there.
-          </p>
-          <div className="mt-auto flex flex-wrap gap-2 pt-5">
-            {apps.map((a) => (
-              <span
-                key={a}
-                className="rounded-lg border border-white/[0.07] bg-white/[0.03] px-2.5 py-1 text-[12.5px] text-white/60"
-              >
-                {a}
-              </span>
-            ))}
-          </div>
-        </Item>
-
-        {/* 3 — COMMAND MODE (wide, live) */}
-        <Item className={`${tileBase} glass-soft hover:border-white/[0.14] sm:col-span-2 lg:col-span-2`}>
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-white/80 ring-1 ring-white/10">
-              <CommandIcon className="h-6 w-6" />
-            </span>
-            <h3 className="text-lg font-semibold text-white">Command Mode</h3>
-          </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/55">
-            Edit by voice — reshape what you just said without touching the keys.
-          </p>
-          <CommandModeDemo />
-        </Item>
-
-        {/* 4 — CONTEXT (small) */}
-        <Item className={`${tileBase} glass-soft hover:border-white/[0.14] lg:col-span-1`}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-white/80 ring-1 ring-white/10">
-            <FormatIcon className="h-6 w-6" />
-          </span>
-          <h3 className="mt-5 text-lg font-semibold text-white">Context-aware</h3>
-          <p className="mt-2 text-[15px] leading-relaxed text-white/55">
-            A Slack message isn&rsquo;t a legal email. Whispr formats to fit.
-          </p>
-        </Item>
-
-        {/* 5 — LANGUAGES (small, live) */}
-        <Item className={`${tileBase} glass-soft hover:border-white/[0.14] lg:col-span-1`}>
-          <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-white/80 ring-1 ring-white/10">
-            <GlobeIcon className="h-6 w-6" />
-          </span>
-          <h3 className="mt-5 text-lg font-semibold text-white">50+ languages</h3>
-          <LanguageCycle />
-        </Item>
-
-        {/* 6 — WHISPER MODE (wide) */}
-        <Item className={`${tileBase} glass-soft hover:border-white/[0.14] sm:col-span-2 lg:col-span-2`}>
-          <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-white/80 ring-1 ring-white/10">
-              <WhisperIcon className="h-6 w-6" />
-            </span>
-            <h3 className="text-lg font-semibold text-white">Whisper mode</h3>
-          </div>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/55">
-            Subvocal, near-silent dictation for open offices, libraries, and any
-            room where you can&rsquo;t talk out loud.
-          </p>
-          <div className="mt-auto flex items-end gap-[3px] pt-5" aria-hidden>
-            {[0.3, 0.5, 0.4, 0.7, 0.45, 0.6, 0.35, 0.55, 0.3, 0.5, 0.4].map(
-              (h, i) => (
-                <span
-                  key={i}
-                  className="w-1 rounded-full bg-white/15"
-                  style={{ height: `${Math.round(h * 26)}px` }}
-                />
-              )
-            )}
-            <span className="ml-2 text-[11px] text-white/35">quiet</span>
-          </div>
-        </Item>
+            {f.tag && <span className="feature-tag">{f.tag}</span>}
+            <h3>{f.title}</h3>
+            <p>{f.copy}</p>
+          </Item>
+        ))}
       </Stagger>
-    </Section>
+
+      <div className="feature-more" aria-label="More built-in features">
+        {alsoInTheBox.map((item) => (
+          <span key={item}>{item}</span>
+        ))}
+      </div>
+    </section>
   );
 }

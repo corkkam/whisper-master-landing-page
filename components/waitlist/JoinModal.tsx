@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import {
-  sendEmailLink,
   submitWaitlist,
-  getCurrentUserEmail,
   getDashboard,
   claimSocial,
+  startDonationCheckout,
   type Dashboard,
 } from "@/lib/waitlist/actions";
 import {
@@ -15,10 +14,17 @@ import {
   PLATFORM_OPTIONS,
   REFERRAL_OPTIONS,
 } from "@/lib/waitlist/schema";
-import { MILESTONES, nextMilestone } from "@/lib/waitlist/points";
+import { MILESTONES, DONATION_TIERS, nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
-import Turnstile from "./Turnstile";
-import { ArrowRightIcon, CheckIcon, XIcon } from "@/components/icons";
+import { publishDashboard } from "./useWaitlistStatus";
+import { track } from "@vercel/analytics";
+import {
+  ArrowRightIcon,
+  CheckIcon,
+  XIcon,
+  XBrandIcon,
+  LinkedInIcon,
+} from "@/components/icons";
 
 type Step = "email" | "otp" | "details" | "success";
 
@@ -31,15 +37,22 @@ export default function JoinModal({
   initialStep?: Step;
   onClose: () => void;
 }) {
+  const { isSignedIn, user, isLoaded: userLoaded } = useUser();
+  // Clerk v7 "Future" API: signIn/signUp are SignInFutureResource/SignUpFutureResource
+  const { signIn } = useSignIn();
+  const { signUp } = useSignUp();
+
   const [step, setStep] = useState<Step>(initialStep);
   const [email, setEmail] = useState(initialEmail);
-  const [token, setToken] = useState<string | null>(null);
+  const [otp, setOtp] = useState("");
+  const [otpFlow, setOtpFlow] = useState<"signIn" | "signUp">("signIn");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [dash, setDash] = useState<Dashboard | null>(null);
   const [copied, setCopied] = useState(false);
   const [returning, setReturning] = useState(false);
   const [initializing, setInitializing] = useState(true);
+  const [donationLoading, setDonationLoading] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -50,30 +63,30 @@ export default function JoinModal({
     referralSource: "" as string,
   });
 
-  // On open, figure out where to start:
-  //  • already has a waitlist entry  → "welcome back" dashboard
-  //  • signed in, no entry yet        → details form (prefilled email)
-  //  • not signed in                  → email step
+  // Determine starting step based on Clerk auth state.
   useEffect(() => {
+    if (!userLoaded) return;
+
     (async () => {
-      const d = await getDashboard();
-      if (d) {
-        setDash(d);
-        setReturning(true);
-        setStep("success");
-      } else {
-        const e = await getCurrentUserEmail();
-        if (e) {
-          setEmail(e);
-          setStep("details");
+      if (isSignedIn) {
+        const d = await getDashboard();
+        if (d) {
+          setDash(d);
+          publishDashboard(d);
+          setReturning(true);
+          setStep("success");
         } else {
-          setStep(initialStep === "details" ? "email" : initialStep);
+          setEmail(user.primaryEmailAddress?.emailAddress ?? "");
+          setForm((f) => ({ ...f, fullName: user.fullName ?? "" }));
+          setStep("details");
         }
+      } else {
+        setStep(initialStep === "details" ? "email" : initialStep);
       }
       setInitializing(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [userLoaded, isSignedIn]);
 
   // Esc to close.
   useEffect(() => {
@@ -82,26 +95,112 @@ export default function JoinModal({
     return () => window.removeEventListener("keydown", h);
   }, [onClose]);
 
-  async function sendLink(e?: React.FormEvent) {
-    e?.preventDefault();
-    setError("");
-    setLoading(true);
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    const res = await sendEmailLink(email, token, redirectTo);
-    setLoading(false);
-    if (res.ok) setStep("otp");
-    else setError(res.error);
-  }
+  // ── Google / SSO OAuth ──────────────────────────────────────────────────────
 
   async function handleGoogle() {
+    if (!signIn) return;
     setError("");
-    const supabase = createClient();
-    const { error: err } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    const { error: err } = await signIn.sso({
+      strategy: "oauth_google",
+      redirectUrl: `${window.location.origin}/sso-callback`,
+      redirectCallbackUrl: `${window.location.origin}/?join=details`,
     });
-    if (err) setError("Couldn't start Google sign-in.");
+    if (err) setError("Couldn't start Google sign-in. Please try again.");
   }
+
+  // ── Email OTP — send ────────────────────────────────────────────────────────
+
+  async function sendOtp(e?: React.FormEvent) {
+    e?.preventDefault();
+    if (!signIn || !signUp) return;
+    setError("");
+    setLoading(true);
+
+    // Identify the user; signUpIfMissing=true avoids an error for new users
+    // and instead sets signIn.isTransferable = true so we can switch to sign-up.
+    const { error: createErr } = await signIn.create({
+      identifier: email,
+      signUpIfMissing: true,
+    });
+
+    if (createErr) {
+      setError((createErr as { longMessage?: string; message?: string }).longMessage ?? (createErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+      setLoading(false);
+      return;
+    }
+
+    if (signIn.isTransferable) {
+      // New user — transfer identifier to a sign-up and send the code.
+      const { error: transferErr } = await signUp.create({ transfer: true });
+      if (transferErr) {
+        setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
+        setLoading(false);
+        return;
+      }
+      // SignUpFutureResource uses verifications.sendEmailCode() (not emailCode.sendCode)
+      const { error: sendErr } = await signUp.verifications.sendEmailCode();
+      if (sendErr) {
+        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+      } else {
+        setOtpFlow("signUp");
+        setStep("otp");
+      }
+    } else {
+      // Existing user — send email code for sign-in.
+      const { error: sendErr } = await signIn.emailCode.sendCode();
+      if (sendErr) {
+        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+      } else {
+        setOtpFlow("signIn");
+        setStep("otp");
+      }
+    }
+
+    setLoading(false);
+  }
+
+  // ── Email OTP — verify ──────────────────────────────────────────────────────
+
+  async function verifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    if (!signIn || !signUp) return;
+    setError("");
+    setLoading(true);
+
+    if (otpFlow === "signIn") {
+      const { error: verifyErr } = await signIn.emailCode.verifyCode({ code: otp });
+      // New user: the code was verified against a sign-in attempt created with
+      // signUpIfMissing, which Clerk marks transferable only after verification.
+      // Complete the account by transferring the verified attempt to a sign-up.
+      if (signIn.isTransferable) {
+        const { error: transferErr } = await signUp.create({ transfer: true });
+        if (transferErr) {
+          setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
+        } else {
+          await signUp.finalize();
+          setStep("details");
+        }
+      } else if (verifyErr) {
+        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
+      } else {
+        await signIn.finalize();
+        setStep("details");
+      }
+    } else {
+      // SignUpFutureResource uses verifications.verifyEmailCode() (not emailCode.verifyCode)
+      const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: otp });
+      if (verifyErr) {
+        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
+      } else {
+        await signUp.finalize();
+        setStep("details");
+      }
+    }
+
+    setLoading(false);
+  }
+
+  // ── Waitlist details submit ─────────────────────────────────────────────────
 
   async function handleSubmitDetails(e: React.FormEvent) {
     e.preventDefault();
@@ -116,7 +215,9 @@ export default function JoinModal({
       referralSource: (form.referralSource || undefined) as never,
     });
     if (res.ok) {
-      setDash(await getDashboard());
+      const d = await getDashboard();
+      setDash(d);
+      publishDashboard(d);
       setStep("success");
     } else {
       setError(res.error);
@@ -124,10 +225,14 @@ export default function JoinModal({
     setLoading(false);
   }
 
+  // ── Referral link helpers ───────────────────────────────────────────────────
+
   const referralLink =
     dash?.referralCode && typeof window !== "undefined"
       ? `${window.location.origin}/r/${dash.referralCode}`
       : "";
+
+  const nextReward = dash ? nextMilestone(dash.referralsCount) : null;
 
   async function copyLink() {
     if (!referralLink) return;
@@ -137,15 +242,36 @@ export default function JoinModal({
   }
 
   async function share(network: "x" | "linkedin") {
-    const text = "I just joined the Whispr waitlist — talk, and it types. Join with my link:";
+    const text =
+      "I just joined the Whisper Master waitlist — talk, and it types. Join with my link:";
     const url =
       network === "x"
         ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`
         : `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`;
-    window.open(url, "_blank", "noopener,noreferrer,width=600,height=560");
+    window.open(url, "_blank", "noopener,noreferrer");
     await claimSocial(network);
-    setDash(await getDashboard());
+    const d = await getDashboard();
+    setDash(d);
+    publishDashboard(d);
   }
+
+  // ── Donation / payment ──────────────────────────────────────────────────────
+
+  async function handleDonate(tierKey: string) {
+    track("payment_interest", { tier: tierKey });
+    setDonationLoading(tierKey);
+    const tier = tierKey as Parameters<typeof startDonationCheckout>[0];
+    const res = await startDonationCheckout(tier);
+    if (res.ok) {
+      window.location.href = res.checkoutUrl;
+    } else {
+      setError(res.error);
+      setTimeout(() => setError(""), 3000);
+    }
+    setDonationLoading(null);
+  }
+
+  // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center">
@@ -154,11 +280,20 @@ export default function JoinModal({
         onClick={onClose}
         aria-hidden
       />
-      <div
-        role="dialog"
-        aria-modal="true"
-        className="glass relative z-10 w-full max-w-md overflow-hidden rounded-2xl p-6 shadow-glass"
-      >
+      <div className="relative z-10 w-full max-w-md">
+        {/* Referral rewards — companion panel tucked under the main card's left edge */}
+        {step === "success" && dash && !initializing && (
+          <aside className="absolute right-full top-1/2 hidden w-72 -translate-y-1/2 translate-x-14 lg:block">
+            <div className="rounded-2xl border border-white/10 bg-[#13150f]/[0.97] p-5 pr-16 backdrop-blur-xl [box-shadow:inset_0_1px_rgba(255,255,255,0.05),0_18px_50px_rgba(0,0,0,0.45)]">
+              <RewardsList referrals={dash.referralsCount} next={nextReward} />
+            </div>
+          </aside>
+        )}
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="glass relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl p-6 shadow-glass"
+        >
         <button
           onClick={onClose}
           aria-label="Close"
@@ -174,240 +309,373 @@ export default function JoinModal({
         )}
 
         {!initializing && (
-        <>
-        {/* ── EMAIL ─────────────────────────────────────────────── */}
-        {step === "email" && (
-          <div>
-            <h2 className="text-xl font-semibold text-white">Join the waitlist</h2>
-            <p className="mt-1 text-sm text-white/55">
-              Earn priority access — invite friends to move up the line.
-            </p>
+          <>
+            {/* ── EMAIL ──────────────────────────────────────────────── */}
+            {step === "email" && (
+              <div>
+                <h2 className="text-xl font-semibold text-white">Join the waitlist</h2>
+                <p className="mt-1 text-sm text-white/55">
+                  Earn priority access — invite friends to move up the line.
+                </p>
 
-            <button
-              onClick={handleGoogle}
-              disabled={!token}
-              className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              <GoogleIcon /> Continue with Google
-            </button>
+                <button
+                  onClick={handleGoogle}
+                  disabled={!signIn}
+                  className="mt-5 flex w-full items-center justify-center gap-2.5 rounded-xl border border-white/10 bg-white/[0.04] px-4 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <GoogleIcon /> Continue with Google
+                </button>
 
-            {/* Turnstile bot-check: when configured, the Google button stays
-                disabled until it's solved. Renders nothing (auto-passes) when
-                no site key is set. */}
-            <div className="mt-3 flex justify-center">
-              <Turnstile onToken={setToken} />
-            </div>
+                {EMAIL_AUTH_ENABLED && (
+                  <>
+                    <div className="my-4 flex items-center gap-3 text-xs text-white/35">
+                      <span className="h-px flex-1 bg-white/10" /> or{" "}
+                      <span className="h-px flex-1 bg-white/10" />
+                    </div>
+                    <form onSubmit={sendOtp}>
+                      <input
+                        type="email"
+                        required
+                        placeholder="you@company.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25"
+                      />
+                      {/* Mount point for Clerk's smart CAPTCHA (bot protection is
+                          enabled on the instance; required for custom sign-up flows). */}
+                      <div id="clerk-captcha" className="mt-3 empty:hidden" />
+                      <button
+                        type="submit"
+                        disabled={loading || !signIn || !signUp}
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
+                      >
+                        {loading ? (
+                          <Spinner />
+                        ) : (
+                          <>
+                            Send verification code{" "}
+                            <ArrowRightIcon className="h-4 w-4" />
+                          </>
+                        )}
+                      </button>
+                    </form>
+                  </>
+                )}
+                <Err error={error} />
+              </div>
+            )}
 
-            {EMAIL_AUTH_ENABLED && (
-              <>
-                <div className="my-4 flex items-center gap-3 text-xs text-white/35">
-                  <span className="h-px flex-1 bg-white/10" /> or <span className="h-px flex-1 bg-white/10" />
-                </div>
-                <form onSubmit={sendLink}>
+            {/* ── OTP ────────────────────────────────────────────────── */}
+            {step === "otp" && (
+              <div className="text-center">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-300 ring-1 ring-accent/30">
+                  <MailIcon className="h-6 w-6" />
+                </span>
+                <h2 className="mt-4 text-xl font-semibold text-white">
+                  Check your inbox
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-white/60">
+                  We sent a 6-digit code to{" "}
+                  <strong className="text-white/80">{email}</strong>.
+                </p>
+                <form onSubmit={verifyOtp} className="mt-5 space-y-3">
                   <input
-                    type="email"
-                    required
-                    placeholder="you@company.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    value={otp}
+                    onChange={(e) =>
+                      setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    placeholder="000000"
+                    autoFocus
+                    className={`${inputCls} text-center text-lg tracking-[0.4em]`}
                   />
                   <button
                     type="submit"
-                    disabled={loading || !token}
-                    className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
+                    disabled={loading || otp.length < 6}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
                   >
-                    {loading ? <Spinner /> : <>Email me a sign-in link <ArrowRightIcon className="h-4 w-4" /></>}
+                    {loading ? <Spinner /> : "Verify code"}
                   </button>
                 </form>
-              </>
-            )}
-            <Err error={error} />
-          </div>
-        )}
-
-        {/* ── CHECK INBOX (magic link) ──────────────────────────── */}
-        {step === "otp" && (
-          <div className="text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-300 ring-1 ring-accent/30">
-              <MailIcon className="h-6 w-6" />
-            </span>
-            <h2 className="mt-4 text-xl font-semibold text-white">Check your inbox</h2>
-            <p className="mt-2 text-sm leading-relaxed text-white/60">
-              We sent a sign-in link to <strong className="text-white/80">{email}</strong>.
-              Open it and click <strong className="text-white/80">Sign in</strong> — you&rsquo;ll
-              come right back here to finish.
-            </p>
-            <p className="mt-3 text-xs text-white/40">
-              Tip: open the link in <em>this</em> browser. Check spam if it&rsquo;s not there in a minute.
-            </p>
-            <button
-              onClick={() => sendLink()}
-              disabled={loading}
-              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:opacity-60"
-            >
-              {loading ? <Spinner /> : "Resend link"}
-            </button>
-            <button
-              onClick={() => setStep("email")}
-              className="mt-3 text-xs text-white/45 transition hover:text-white/70"
-            >
-              ← Use a different email
-            </button>
-            <Err error={error} />
-          </div>
-        )}
-
-        {/* ── DETAILS ───────────────────────────────────────────── */}
-        {step === "details" && (
-          <div>
-            <h2 className="text-xl font-semibold text-white">A few details</h2>
-            <p className="mt-1 text-sm text-white/55">
-              So we tailor your early access. {email && <span className="text-white/40">({email})</span>}
-            </p>
-            <form onSubmit={handleSubmitDetails} className="mt-5 space-y-3">
-              <Field label="Name">
-                <input
-                  required
-                  value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  className={inputCls}
-                  placeholder="Jane Doe"
-                />
-              </Field>
-              <Field label="Company / team (optional)">
-                <input
-                  value={form.company}
-                  onChange={(e) => setForm({ ...form, company: e.target.value })}
-                  className={inputCls}
-                  placeholder="Acme Inc."
-                />
-              </Field>
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Role">
-                  <select
-                    value={form.role}
-                    onChange={(e) => setForm({ ...form, role: e.target.value })}
-                    className={inputCls}
-                  >
-                    {ROLE_OPTIONS.map((o) => (
-                      <option key={o} value={o} className="bg-base-800">{o}</option>
-                    ))}
-                  </select>
-                </Field>
-                <Field label="Platform">
-                  <select
-                    value={form.platform}
-                    onChange={(e) => setForm({ ...form, platform: e.target.value })}
-                    className={inputCls}
-                  >
-                    {PLATFORM_OPTIONS.map((o) => (
-                      <option key={o} value={o} className="bg-base-800">{o}</option>
-                    ))}
-                  </select>
-                </Field>
-              </div>
-              <Field label="What will you use Whispr for? (optional)">
-                <textarea
-                  rows={2}
-                  value={form.useCase}
-                  onChange={(e) => setForm({ ...form, useCase: e.target.value })}
-                  className={`${inputCls} resize-none`}
-                  placeholder="Standups, emails, code comments…"
-                />
-              </Field>
-              <Field label="How did you hear about us? (optional)">
-                <select
-                  value={form.referralSource}
-                  onChange={(e) => setForm({ ...form, referralSource: e.target.value })}
-                  className={inputCls}
-                >
-                  <option value="" className="bg-base-800">Select…</option>
-                  {REFERRAL_OPTIONS.map((o) => (
-                    <option key={o} value={o} className="bg-base-800">{o}</option>
-                  ))}
-                </select>
-              </Field>
-              <button
-                type="submit"
-                disabled={loading}
-                className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white shadow-glow transition hover:bg-accent-600 disabled:opacity-70"
-              >
-                {loading ? <Spinner /> : "Claim my spot"}
-              </button>
-            </form>
-            <Err error={error} />
-          </div>
-        )}
-
-        {/* ── SUCCESS ───────────────────────────────────────────── */}
-        {step === "success" && dash && (
-          <div className="text-center">
-            <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
-              <CheckIcon className="h-6 w-6" />
-            </span>
-            <h2 className="mt-4 text-2xl font-semibold text-white">
-              {returning
-                ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
-                : "You’re in! 🎉"}
-            </h2>
-            <p className="mt-1 text-sm text-white/55">
-              {returning
-                ? "You’re already on the list — here’s where you stand. Share your link to climb higher."
-                : dash.movedUp > 0
-                ? `You've already jumped +${dash.movedUp} spots.`
-                : "Invite friends to climb the line."}
-            </p>
-
-            <div className="mt-5 grid grid-cols-3 gap-2 text-center">
-              <Stat label="Your spot" value={dash.rank ? `#${dash.rank}` : "—"} />
-              <Stat label="Points" value={String(dash.totalPoints)} />
-              <Stat label="Referrals" value={String(dash.referralsCount)} />
-            </div>
-
-            <div className="mt-5 text-left">
-              <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
-                Your referral link
-              </p>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  readOnly
-                  value={referralLink}
-                  className="w-full truncate rounded-lg border border-white/10 bg-base-900/60 px-3 py-2 text-sm text-white/70"
-                />
                 <button
-                  onClick={copyLink}
-                  className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-white transition hover:bg-accent-600"
+                  onClick={() => sendOtp()}
+                  disabled={loading}
+                  className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-5 py-3 text-sm font-medium text-white transition hover:bg-white/[0.08] disabled:opacity-60"
                 >
-                  {copied ? "Copied" : "Copy"}
+                  {loading ? <Spinner /> : "Resend code"}
                 </button>
+                <button
+                  onClick={() => setStep("email")}
+                  className="mt-3 text-xs text-white/45 transition hover:text-white/70"
+                >
+                  ← Use a different email
+                </button>
+                <Err error={error} />
               </div>
-              <div className="mt-2 flex gap-2">
-                <button onClick={() => share("x")} className={shareCls}>
-                  Share on X <span className="text-white/40">+25</span>
-                </button>
-                <button onClick={() => share("linkedin")} className={shareCls}>
-                  LinkedIn <span className="text-white/40">+25</span>
-                </button>
-              </div>
-            </div>
+            )}
 
-            <MilestoneTracker referrals={dash.referralsCount} />
-          </div>
+            {/* ── DETAILS ────────────────────────────────────────────── */}
+            {step === "details" && (
+              <div>
+                <h2 className="text-xl font-semibold text-white">A few details</h2>
+                <p className="mt-1 text-sm text-white/55">
+                  So we tailor your early access.{" "}
+                  {email && <span className="text-white/40">({email})</span>}
+                </p>
+                <form onSubmit={handleSubmitDetails} className="mt-5 space-y-3">
+                  <Field label="Name">
+                    <input
+                      required
+                      value={form.fullName}
+                      onChange={(e) =>
+                        setForm({ ...form, fullName: e.target.value })
+                      }
+                      className={inputCls}
+                      placeholder="Jane Doe"
+                    />
+                  </Field>
+                  <Field label="Company / team (optional)">
+                    <input
+                      value={form.company}
+                      onChange={(e) =>
+                        setForm({ ...form, company: e.target.value })
+                      }
+                      className={inputCls}
+                      placeholder="Acme Inc."
+                    />
+                  </Field>
+                  <div className="grid grid-cols-2 gap-3">
+                    <Field label="Role">
+                      <select
+                        value={form.role}
+                        onChange={(e) =>
+                          setForm({ ...form, role: e.target.value })
+                        }
+                        className={inputCls}
+                      >
+                        {ROLE_OPTIONS.map((o) => (
+                          <option key={o} value={o} className="bg-base-800">
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                    <Field label="Platform">
+                      <select
+                        value={form.platform}
+                        onChange={(e) =>
+                          setForm({ ...form, platform: e.target.value })
+                        }
+                        className={inputCls}
+                      >
+                        {PLATFORM_OPTIONS.map((o) => (
+                          <option key={o} value={o} className="bg-base-800">
+                            {o}
+                          </option>
+                        ))}
+                      </select>
+                    </Field>
+                  </div>
+                  <Field label="What will you use Whisper Master for? (optional)">
+                    <textarea
+                      rows={2}
+                      value={form.useCase}
+                      onChange={(e) =>
+                        setForm({ ...form, useCase: e.target.value })
+                      }
+                      className={`${inputCls} resize-none`}
+                      placeholder="Standups, emails, code comments…"
+                    />
+                  </Field>
+                  <Field label="How did you hear about us? (optional)">
+                    <select
+                      value={form.referralSource}
+                      onChange={(e) =>
+                        setForm({ ...form, referralSource: e.target.value })
+                      }
+                      className={inputCls}
+                    >
+                      <option value="" className="bg-base-800">
+                        Select…
+                      </option>
+                      {REFERRAL_OPTIONS.map((o) => (
+                        <option key={o} value={o} className="bg-base-800">
+                          {o}
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
+                  >
+                    {loading ? <Spinner /> : "Claim my spot"}
+                  </button>
+                </form>
+                <Err error={error} />
+              </div>
+            )}
+
+            {/* ── SUCCESS ────────────────────────────────────────────── */}
+            {step === "success" && dash && (
+              <div>
+                <div className="text-center">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
+                    <CheckIcon className="h-6 w-6" />
+                  </span>
+                  <h2 className="mt-4 text-2xl font-semibold text-white">
+                    {returning
+                      ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
+                      : "You're in! 🎉"}
+                  </h2>
+                  <p className="mt-1 text-sm text-white/55">
+                    {returning
+                      ? "You're already on the list — share your link or support us to climb higher."
+                      : dash.movedUp > 0
+                      ? `You've already jumped +${dash.movedUp} spots.`
+                      : "Invite friends or support us to climb the line."}
+                  </p>
+                </div>
+
+                <div className="mt-5 space-y-4 text-left">
+                  {/* Rank */}
+                  <div className="glass-soft flex items-center justify-around rounded-xl px-4 py-3 text-center">
+                    <div>
+                      <p className="text-2xl font-semibold tracking-tight text-white">
+                        {dash.rank ? `#${dash.rank}` : "—"}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Your spot
+                      </p>
+                    </div>
+                    <div className="h-9 w-px bg-white/[0.08]" />
+                    <div>
+                      <p className="text-2xl font-semibold tracking-tight text-white">
+                        {dash.referralsCount}
+                      </p>
+                      <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Referrals
+                      </p>
+                    </div>
+                  </div>
+                    {/* Referral link + share */}
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                        Your referral link
+                      </p>
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          readOnly
+                          value={referralLink}
+                          className="w-full truncate rounded-lg border border-white/10 bg-base-900/60 px-3 py-2 text-sm text-white/70"
+                        />
+                        <button
+                          onClick={copyLink}
+                          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-dark transition hover:bg-accent-300"
+                        >
+                          {copied ? "Copied" : "Copy"}
+                        </button>
+                      </div>
+                      {/* Share — the main action we want */}
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-accent/[0.07] px-4 py-3 ring-1 ring-accent/20">
+                        <div>
+                          <p className="text-sm font-medium text-white">
+                            Share it — earn more points
+                          </p>
+                          <p className="mt-0.5 text-xs text-white/50">
+                            Every friend who joins moves you up.
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-2">
+                          <button
+                            onClick={() => share("x")}
+                            aria-label="Share on X"
+                            className={shareIconCls}
+                          >
+                            <XBrandIcon className="h-5 w-5" />
+                          </button>
+                          <button
+                            onClick={() => share("linkedin")}
+                            aria-label="Share on LinkedIn"
+                            className={shareIconCls}
+                          >
+                            <LinkedInIcon className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Donation / skip-the-queue — compact */}
+                    <div>
+                      <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
+                        <div>
+                          <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
+                            Skip the queue
+                          </p>
+                          <p className="mt-0.5 text-[10px] text-white/40">
+                            One-time support = instant spot bump.
+                          </p>
+                        </div>
+                        <div className="flex shrink-0 gap-1.5">
+                          {DONATION_TIERS.map((tier) => (
+                            <button
+                              key={tier.key}
+                              onClick={() => handleDonate(tier.key)}
+                              disabled={donationLoading === tier.key}
+                              title={`${tier.label} — ${tier.perk}`}
+                              className={`rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold transition hover:border-accent/25 hover:bg-white/[0.06] disabled:opacity-60 ${tier.color}`}
+                            >
+                              {donationLoading === tier.key ? (
+                                <Spinner />
+                              ) : (
+                                `$${tier.amount}`
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {error && (
+                        <p className="mt-2 text-center text-xs text-white/50">{error}</p>
+                      )}
+                    </div>
+
+                    {/* Rewards — inline fallback when the side panel is hidden */}
+                    <div className="glass-soft rounded-xl p-4 lg:hidden">
+                      <RewardsList
+                        referrals={dash.referralsCount}
+                        next={nextReward}
+                      />
+                    </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
-        </>
-        )}
+        </div>
       </div>
     </div>
   );
 }
 
-const inputCls =
-  "w-full rounded-lg border border-white/10 bg-base-900/60 px-3 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus-visible:ring-2 focus-visible:ring-accent/50";
-const shareCls =
-  "flex-1 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-2 text-xs font-medium text-white/80 transition hover:bg-white/[0.08]";
+// ── Styles ────────────────────────────────────────────────────────────────────
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+const inputCls =
+  "w-full rounded-lg border border-white/10 bg-base-900/60 px-3 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25";
+const shareIconCls =
+  "flex h-10 w-10 items-center justify-center rounded-lg text-accent transition hover:bg-accent/15 hover:scale-105";
+
+// ── Small components ──────────────────────────────────────────────────────────
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
       <span className="mb-1 block text-xs font-medium text-white/50">{label}</span>
@@ -416,50 +684,78 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function RewardsList({
+  referrals,
+  next,
+}: {
+  referrals: number;
+  next: ReturnType<typeof nextMilestone>;
+}) {
   return (
-    <div className="rounded-xl border border-white/[0.07] bg-white/[0.03] py-3">
-      <div className="text-lg font-semibold text-white">{value}</div>
-      <div className="text-[11px] text-white/45">{label}</div>
-    </div>
-  );
-}
-
-function MilestoneTracker({ referrals }: { referrals: number }) {
-  const next = nextMilestone(referrals);
-  return (
-    <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 text-left">
-      <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-accent-300">
-        {next ? `Next: ${next.referrals - referrals} more → ${next.label}` : "All milestones unlocked 🏆"}
+    <>
+      <p className="rounded-lg bg-accent/10 px-3 py-2 text-xs font-medium text-accent-300 ring-1 ring-accent/20">
+        {next
+          ? `${next.referrals - referrals} more referral${next.referrals - referrals === 1 ? "" : "s"} → ${next.label}`
+          : "All rewards unlocked 🏆"}
       </p>
-      <ul className="mt-2 space-y-1.5">
+      <p className="mt-4 text-xs text-white/45">Invite friends to unlock:</p>
+      <ul className="mt-3 space-y-2.5">
         {MILESTONES.map((m) => {
           const hit = referrals >= m.referrals;
+          const isNext = !hit && next?.key === m.key;
           return (
-            <li key={m.key} className="flex items-center gap-2 text-xs">
+            <li key={m.key} className="flex items-center gap-2.5 text-xs">
               <span
-                className={`flex h-4 w-4 items-center justify-center rounded-full ${
-                  hit ? "bg-accent/25 text-accent-300" : "bg-white/[0.05] text-white/30"
+                className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                  hit
+                    ? "bg-accent/25 text-accent-300"
+                    : isNext
+                    ? "bg-accent/10 ring-1 ring-accent/30"
+                    : "bg-white/[0.05]"
                 }`}
               >
                 {hit ? <CheckIcon className="h-2.5 w-2.5" /> : null}
               </span>
-              <span className={hit ? "text-white/80" : "text-white/45"}>
-                {m.referrals} referrals → {m.label}
+              <span className={hit || isNext ? "text-white/85" : "text-white/50"}>
+                {m.label}
+              </span>
+              <span
+                className={`ml-auto font-mono text-[10px] ${
+                  isNext ? "text-accent-300/80" : "text-white/30"
+                }`}
+              >
+                {m.referrals}
               </span>
             </li>
           );
         })}
       </ul>
-    </div>
+    </>
   );
 }
 
 function Spinner() {
   return (
-    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2.5" opacity="0.25" />
-      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+    <svg
+      className="h-4 w-4 animate-spin"
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        opacity="0.25"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -490,10 +786,22 @@ function MailIcon({ className }: { className?: string }) {
 function GoogleIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 18 18" aria-hidden>
-      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z" />
-      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z" />
-      <path fill="#FBBC05" d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z" />
-      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z" />
+      <path
+        fill="#4285F4"
+        d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"
+      />
+      <path
+        fill="#34A853"
+        d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M3.97 10.72a5.41 5.41 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33z"
+      />
+      <path
+        fill="#EA4335"
+        d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.47.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+      />
     </svg>
   );
 }

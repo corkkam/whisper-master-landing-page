@@ -1,67 +1,91 @@
-import { Section, SectionHeading } from "./ui";
 import { Reveal } from "./motion";
-import { CodeIcon, PenIcon, HeadsetIcon } from "./icons";
-import type { ReactNode } from "react";
 
-const personas: { icon: ReactNode; who: string; win: string; stat: string }[] = [
+type IconName = "code" | "pen" | "headset";
+
+function Icon({ name }: { name: IconName }) {
+  const props = {
+    viewBox: "0 0 24 24",
+    "aria-hidden": true as const,
+    fill: "none",
+    stroke: "currentColor",
+    strokeWidth: 1.7,
+    strokeLinecap: "round" as const,
+    strokeLinejoin: "round" as const,
+  };
+
+  if (name === "code") return (
+    <svg {...props}>
+      <path d="m8 7-5 5 5 5M16 7l5 5-5 5M14 4l-4 16" />
+    </svg>
+  );
+
+  if (name === "pen") return (
+    <svg {...props}>
+      <path d="m4 20 4.5-1 10-10a2.1 2.1 0 0 0-3-3l-10 10L4 20Z" />
+      <path d="m13.5 8.5 3 3" />
+    </svg>
+  );
+
+  return (
+    <svg {...props}>
+      <path d="M4 14v-2a8 8 0 0 1 16 0v2" />
+      <path d="M6 13H4a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h3v-7H6ZM18 13h2a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-3v-7h1Z" />
+    </svg>
+  );
+}
+
+const personas: { icon: IconName; role: string; n: string; line: string }[] = [
   {
-    icon: <CodeIcon className="h-6 w-6" />,
-    who: "Developers",
-    win: "Dictate commits, comments, and Slack replies without lifting your hands off the keys — Whispr knows camelCase from prose.",
-    stat: "Stay in the editor",
+    icon: "code",
+    role: "For builders",
+    n: "01",
+    line: "Talk through pull requests, specs, and prompts while your hands stay in the code.",
   },
   {
-    icon: <PenIcon className="h-6 w-6" />,
-    who: "Writers",
-    win: "Draft at 200+ words a minute, then reshape it by voice. The blank page never wins.",
-    stat: "5× first-draft speed",
+    icon: "pen",
+    role: "For writers",
+    n: "02",
+    line: "Catch the thought at full speed, then let Whisper Master clean the edges.",
   },
   {
-    icon: <HeadsetIcon className="h-6 w-6" />,
-    who: "Support teams",
-    win: "Answer twice the tickets in clear, on-brand prose — no canned-response stiffness.",
-    stat: "2× tickets / hour",
+    icon: "headset",
+    role: "For teams",
+    n: "03",
+    line: "Clear tickets and customer replies without carrying the typing load home.",
   },
 ];
 
 export default function UseCases() {
   return (
-    <Section id="who-its-for">
-      <div className="flex flex-col items-center">
-        <SectionHeading
-          eyebrow="Who it's for"
-          title="Made for people who think faster than they type."
-        />
-      </div>
+    <section className="use-section" id="who-its-for">
+      <Reveal>
+        <div className="use-panel">
+          <div className="use-intro">
+            <div className="kicker">MADE FOR DEEP WORK</div>
+            <h2>
+              Your thoughts move fast.
+              <br />
+              Now your work does too.
+            </h2>
+          </div>
 
-      {/* One connected panel split by hairline dividers — editorial, not cards. */}
-      <Reveal className="mt-14">
-        <div className="glass grid overflow-hidden rounded-2xl md:grid-cols-3">
-          {personas.map((p, i) => (
-            <div
-              key={p.who}
-              className={`flex flex-col p-7 transition-colors duration-300 hover:bg-white/[0.02] ${
-                i > 0
-                  ? "border-t border-white/[0.07] md:border-l md:border-t-0"
-                  : ""
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05] text-accent-300 ring-1 ring-white/10">
-                  {p.icon}
+          <div className="persona-list">
+            {personas.map((p) => (
+              <article className="persona" key={p.role}>
+                <span className="persona-num">{p.n}</span>
+                <span className="persona-icon">
+                  <Icon name={p.icon} />
                 </span>
-                <span className="text-[11px] font-medium uppercase tracking-wider text-white/35">
-                  {p.stat}
-                </span>
-              </div>
-              <h3 className="mt-6 text-xl font-semibold text-white">{p.who}</h3>
-              <p className="mt-2 text-[15px] leading-relaxed text-white/55">
-                {p.win}
-              </p>
-            </div>
-          ))}
+                <div>
+                  <h3>{p.role}</h3>
+                  <p>{p.line}</p>
+                </div>
+                <span className="persona-arrow" aria-hidden="true">↗</span>
+              </article>
+            ))}
+          </div>
         </div>
       </Reveal>
-    </Section>
+    </section>
   );
 }
