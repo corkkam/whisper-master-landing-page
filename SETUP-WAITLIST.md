@@ -52,6 +52,44 @@ Test the loop: join → success screen shows your spot + referral link → open
 the `/r/CODE` link in a private window → join with a second account → first
 account gains +200 points and moves up.
 
+## Environments (local / preview / production)
+
+One Supabase instance serves all three without data collisions, using a mix of
+a local stack and Postgres **schema separation**:
+
+| Environment | Supabase | Schema (`SUPABASE_DB_SCHEMA`) | Clerk |
+|-------------|----------|-------------------------------|-------|
+| **Local**   | `supabase start` (Docker) | `public` (local DB) | test keys |
+| **Preview** | cloud instance | `dev` | test keys |
+| **Production** | cloud instance | `public` | live keys |
+
+The server client reads `SUPABASE_DB_SCHEMA` (see `lib/supabase/server.ts`),
+defaulting to `public`.
+
+### Local development (recommended)
+
+```bash
+supabase start          # boots local Postgres + applies supabase/migrations
+supabase status         # prints local API URL + keys (already in .env.local)
+pnpm dev
+```
+
+`.env.local` points at the local stack (`http://127.0.0.1:54321`). Nothing you
+do locally touches cloud data. `supabase stop` when done.
+
+### Cloud `dev` schema (one-time, for Preview)
+
+In the Supabase dashboard for the cloud project:
+
+1. **SQL Editor → New query** → run
+   [`supabase/dev-schema.sql`](supabase/dev-schema.sql). It creates a `dev`
+   schema mirroring `public` (keep the two in sync when you change either).
+2. **Settings → API → Exposed schemas** → add `dev` (PostgREST won't serve an
+   unexposed schema).
+
+`SUPABASE_DB_SCHEMA` is already set in Vercel (`public` for Production,
+`dev` for Preview).
+
 ## Deploy (Vercel)
 
 Add the same env vars in the Vercel project settings and set
