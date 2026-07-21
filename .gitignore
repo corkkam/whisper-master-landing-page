@@ -32,3 +32,6 @@ next-env.d.ts
 # vercel
 .vercel
 .env*
+
+# internal handoff docs (contain infra details; keep out of public repo)
+docs/MACOS-SUPABASE-HANDOFF.md
