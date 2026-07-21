@@ -2,6 +2,7 @@
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
+import { flagBetaUser } from "@/lib/clerk/beta";
 import { createAdminClient } from "@/lib/supabase/server";
 import { waitlistSchema, type WaitlistInput } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
@@ -74,6 +75,17 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
   if (referredBy) {
     cookieStore.set(REFERRAL_COOKIE, "", { maxAge: 0, path: "/" });
   }
+
+  // Grant beta access on Clerk so the Mac app (which reads
+  // `publicMetadata.betaAccess`) unlocks beta features + the beta appcast.
+  // Best-effort: the Supabase row above is the source of truth, so a metadata
+  // hiccup must not fail the join. Reuse the already-loaded user to skip a fetch.
+  try {
+    await flagBetaUser(userId, clerkUser?.publicMetadata);
+  } catch (e) {
+    console.error("[waitlist] flagBetaUser failed:", e);
+  }
+
   return { ok: true, position: data.position, status: data.status };
 }
 
