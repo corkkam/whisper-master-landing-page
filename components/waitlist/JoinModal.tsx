@@ -98,14 +98,32 @@ export default function JoinModal({
   // ── Google / SSO OAuth ──────────────────────────────────────────────────────
 
   async function handleGoogle() {
-    if (!signIn) return;
+    if (!signIn) {
+      setError("Sign-in isn't ready yet — refresh the page and try again.");
+      return;
+    }
     setError("");
-    const { error: err } = await signIn.sso({
-      strategy: "oauth_google",
-      redirectUrl: `${window.location.origin}/sso-callback`,
-      redirectCallbackUrl: `${window.location.origin}/?join=details`,
-    });
-    if (err) setError("Couldn't start Google sign-in. Please try again.");
+    try {
+      const { error: err } = await signIn.sso({
+        strategy: "oauth_google",
+        redirectUrl: `${window.location.origin}/sso-callback`,
+        redirectCallbackUrl: `${window.location.origin}/?join=details`,
+      });
+      // Surface the real reason (e.g. Google connection disabled, redirect not
+      // allowlisted) instead of a generic message — otherwise the button just
+      // looks dead.
+      if (err) {
+        console.error("[join] Google SSO failed:", err);
+        setError(
+          (err as { longMessage?: string; message?: string }).longMessage ??
+            (err as { message?: string }).message ??
+            "Couldn't start Google sign-in. Please try again."
+        );
+      }
+    } catch (e) {
+      console.error("[join] Google SSO threw:", e);
+      setError("Couldn't start Google sign-in. Please try again.");
+    }
   }
 
   // ── Email OTP — send ────────────────────────────────────────────────────────

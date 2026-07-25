@@ -9,6 +9,7 @@ const links = [
   { href: "#features",     label: "Features" },
   { href: "#who-its-for",  label: "Use cases" },
   { href: "#roadmap",      label: "Roadmap" },
+  { href: "/download",     label: "Download" },
 ];
 
 export default function Nav() {
