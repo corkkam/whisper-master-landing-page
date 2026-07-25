@@ -2,7 +2,7 @@
 
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
-import { flagBetaUser } from "@/lib/clerk/beta";
+import { isBetaUser } from "@/lib/clerk/beta";
 import { createAdminClient } from "@/lib/supabase/server";
 import { waitlistSchema, type WaitlistInput } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
@@ -76,16 +76,10 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
     cookieStore.set(REFERRAL_COOKIE, "", { maxAge: 0, path: "/" });
   }
 
-  // Grant beta access on Clerk so the Mac app (which reads
-  // `publicMetadata.betaAccess`) unlocks beta features + the beta appcast.
-  // Best-effort: the Supabase row above is the source of truth, so a metadata
-  // hiccup must not fail the join. Reuse the already-loaded user to skip a fetch.
-  try {
-    await flagBetaUser(userId, clerkUser?.publicMetadata);
-  } catch (e) {
-    console.error("[waitlist] flagBetaUser failed:", e);
-  }
-
+  // NOTE: joining does *not* grant beta access. The entry lands as `pending`
+  // and stays there until someone is approved from the Clerk dashboard
+  // (publicMetadata.betaAccess = true) — see SETUP-WAITLIST.md → "Approving a
+  // waitlist member". `getDashboard` reconciles the Supabase status afterwards.
   return { ok: true, position: data.position, status: data.status };
 }
 
@@ -162,6 +156,8 @@ export async function awardDonationPoints(userId: string, points: number) {
 
 // ── reads ────────────────────────────────────────────────────────────────────
 
+export type WaitlistStatus = "pending" | "invited" | "accepted";
+
 export type Dashboard = {
   rank: number | null;
   totalPoints: number;
@@ -169,6 +165,9 @@ export type Dashboard = {
   movedUp: number;
   referralCode: string | null;
   fullName: string | null;
+  status: WaitlistStatus;
+  /** Approved off the waitlist — the beta download is unlocked. */
+  approved: boolean;
 };
 
 export async function getDashboard(): Promise<Dashboard | null> {
@@ -177,13 +176,34 @@ export async function getDashboard(): Promise<Dashboard | null> {
 
   const supabase = createAdminClient();
 
-  const { data: entry } = await supabase
-    .from("waitlist_entries")
-    .select("position, referral_code, full_name, points, moved_up")
-    .eq("user_id", userId)
-    .maybeSingle();
+  const [clerkUser, { data: entry }] = await Promise.all([
+    currentUser(),
+    supabase
+      .from("waitlist_entries")
+      .select("position, referral_code, full_name, points, moved_up, status")
+      .eq("user_id", userId)
+      .maybeSingle(),
+  ]);
 
   if (!entry) return null;
+
+  // Clerk metadata is the approval gate; Supabase mirrors it so the `status`
+  // column stays usable for exports and the Mac app's access check. Approvals
+  // happen out-of-band (dashboard), so reconcile lazily on read — best-effort,
+  // a failed mirror must not hide the unlocked download.
+  const approved = isBetaUser(clerkUser?.publicMetadata);
+  let status = ((entry as Record<string, unknown>).status as WaitlistStatus) ?? "pending";
+  if (approved && status !== "accepted") {
+    const { error: syncErr } = await supabase
+      .from("waitlist_entries")
+      .update({ status: "accepted" })
+      .eq("user_id", userId);
+    if (syncErr) {
+      console.error("[waitlist] status sync to accepted failed:", syncErr.message);
+    } else {
+      status = "accepted";
+    }
+  }
 
   // Count referrals made through this user's referral code.
   const referralCode = (entry as Record<string, unknown>).referral_code as string | null;
@@ -201,6 +221,8 @@ export async function getDashboard(): Promise<Dashboard | null> {
     movedUp: ((entry as Record<string, unknown>).moved_up as number) ?? 0,
     referralCode,
     fullName: (entry as Record<string, unknown>).full_name as string | null,
+    status,
+    approved,
   };
 }
 

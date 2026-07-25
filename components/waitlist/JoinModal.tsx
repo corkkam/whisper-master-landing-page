@@ -633,6 +633,31 @@ export default function JoinModal({
                       </p>
                     </div>
                   </div>
+
+                    {/* Access — approved users get the beta straight from here */}
+                    {dash.approved ? (
+                      <a
+                        href="/download"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300"
+                      >
+                        You&rsquo;re approved — download the beta{" "}
+                        <span aria-hidden="true">↓</span>
+                      </a>
+                    ) : (
+                      <div className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
+                        <p className="text-xs text-white/50">
+                          Beta access is pending — we&rsquo;ll email you when
+                          you&rsquo;re approved.
+                        </p>
+                        <a
+                          href="/download"
+                          className="shrink-0 text-xs font-semibold text-accent transition hover:text-accent-300"
+                        >
+                          Get stable <span aria-hidden="true">→</span>
+                        </a>
+                      </div>
+                    )}
+
                     {/* Referral link + share */}
                     <div>
                       <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">

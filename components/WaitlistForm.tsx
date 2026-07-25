@@ -31,6 +31,31 @@ export default function WaitlistForm({
     open({ email: value });
   }
 
+  // Approved off the waitlist — the queue is over for them, so the hero CTA
+  // becomes the download itself.
+  if (dash?.approved) {
+    return (
+      <div className="waitlist-status">
+        <div className="waitlist-status-rank">
+          <strong aria-hidden="true">✓</strong>
+          <span>Approved</span>
+        </div>
+        <div className="waitlist-status-info">
+          <p>
+            You&apos;re in
+            {dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""}.
+          </p>
+          <p className="waitlist-status-next">
+            Beta and stable builds are both unlocked.
+          </p>
+        </div>
+        <a className="waitlist-btn" href="/download">
+          Download <span aria-hidden="true">↓</span>
+        </a>
+      </div>
+    );
+  }
+
   // Already on the list (same browser, Clerk session cached) — no email input,
   // just their spot and how far the next referral reward is.
   if (dash) {

@@ -8,9 +8,14 @@ export {};
 
 declare global {
   interface UserPublicMetadata {
-    /** True once the user has joined the beta. Absent/false ⇒ stable channel. */
+    /**
+     * True once the user has been **approved** off the waitlist. Absent/false ⇒
+     * still waiting (stable channel only). Joining the waitlist does NOT set
+     * this — you grant it per user from the Clerk dashboard (or via
+     * `approveUser()`); see SETUP-WAITLIST.md → "Approving a waitlist member".
+     */
     betaAccess?: boolean;
-    /** ISO date (YYYY-MM-DD) the user first joined the beta. Set once. */
+    /** ISO date (YYYY-MM-DD) the user was approved for beta. Set once. */
     betaJoinedAt?: string;
   }
 }

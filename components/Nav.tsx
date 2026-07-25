@@ -16,6 +16,7 @@ export default function Nav() {
   const { open } = useJoin();
   // Already joined (same browser) — the CTA becomes a referral prompt; the
   // modal opens straight to the success screen with the link + share buttons.
+  // Once approved, the queue is irrelevant and the CTA points at the builds.
   const { dash } = useWaitlistStatus();
 
   return (
@@ -31,9 +32,16 @@ export default function Nav() {
             </a>
           ))}
         </div>
-        <button className="nav-cta" onClick={() => open()}>
-          {dash ? "Refer a friend" : "Join waitlist"} <span aria-hidden="true">↗</span>
-        </button>
+        {dash?.approved ? (
+          <a className="nav-cta" href="/download">
+            Download <span aria-hidden="true">↓</span>
+          </a>
+        ) : (
+          <button className="nav-cta" onClick={() => open()}>
+            {dash ? "Refer a friend" : "Join waitlist"}{" "}
+            <span aria-hidden="true">↗</span>
+          </button>
+        )}
       </div>
     </nav>
   );
