@@ -1,5 +1,15 @@
 import type { Config } from "tailwindcss";
 
+/**
+ * Palette concept: a treated recording room at night.
+ *
+ * The two accents carry meaning and should not be used interchangeably:
+ *   ember  → you. Your voice, the live record light, anything human.
+ *   signal → the machine. On-device processing, locked-in text, data.
+ *
+ * Text is warm (`bone`) on a cool ground (`ink`) — that contrast *is* the
+ * product thesis: warm human speech into a cool private machine.
+ */
 const config: Config = {
   content: [
     "./app/**/*.{ts,tsx}",
@@ -9,58 +19,66 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        base: {
-          DEFAULT: "#0b0c0b",
-          900: "#0b0c0b",
-          800: "#101210",
-          700: "#141714",
+        ink: {
+          DEFAULT: "#07090e",
+          900: "#07090e",
+          800: "#0b0f17",
+          700: "#101623",
+          600: "#18202f",
         },
-        accent: {
-          DEFAULT: "#d7ff65",
-          300: "#e3ff92",
-          400: "#d7ff65",
-          500: "#d7ff65",
-          600: "#b9e849",
-          dark: "#12140d",
+        haze: {
+          DEFAULT: "#8a94a8",
+          bright: "#aab3c4",
+          dim: "#5c6577",
+        },
+        bone: "#f2efe9",
+        ember: {
+          DEFAULT: "#ff6a3d",
+          bright: "#ff8b64",
+          deep: "#d94a20",
+        },
+        signal: {
+          DEFAULT: "#6ee7df",
+          bright: "#9df3ed",
+          deep: "#3bbdb4",
         },
       },
       fontFamily: {
-        sans: ["var(--font-manrope)", "Manrope", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-dm-mono)", "DM Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        display: ["var(--font-display)", "Bricolage Grotesque", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Instrument Sans", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       letterSpacing: {
-        eyebrow: "0.18em",
+        label: "0.2em",
+        display: "-0.045em",
       },
       maxWidth: {
-        content: "1180px",
+        content: "1240px",
+        prose: "62ch",
       },
       boxShadow: {
-        glass: "inset 0 1px rgba(255,255,255,0.06), 0 14px 40px rgba(0,0,0,0.2)",
-        "glass-sm": "inset 0 1px rgba(255,255,255,0.05), 0 8px 24px rgba(0,0,0,0.3)",
-        glow: "0 0 80px -10px rgba(215,255,101,0.4)",
+        raised: "inset 0 1px rgba(255,255,255,0.07), 0 18px 50px rgba(0,0,0,0.45)",
+        ember: "0 0 70px -12px rgba(255,106,61,0.55)",
+        signal: "0 0 70px -12px rgba(110,231,223,0.45)",
       },
       keyframes: {
-        waveform: {
-          "0%, 100%": { transform: "scaleY(0.35)", opacity: "0.35" },
-          "50%": { transform: "scaleY(1)", opacity: "0.9" },
+        "record-breathe": {
+          "0%, 100%": { opacity: "1", boxShadow: "0 0 0 0 rgba(255,106,61,0.45)" },
+          "70%": { opacity: "0.75", boxShadow: "0 0 0 7px rgba(255,106,61,0)" },
         },
-        "pulse-ring": {
-          "0%": { opacity: "0.6", transform: "scale(0.9)" },
-          "100%": { opacity: "0", transform: "scale(1.8)" },
-        },
-        blink: {
+        caret: {
           "0%, 49%": { opacity: "1" },
           "50%, 100%": { opacity: "0" },
         },
-        "float-slow": {
+        drift: {
           "0%, 100%": { transform: "translate3d(0,0,0)" },
-          "50%": { transform: "translate3d(0,-24px,0)" },
+          "50%": { transform: "translate3d(0,-20px,0)" },
         },
       },
       animation: {
-        "pulse-ring": "pulse-ring 2.4s ease-out infinite",
-        blink: "blink 1.1s step-end infinite",
-        "float-slow": "float-slow 14s ease-in-out infinite",
+        "record-breathe": "record-breathe 2.6s ease-out infinite",
+        caret: "caret 1.1s step-end infinite",
+        drift: "drift 16s ease-in-out infinite",
       },
     },
   },
