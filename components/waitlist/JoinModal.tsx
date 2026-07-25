@@ -28,6 +28,43 @@ import {
 
 type Step = "email" | "otp" | "details" | "success";
 
+// ── Clerk error helpers ───────────────────────────────────────────────────────
+
+/** Clerk's `longMessage` lives on `errors[0]`; the top level only has `message`. */
+function clerkMessage(err: unknown, fallback: string) {
+  const e = err as {
+    message?: string;
+    errors?: { longMessage?: string; message?: string }[];
+  } | null;
+  return (
+    e?.errors?.[0]?.longMessage ?? e?.errors?.[0]?.message ?? e?.message ?? fallback
+  );
+}
+
+/**
+ * True when the failure is the instance's sign-up mode refusing to create new
+ * accounts ("waitlist" / "restricted"), not a problem with the user's input.
+ */
+function isSignUpBlocked(err: unknown) {
+  const e = err as {
+    message?: string;
+    errors?: { code?: string; message?: string }[];
+  } | null;
+  const haystack = [e?.message, ...(e?.errors ?? []).flatMap((x) => [x.code, x.message])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return (
+    haystack.includes("sign_up_if_missing") ||
+    haystack.includes("waitlist mode") ||
+    haystack.includes("sign up is restricted") ||
+    haystack.includes("sign_up_mode")
+  );
+}
+
+const SIGNUP_BLOCKED =
+  "New sign-ups are paused right now. If you've already joined, check the email address and try again — otherwise please try later.";
+
 export default function JoinModal({
   initialEmail = "",
   initialStep = "email",
@@ -115,9 +152,9 @@ export default function JoinModal({
       if (err) {
         console.error("[join] Google SSO failed:", err);
         setError(
-          (err as { longMessage?: string; message?: string }).longMessage ??
-            (err as { message?: string }).message ??
-            "Couldn't start Google sign-in. Please try again."
+          isSignUpBlocked(err)
+            ? SIGNUP_BLOCKED
+            : clerkMessage(err, "Couldn't start Google sign-in. Please try again.")
         );
       }
     } catch (e) {
@@ -136,13 +173,30 @@ export default function JoinModal({
 
     // Identify the user; signUpIfMissing=true avoids an error for new users
     // and instead sets signIn.isTransferable = true so we can switch to sign-up.
-    const { error: createErr } = await signIn.create({
+    let { error: createErr } = await signIn.create({
       identifier: email,
       signUpIfMissing: true,
     });
 
+    // A Clerk instance whose sign-up mode is "waitlist" or "restricted" rejects
+    // signUpIfMissing outright ("sign up is in waitlist mode"). That's a
+    // misconfiguration — this app runs its own waitlist in Supabase and needs
+    // Clerk on **Public** (SETUP-WAITLIST.md §1, per instance: dev *and*
+    // production). Until it's flipped, don't dead-end returning members: sign-in
+    // itself still works, so retry without the flag and keep the raw Clerk
+    // internals out of the UI.
+    const signUpBlocked = !!createErr && isSignUpBlocked(createErr);
+    if (signUpBlocked) {
+      console.error("[join] Clerk sign-up mode blocks new sign-ups:", createErr);
+      ({ error: createErr } = await signIn.create({ identifier: email }));
+    }
+
     if (createErr) {
-      setError((createErr as { longMessage?: string; message?: string }).longMessage ?? (createErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+      setError(
+        signUpBlocked
+          ? SIGNUP_BLOCKED
+          : clerkMessage(createErr, "Couldn't send the code. Try again.")
+      );
       setLoading(false);
       return;
     }
@@ -151,14 +205,14 @@ export default function JoinModal({
       // New user — transfer identifier to a sign-up and send the code.
       const { error: transferErr } = await signUp.create({ transfer: true });
       if (transferErr) {
-        setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
+        setError(clerkMessage(transferErr, "Couldn't create account. Try again."));
         setLoading(false);
         return;
       }
       // SignUpFutureResource uses verifications.sendEmailCode() (not emailCode.sendCode)
       const { error: sendErr } = await signUp.verifications.sendEmailCode();
       if (sendErr) {
-        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+        setError(clerkMessage(sendErr, "Couldn't send the code. Try again."));
       } else {
         setOtpFlow("signUp");
         setStep("otp");
@@ -167,7 +221,7 @@ export default function JoinModal({
       // Existing user — send email code for sign-in.
       const { error: sendErr } = await signIn.emailCode.sendCode();
       if (sendErr) {
-        setError((sendErr as { longMessage?: string; message?: string }).longMessage ?? (sendErr as { message?: string }).message ?? "Couldn't send the code. Try again.");
+        setError(clerkMessage(sendErr, "Couldn't send the code. Try again."));
       } else {
         setOtpFlow("signIn");
         setStep("otp");
@@ -193,13 +247,13 @@ export default function JoinModal({
       if (signIn.isTransferable) {
         const { error: transferErr } = await signUp.create({ transfer: true });
         if (transferErr) {
-          setError((transferErr as { longMessage?: string; message?: string }).longMessage ?? (transferErr as { message?: string }).message ?? "Couldn't create account. Try again.");
+          setError(clerkMessage(transferErr, "Couldn't create account. Try again."));
         } else {
           await signUp.finalize();
           setStep("details");
         }
       } else if (verifyErr) {
-        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
+        setError(clerkMessage(verifyErr, "Invalid or expired code. Try again."));
       } else {
         await signIn.finalize();
         setStep("details");
@@ -208,7 +262,7 @@ export default function JoinModal({
       // SignUpFutureResource uses verifications.verifyEmailCode() (not emailCode.verifyCode)
       const { error: verifyErr } = await signUp.verifications.verifyEmailCode({ code: otp });
       if (verifyErr) {
-        setError((verifyErr as { longMessage?: string; message?: string }).longMessage ?? (verifyErr as { message?: string }).message ?? "Invalid or expired code. Try again.");
+        setError(clerkMessage(verifyErr, "Invalid or expired code. Try again."));
       } else {
         await signUp.finalize();
         setStep("details");
