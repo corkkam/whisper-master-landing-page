@@ -2,11 +2,24 @@
 
 import { useEffect, useReducer, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
+import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { dictationTakes } from "@/lib/content";
 
 type Phase = "speaking" | "thinking" | "written" | "resting";
 
 type State = { take: number; chars: number; phase: Phase };
+
+/**
+ * The orb state each phase is actually in. `solving` for the clean-up pass
+ * because that is what it depicts — bands scrambling and clicking back — and
+ * `listening` holds through `written`, where the orb is frozen anyway.
+ */
+const ORB_FOR_PHASE: Record<Phase, OrbState> = {
+  speaking: "listening",
+  thinking: "solving",
+  written: "listening",
+  resting: "listening",
+};
 
 /** Milliseconds per spoken character — roughly a natural 160 wpm. */
 const CHAR_MS = 42;
@@ -93,7 +106,17 @@ export default function LiveDictation() {
     <div className="capture" ref={hostRef}>
       <div className="capture-bar">
         <span className="capture-mark">
-          <i className={`rec-dot ${written ? "" : "is-live"}`} />
+          {/* The glyph and the word are the same claim, so the orb is driven by
+              the phase rather than picked once: hearing you, working it out, then
+              frozen when there is nothing left to do. */}
+          <ThinkingOrb
+            className="capture-orb"
+            state={ORB_FOR_PHASE[state.phase]}
+            size={20}
+            theme="dark"
+            paused={written}
+            aria-hidden="true"
+          />
           {written ? "written" : state.phase === "thinking" ? "cleaning" : "listening"}
         </span>
         <Meter live={!written && !reduce} />

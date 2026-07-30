@@ -217,3 +217,12 @@ export const proofStats: { value: string; label: string; note: string }[] = [
   { value: "~70ms", label: "To first word", note: "Mic pre-warmed at launch, down from ~500ms" },
   { value: "0", label: "Bytes of audio uploaded", note: "Transcription never leaves your Mac" },
 ];
+
+/**
+ * The state word frozen into the hero's faded app backdrop.
+ *
+ * Mirrors what the Mac app's notch actually says while recording in toggle mode
+ * (`NotchActivity.label`) — keep the two in step, because the backdrop's whole job
+ * is to look like the real surface.
+ */
+export const heroBackdropState = "Dictating";
