@@ -1,26 +1,28 @@
 import { product } from "@/lib/config";
 
-export function Wordmark({ className = "" }: { className?: string }) {
+/**
+ * Four bars at different heights — a mic level meter, which is the one
+ * instrument this product actually is. Animated only via CSS so it can render
+ * on the server.
+ */
+export function LevelMark({ className = "" }: { className?: string }) {
   return (
-    <span className={`brand ${className}`}>
-      <span className="brand-mark" aria-hidden="true">
-        <i />
-        <i />
-        <i />
-        <i />
-      </span>
-      <span>{product.name.toLowerCase()}</span>
+    <span className={`level-mark ${className}`} aria-hidden="true">
+      <i />
+      <i />
+      <i />
+      <i />
     </span>
   );
 }
 
-export function WordmarkCompact() {
+export function Wordmark({ className = "" }: { className?: string }) {
   return (
-    <span className="brand-mark" aria-hidden="true">
-      <i />
-      <i />
-      <i />
-      <i />
+    <span className={`wordmark ${className}`}>
+      <LevelMark />
+      <span className="wordmark-text">
+        whisper<em>master</em>
+      </span>
     </span>
   );
 }

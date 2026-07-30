@@ -1,4 +1,10 @@
-// Beta-access flag, stored on Clerk `publicMetadata`.
+// Approval flag, stored on Clerk `publicMetadata`.
+//
+// This single flag is the waitlist gate: `betaAccess === true` means "approved
+// off the waitlist" and unlocks the beta download on /download. Joining the
+// waitlist deliberately does *not* set it — approval is a manual decision you
+// make per user in the Clerk dashboard (Users → Metadata), or programmatically
+// with `approveUser()`. See SETUP-WAITLIST.md → "Approving a waitlist member".
 //
 // One Clerk *production* instance serves both channels — beta and stable users
 // share the same account; the only difference is this flag. The *development*
@@ -7,7 +13,7 @@
 // The Mac app reads `publicMetadata.betaAccess` after login to decide which
 // Sparkle appcast to point at. When the beta ends you flip the flag with
 // `setBetaAccess(userId, false)` and the same account rolls onto stable — no
-// re-signup. See SETUP-WAITLIST.md → "Beta access".
+// re-signup.
 //
 // Server-only: importing `@clerk/nextjs/server` (and using the secret key)
 // keeps this module out of any client bundle.
@@ -18,7 +24,10 @@ function today(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-/** Read the flag off an already-loaded Clerk user's public metadata. */
+/**
+ * Read the flag off an already-loaded Clerk user's public metadata — i.e. "has
+ * this user been approved off the waitlist?".
+ */
 export function isBetaUser(
   publicMetadata: UserPublicMetadata | null | undefined
 ): boolean {
@@ -26,15 +35,16 @@ export function isBetaUser(
 }
 
 /**
- * Grant beta access. Idempotent and merge-safe: `updateUserMetadata` deep-merges,
- * so other public metadata is preserved, and `betaJoinedAt` is only stamped the
- * first time (re-joins keep the original date).
+ * Approve a user off the waitlist (grants the beta download + beta appcast).
+ * Idempotent and merge-safe: `updateUserMetadata` deep-merges, so other public
+ * metadata is preserved, and `betaJoinedAt` is only stamped the first time.
+ *
+ * Not called on join — approval is manual. This exists for scripted/bulk
+ * approvals; the everyday path is the Clerk dashboard.
  *
  * Pass `current` (e.g. from an already-loaded `currentUser()`) to skip a fetch.
- * Best-effort by design — callers should not let a metadata hiccup fail the
- * primary flow (the Supabase row is the source of truth for waitlist state).
  */
-export async function flagBetaUser(
+export async function approveUser(
   userId: string,
   current?: UserPublicMetadata | null
 ): Promise<void> {

@@ -1,18 +1,15 @@
 import Nav from "@/components/Nav";
-import Hero from "@/components/Hero";
-import SocialProof from "@/components/SocialProof";
-import HowItWorks from "@/components/HowItWorks";
-import Features from "@/components/Features";
-import UseCases from "@/components/UseCases";
-import Comparison from "@/components/Comparison";
-import Roadmap from "@/components/Roadmap";
-import FinalCTA from "@/components/FinalCTA";
-import Footer from "@/components/Footer";
+import Hero from "@/components/sections/Hero";
+import HowItWorks from "@/components/sections/HowItWorks";
+import FeatureWheel from "@/components/sections/FeatureWheel";
+import Principles from "@/components/sections/Principles";
+import Comparison from "@/components/sections/Comparison";
+import DownloadCTA from "@/components/sections/DownloadCTA";
+import Footer from "@/components/sections/Footer";
 import { getWaitlistCount } from "@/lib/waitlist/actions";
 import { product } from "@/lib/config";
 
-// Re-render on this interval so the social-proof count stays current
-// without a redeploy.
+// Re-render on this interval so the live count stays current without a redeploy.
 export const revalidate = 120;
 
 export default async function Page() {
@@ -21,17 +18,17 @@ export default async function Page() {
     count != null ? count.toLocaleString("en-US") : product.waitlistCount;
 
   return (
-    <main>
+    <>
       <Nav />
-      <Hero waitlistCount={waitlistCount} />
-      <SocialProof />
-      <HowItWorks />
-      <Features />
-      <UseCases />
-      <Comparison />
-      <Roadmap />
-      <FinalCTA waitlistCount={waitlistCount} />
+      <main>
+        <Hero waitlistCount={waitlistCount} />
+        <HowItWorks />
+        <FeatureWheel />
+        <Principles />
+        <Comparison />
+        <DownloadCTA />
+      </main>
       <Footer />
-    </main>
+    </>
   );
 }

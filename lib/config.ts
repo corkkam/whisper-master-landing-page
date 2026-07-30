@@ -22,6 +22,21 @@ export const product = {
   waitlistCount: "2,400+",
 } as const;
 
+// ─────────────────────────────────────────────────────────────────────────
+// DOWNLOADS
+// Direct-download artifacts on Cloudflare R2 (served via model.scoopscore.in).
+// - `stable` is public: anyone can download it, signed in or not.
+// - `beta` is gated: only users with Clerk `publicMetadata.betaAccess === true`
+//   see the real link (see app/download/page.tsx). The beta DMG is produced by
+//   the beta release channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
+export const downloads = {
+  stable: "https://model.scoopscore.in/WhisperMaster.dmg",
+  beta: "https://model.scoopscore.in/WhisperMaster-beta.dmg",
+  // Shown as helper copy under the buttons.
+  requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
+} as const;
+// ─────────────────────────────────────────────────────────────────────────
+
 // Sample lines the hero demo "dictates", cycled on a loop.
 export const demoLines: string[] = [
   "Hey team — shipping the on-device model Friday. No cloud, no latency.",

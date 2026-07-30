@@ -1,39 +1,82 @@
 "use client";
 
+import Link from "next/link";
+import { Component, useEffect, useState, type ReactNode } from "react";
 import { Wordmark } from "./Wordmark";
-import { useJoin } from "./waitlist/JoinContext";
 import { useWaitlistStatus } from "./waitlist/useWaitlistStatus";
 
 const links = [
-  { href: "#how-it-works", label: "How it works" },
-  { href: "#features",     label: "Features" },
-  { href: "#who-its-for",  label: "Use cases" },
-  { href: "#roadmap",      label: "Roadmap" },
+  { href: "/#features", label: "Features" },
+  { href: "/#how", label: "How it works" },
+  { href: "/#principles", label: "Principles" },
+  { href: "/roadmap", label: "Roadmap" },
 ];
 
 export default function Nav() {
-  const { open } = useJoin();
-  // Already joined (same browser) — the CTA becomes a referral prompt; the
-  // modal opens straight to the success screen with the link + share buttons.
-  const { dash } = useWaitlistStatus();
+  const [lifted, setLifted] = useState(false);
+
+  // The bar earns its backdrop only once content is behind it.
+  useEffect(() => {
+    const onScroll = () => setLifted(window.scrollY > 24);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   return (
-    <nav className="nav-wrap" aria-label="Main navigation">
+    <nav className={`nav-wrap ${lifted ? "is-lifted" : ""}`} aria-label="Main">
       <div className="nav">
-        <a href="#top" aria-label="Whisper Master home">
+        <Link href="/" aria-label="Whisper Master home" className="nav-brand">
           <Wordmark />
-        </a>
+        </Link>
+
         <div className="nav-links">
           {links.map((l) => (
-            <a key={l.href} href={l.href}>
+            <Link key={l.href} href={l.href}>
               {l.label}
-            </a>
+            </Link>
           ))}
         </div>
-        <button className="nav-cta" onClick={() => open()}>
-          {dash ? "Refer a friend" : "Join waitlist"} <span aria-hidden="true">↗</span>
-        </button>
+
+        <div className="nav-right">
+          <Quiet>
+            <NavStatus />
+          </Quiet>
+          <Link className="nav-cta" href="/download" data-cursor="Get the app">
+            Download
+            <span aria-hidden="true">↓</span>
+          </Link>
+        </div>
       </div>
     </nav>
   );
+}
+
+/**
+ * The status chip is the only part of the bar that needs auth and waitlist state.
+ * It lives in its own leaf, wrapped below, so the brand, the links and the
+ * download CTA never depend on that lookup — losing a decorative word must not
+ * be able to take the site's navigation down with it.
+ */
+function NavStatus() {
+  const { dash, isSignedIn } = useWaitlistStatus();
+  return (
+    <span className="nav-status" aria-hidden="true">
+      <i className="rec-dot" />
+      {dash?.approved ? "approved" : isSignedIn ? "signed in" : "on-device"}
+    </span>
+  );
+}
+
+/** Renders nothing if its child throws. Deliberately silent: the chip is decor. */
+class Quiet extends Component<{ children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }

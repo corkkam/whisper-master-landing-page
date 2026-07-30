@@ -18,6 +18,23 @@ Do these once, then the app runs locally and on Vercel.
    Gating access to the actual app is handled by the `status` column in
    Supabase (`pending → invited → accepted`), not by Clerk.
 
+   This is a **per-instance** setting: set it on the development instance *and*
+   on the production instance (the dashboard's env switcher). A production
+   instance left in waitlist mode fails only in production, with
+   `The sign_up_if_missing option cannot be used: sign up is in waitlist mode`.
+   Verify either side without logging in:
+
+   ```bash
+   curl -s "https://<frontend-api-host>/v1/environment?__clerk_api_version=2025-04-10&_clerk_js_version=5.100.0" \
+     | python3 -c "import sys,json;print(json.load(sys.stdin)['user_settings']['sign_up']['mode'])"
+   # → public
+   ```
+
+   The host is the base64-decoded publishable key, e.g.
+   `clerk.whisper.corkkam.com` for production. There is no Backend API for this
+   setting — `PATCH /v1/instance/restrictions` only covers allowlist/blocklist —
+   so it has to be flipped in the dashboard.
+
 ## 2. Supabase (database)
 
 1. supabase.com → New project. Pick a region close to you.
@@ -96,35 +113,72 @@ In the Supabase dashboard for the cloud project:
 `SUPABASE_DB_SCHEMA` is already set in Vercel (`public` for Production,
 `dev` for Preview).
 
-## Beta access (Clerk metadata)
+## Approving a waitlist member (Clerk metadata)
 
-Beta vs stable is **one flag on the Clerk user**, not a separate instance or
-account. When someone joins the waitlist, `submitWaitlist`
-([`lib/waitlist/actions.ts`](lib/waitlist/actions.ts)) calls `flagBetaUser`
-([`lib/clerk/beta.ts`](lib/clerk/beta.ts)), which sets:
+Approval is **one flag on the Clerk user**, not a separate instance or account.
+Joining the waitlist does *not* grant it — every entry lands as `pending` and
+waits for you:
 
-```jsonc
-// publicMetadata — readable by frontend + Mac app, writable only server-side
-{
-  "betaAccess": true,
-  "betaJoinedAt": "2026-07-22"  // ISO date, stamped once on first join
-}
+```
+Join           → Clerk account + Supabase row (status: pending)
+                 user sees rank, referral link, milestones
+You approve    → Clerk dashboard → Users → <user> → Metadata → Public
+                 { "betaAccess": true }
+User returns   → /download: stable (always) + beta (now unlocked)
+                 Supabase status reconciles to `accepted` on next read
 ```
 
+### Approving one user
+
+1. dashboard.clerk.com → **Users** → pick the user (search by email).
+2. **Metadata → Public metadata → Edit**, then save:
+
+   ```jsonc
+   {
+     "betaAccess": true,
+     "betaJoinedAt": "2026-07-26"  // optional; ISO date for your own records
+   }
+   ```
+
+3. That's it. Nothing to redeploy — `/download` is `force-dynamic`, so their
+   next page load shows the beta button. The landing-page hero CTA and nav
+   switch to **Download** too.
+
 `publicMetadata` is readable everywhere but only **writable with the secret
-key**, so the flag can't be spoofed from a browser. The write is a deep-merge
-and idempotent — re-joining keeps the original `betaJoinedAt`.
+key**, so the flag can't be spoofed from a browser.
 
-**Helpers** ([`lib/clerk/beta.ts`](lib/clerk/beta.ts)):
+**Helpers** ([`lib/clerk/beta.ts`](lib/clerk/beta.ts)) for scripted/bulk
+approvals — the dashboard is the everyday path:
 
-- `flagBetaUser(userId, current?)` — grant beta access (called on join).
-- `setBetaAccess(userId, false)` — move a user beta → stable without deleting
-  their account. Use this when the beta program ends; the same login rolls onto
-  the stable channel.
+- `approveUser(userId, current?)` — approve off the waitlist. Idempotent and
+  merge-safe; `betaJoinedAt` is stamped once.
+- `setBetaAccess(userId, false)` — revoke (beta → stable) without deleting the
+  account. Use when the beta program ends; the same login rolls onto stable.
 - `isBetaUser(publicMetadata)` — read the flag.
 
 The contract is typed in [`types/globals.d.ts`](types/globals.d.ts) so
 `user.publicMetadata.betaAccess` is checked at compile time.
+
+### Where the gate is enforced
+
+| Surface | Signed out | Pending | Approved |
+| --- | --- | --- | --- |
+| Hero / final CTA (`WaitlistForm`) | email → join | rank + "Boost my spot" | **Download** |
+| Nav CTA | "Join waitlist" | "Refer a friend" | **Download** |
+| Join modal success screen | — | "Beta access is pending" | "Download the beta" |
+| `/download` → Stable | ✅ public | ✅ | ✅ |
+| `/download` → Beta | sign-in prompt | 🔒 "You're #N…" | ✅ download |
+
+> **Heads-up — the beta gate is UI-only.** `downloads.beta` in
+> [`lib/config.ts`](lib/config.ts) is a public R2 URL, so anyone who knows or
+> guesses it can fetch the DMG without being approved. To make the gate real,
+> serve it through a route handler that checks `isBetaUser()` and redirects to a
+> short-lived **presigned** R2 URL (and make the bucket private).
+
+> **Automating approval.** The flag is just metadata, so anything can set it: a
+> `/api/webhooks/clerk` handler, a cron that approves the top N by points, or a
+> Supabase trigger calling `approveUser()`. Approvals made out-of-band still
+> work — `getDashboard()` mirrors them into `waitlist_entries.status`.
 
 ### How the Mac app consumes it
 
@@ -143,11 +197,12 @@ if let user = Clerk.shared.user {
 One account works for both channels; flip the flag and the user moves between
 them — no re-signup.
 
-> **Alternative — Clerk Invitations / webhooks.** This repo sets the flag
-> inline in the server action because the user is already authenticated when
-> they submit the join form. If you instead gate signups behind Clerk
-> Invitations, or want to flag users created out-of-band, add a `user.created`
-> webhook (`svix` + `/api/webhooks/clerk`) that calls `flagBetaUser(userId)`.
+> **Alternative — Clerk's own waitlist mode.** Clerk can host the queue itself
+> (Restrictions → Sign-up mode → Waitlist, with an Approve button and invite
+> emails). This repo deliberately doesn't use it: unapproved users can't sign
+> in there, which kills the referral engine — no rank, referral link, points, or
+> milestones until after approval. Keep Sign-up mode on **Public** and gate on
+> `betaAccess` instead.
 
 ## Deploy (Vercel)
 
@@ -163,8 +218,8 @@ cap MAUs) and swap the keys.
 - `supabase/migrations/0001_init.sql` — schema + triggers + rank recompute
 - `supabase/migrations/0002_payment_clicks.sql` — payment-interest click tracking
 - `lib/supabase/server.ts` — service-role admin client (server-only)
-- `lib/clerk/beta.ts` — beta-access flag helpers (`flagBetaUser`,
-  `setBetaAccess`, `isBetaUser`); flag set on join by `submitWaitlist`
+- `lib/clerk/beta.ts` — approval flag helpers (`approveUser`, `setBetaAccess`,
+  `isBetaUser`); set on approval, **not** on join
 - `lib/waitlist/schema.ts` — Zod validation + form field options
 - `lib/waitlist/actions.ts` — `submitWaitlist`, `getDashboard`,
   `claimSocial`, `getLeaderboard` (server actions)
