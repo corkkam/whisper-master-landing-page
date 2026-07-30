@@ -6,6 +6,8 @@ import JoinProvider from "@/components/waitlist/JoinContext";
 import SmoothScroll from "@/components/chrome/SmoothScroll";
 import Cursor from "@/components/chrome/Cursor";
 import SignalSpine from "@/components/chrome/SignalSpine";
+import CookieConsent from "@/components/chrome/CookieConsent";
+import GoogleAnalytics from "@/components/chrome/GoogleAnalytics";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { product } from "@/lib/config";
@@ -88,8 +90,11 @@ export default function RootLayout({
             </JoinProvider>
           </SmoothScroll>
           <Cursor />
+          <CookieConsent />
           <SpeedInsights />
           <Analytics />
+          {/* GA4 stays dark until CookieConsent says otherwise. */}
+          <GoogleAnalytics />
         </body>
       </html>
     </ClerkProvider>

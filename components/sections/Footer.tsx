@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Wordmark } from "../Wordmark";
 import { product } from "@/lib/config";
+import CookieSettingsLink from "../chrome/CookieSettingsLink";
 
 /**
  * Closing statement, borrowing the reference site's stacked-type sign-off. The
@@ -32,6 +33,7 @@ export default function Footer() {
           <Link href="/#principles">Principles</Link>
           <Link href="/roadmap">Roadmap</Link>
           <Link href="/download">Download</Link>
+          <CookieSettingsLink />
         </nav>
 
         <a className="footer-mail" href={`mailto:${product.contactEmail}`} data-cursor="Say hello">
