@@ -69,10 +69,17 @@ export default function JoinModal({
   initialEmail = "",
   initialStep = "email",
   onClose,
+  onJoined,
 }: {
   initialEmail?: string;
   initialStep?: Step;
   onClose: () => void;
+  /**
+   * Fired once, on a genuine first-time join — never for a returning member.
+   * Existing entries are routed straight to `success` by the mount effect
+   * below, so they never reach the details form this fires from.
+   */
+  onJoined?: (rank: number | null) => void;
 }) {
   const { isSignedIn, user, isLoaded: userLoaded } = useUser();
   // Clerk v7 "Future" API: signIn/signUp are SignInFutureResource/SignUpFutureResource
@@ -290,6 +297,9 @@ export default function JoinModal({
       const d = await getDashboard();
       setDash(d);
       publishDashboard(d);
+      // `submitWaitlist` already returned a position, so the confirmation
+      // still gets a rank even if the dashboard read comes back empty.
+      onJoined?.(d?.rank ?? res.position ?? null);
       setStep("success");
     } else {
       setError(res.error);

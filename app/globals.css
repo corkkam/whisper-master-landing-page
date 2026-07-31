@@ -2070,6 +2070,72 @@ html.has-cursor [contenteditable="true"] {
   }
 }
 
+/* ═══ TOAST ═════════════════════════════════════════════════════════ */
+/* Bottom-*centre*, because the cookie card owns bottom-right (.consent) and
+   the two would otherwise stack. Above the nav (60) and the consent card (80),
+   below the join modal (100) — though it only ever appears once that's closed.
+   The width clamp keeps it inside the gutters on a phone without a breakpoint. */
+.toast {
+  position: fixed;
+  bottom: var(--gutter);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 90;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.8rem;
+  width: min(420px, calc(100vw - 2 * var(--gutter)));
+  padding: 0.95rem 1.05rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(11, 15, 23, 0.92);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05),
+    0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  animation: toast-rise 0.45s var(--ease) both;
+}
+
+/* Matches the base transform, so the fill-mode hold lands centred. */
+@keyframes toast-rise {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 14px);
+  }
+}
+
+/* Optical alignment with the first line of copy rather than the box. */
+.toast .rec-dot {
+  margin-top: 0.42rem;
+}
+
+.toast-copy {
+  flex: 1;
+  margin: 0;
+  color: var(--haze-bright);
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.toast-close {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: -0.15rem -0.25rem 0 0;
+  border-radius: 8px;
+  color: var(--haze);
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+.toast-close:hover {
+  color: var(--bone);
+  background: rgba(255, 255, 255, 0.06);
+}
+
 /* ═══ MOTION PREFERENCES ════════════════════════════════════════════ */
 @media (prefers-reduced-motion: reduce) {
   *,
