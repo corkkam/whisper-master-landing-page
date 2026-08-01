@@ -14,25 +14,35 @@ import { XIcon } from "@/components/icons";
 export default function Toast({
   message,
   onDismiss,
-  duration = 6000,
+  variant = "success",
+  duration,
 }: {
   message: string;
   onDismiss: () => void;
-  /** Auto-dismiss delay in ms. */
+  /** Failures read red and stay up longer — they usually ask for a retry. */
+  variant?: "success" | "error";
+  /** Auto-dismiss delay in ms. Defaults by variant. */
   duration?: number;
 }) {
+  const isError = variant === "error";
+  const delay = duration ?? (isError ? 8000 : 6000);
   // Re-armed whenever the message changes, so a second toast in the same
   // session gets a full window rather than inheriting the first one's timer.
   useEffect(() => {
-    const t = setTimeout(onDismiss, duration);
+    const t = setTimeout(onDismiss, delay);
     return () => clearTimeout(t);
-  }, [message, duration, onDismiss]);
+  }, [message, delay, onDismiss]);
 
   return (
-    // `status` + polite: announced without stealing focus from the page the
-    // user just got back to.
-    <div className="toast" role="status" aria-live="polite">
-      <i className="rec-dot is-live" aria-hidden="true" />
+    // Success is announced politely — it's a confirmation of something the user
+    // already saw. A failure is an alert: it's the only place the reason
+    // survives once the modal is gone.
+    <div
+      className={`toast${isError ? " toast--error" : ""}`}
+      role={isError ? "alert" : "status"}
+      aria-live={isError ? "assertive" : "polite"}
+    >
+      <i className={`rec-dot${isError ? "" : " is-live"}`} aria-hidden="true" />
       <p className="toast-copy">{message}</p>
       <button
         type="button"
