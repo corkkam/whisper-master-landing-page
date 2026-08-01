@@ -35,3 +35,11 @@ next-env.d.ts
 
 # internal handoff docs (contain infra details; keep out of public repo)
 docs/MACOS-SUPABASE-HANDOFF.md
+
+# Credential files — never commit (see SECURITY notes)
+*client_secret*.json
+*-credentials.json
+service-account*.json
+*.p8
+*.p12
+*.mobileprovision

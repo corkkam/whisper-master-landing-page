@@ -17,6 +17,7 @@ import {
 import { MILESTONES, DONATION_TIERS, nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
 import { publishDashboard } from "./useWaitlistStatus";
+import Turnstile from "./Turnstile";
 import { track } from "@vercel/analytics";
 import {
   ArrowRightIcon,
@@ -104,6 +105,10 @@ export default function JoinModal({
   const [returning, setReturning] = useState(false);
   const [initializing, setInitializing] = useState(true);
   const [donationLoading, setDonationLoading] = useState<string | null>(null);
+  // Turnstile token for the details submit. Null until the widget solves (or
+  // immediately "dev-skip" when no site key is configured); the server verifies
+  // it, so this is only about not letting the user submit before it lands.
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
 
   const [form, setForm] = useState({
     fullName: "",
@@ -292,14 +297,17 @@ export default function JoinModal({
     e.preventDefault();
     setError("");
     setLoading(true);
-    const res = await submitWaitlist({
-      fullName: form.fullName,
-      company: form.company,
-      role: form.role as never,
-      useCase: form.useCase,
-      platform: form.platform as never,
-      referralSource: (form.referralSource || undefined) as never,
-    });
+    const res = await submitWaitlist(
+      {
+        fullName: form.fullName,
+        company: form.company,
+        role: form.role as never,
+        useCase: form.useCase,
+        platform: form.platform as never,
+        referralSource: (form.referralSource || undefined) as never,
+      },
+      turnstileToken
+    );
     if (res.ok) {
       const d = await getDashboard();
       setDash(d);
@@ -309,6 +317,9 @@ export default function JoinModal({
       onJoined?.(d?.rank ?? res.position ?? null);
       setStep("success");
     } else {
+      // Turnstile tokens are single-use — a retry needs a fresh one, so clear
+      // it and let the widget re-solve rather than replaying a spent token.
+      setTurnstileToken(null);
       setError(res.error);
       onFailed?.(res.error);
     }
@@ -597,9 +608,10 @@ export default function JoinModal({
                       ))}
                     </select>
                   </Field>
+                  <Turnstile onToken={setTurnstileToken} />
                   <button
                     type="submit"
-                    disabled={loading}
+                    disabled={loading || !turnstileToken}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ember px-5 py-3 text-sm font-semibold text-ember-ink shadow-ember transition hover:bg-ember-bright disabled:opacity-70"
                   >
                     {loading ? <Spinner /> : "Claim my spot"}

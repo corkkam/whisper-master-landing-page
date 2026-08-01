@@ -6,7 +6,7 @@ import Principles from "@/components/sections/Principles";
 import Comparison from "@/components/sections/Comparison";
 import DownloadCTA from "@/components/sections/DownloadCTA";
 import Footer from "@/components/sections/Footer";
-import { getWaitlistCount } from "@/lib/waitlist/actions";
+import { getWaitlistCount } from "@/lib/waitlist/queries";
 
 // Re-render on this interval so the live count stays current without a redeploy.
 export const revalidate = 120;

@@ -8,10 +8,16 @@ import { REFERRAL_COOKIE } from "@/lib/waitlist/constants";
  */
 export async function GET(
   request: Request,
-  { params }: { params: { code: string } }
+  { params }: { params: Promise<{ code: string }> }
 ) {
   const { origin } = new URL(request.url);
-  const code = (params.code ?? "").trim().slice(0, 32);
+  const { code: rawCode } = await params;
+
+  // Referral codes are generated as 8 uppercase hex chars (see 0001_init.sql).
+  // Anything else is discarded rather than stored: this value is attacker-chosen
+  // and ends up in a cookie that later becomes the `referred_by` column.
+  const candidate = (rawCode ?? "").trim().toUpperCase().slice(0, 32);
+  const code = /^[A-Z0-9]{4,32}$/.test(candidate) ? candidate : "";
 
   const res = NextResponse.redirect(`${origin}/?join=1&ref=1`);
   if (code) {

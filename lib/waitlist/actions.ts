@@ -1,19 +1,29 @@
 "use server";
 
+// SECURITY — everything exported from this file is a PUBLIC HTTP ENDPOINT.
+//
+// Next.js compiles each exported async function in a `"use server"` module into
+// a server action with a stable id that ships in the client bundle. Anyone can
+// POST to the app with that id and call the function with arbitrary arguments —
+// there is no implicit "only my own UI can call this".
+//
+// So every function here must:
+//   1. establish identity itself via `auth()` / `currentUser()`, and
+//   2. derive all security-relevant values (user id, email) from that session,
+//      never from its parameters.
+//
+// Helpers that are NOT meant to be browser-callable — webhook handlers, build
+// -time reads, internal mutations — belong in `./queries.ts`, which is guarded
+// by `server-only` and compiles to no endpoint at all.
+
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { cookies } from "next/headers";
 import { isBetaUser } from "@/lib/clerk/beta";
 import { createAdminClient } from "@/lib/supabase/server";
+import { verifyTurnstile } from "@/lib/turnstile";
 import { waitlistSchema, type WaitlistInput } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
 import type { DonationTierKey } from "./points";
-
-// ── identity ─────────────────────────────────────────────────────────────────
-
-export async function getCurrentUserEmail() {
-  const user = await currentUser();
-  return user?.emailAddresses[0]?.emailAddress ?? null;
-}
 
 // ── waitlist write (Clerk-verified, referral-aware) ───────────────────────────
 
@@ -21,7 +31,10 @@ export type SubmitResult =
   | { ok: true; position: number; status: string }
   | { ok: false; error: string };
 
-export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult> {
+export async function submitWaitlist(
+  input: WaitlistInput,
+  turnstileToken: string | null
+): Promise<SubmitResult> {
   const parsed = waitlistSchema.safeParse(input);
   if (!parsed.success) {
     return { ok: false, error: "Please check the highlighted fields and try again." };
@@ -30,6 +43,13 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
   const { userId } = await auth();
   if (!userId) return { ok: false, error: "Please sign in first." };
 
+  // Bot check. Clerk already proves a human owns the email, but this endpoint is
+  // the one that mints waitlist positions and referral credit, so it gets its own
+  // gate — scripted multi-account farming is the abuse this actually stops.
+  if (!(await verifyTurnstile(turnstileToken))) {
+    return { ok: false, error: "Couldn't verify you're human — please retry." };
+  }
+
   const clerkUser = await currentUser();
   const userEmail = clerkUser?.emailAddresses[0]?.emailAddress;
   if (!userEmail) return { ok: false, error: "No email address found on your account." };
@@ -37,7 +57,7 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
   const supabase = createAdminClient();
 
   // Referral only attaches on first join (not on re-submit).
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const { data: existing } = await supabase
     .from("waitlist_entries")
     .select("id")
@@ -58,18 +78,21 @@ export async function submitWaitlist(input: WaitlistInput): Promise<SubmitResult
   };
   if (referredBy) payload.referred_by = referredBy;
 
+  // Conflict on `user_id`, not `email`: the Clerk session is the identity here,
+  // and `email` is only a mirrored attribute. Keying on email meant a second
+  // Clerk account that verified the same address would silently take over the
+  // first account's row (and its position, points and referral code).
   const { data, error } = await supabase
     .from("waitlist_entries")
-    .upsert(payload, { onConflict: "email" })
+    .upsert(payload, { onConflict: "user_id" })
     .select("position, status")
     .single();
 
   if (error || !data) {
+    // Log the detail server-side; return a generic message. Postgres errors name
+    // tables, columns and constraints — free schema recon for an attacker.
     console.error("[waitlist] submitWaitlist failed:", error?.code, error?.message);
-    return {
-      ok: false,
-      error: error?.message || "Couldn't save your spot — please try again.",
-    };
+    return { ok: false, error: "Couldn't save your spot — please try again." };
   }
 
   if (referredBy) {
@@ -89,6 +112,11 @@ export async function claimSocial(network: "x" | "linkedin") {
   const { userId } = await auth();
   if (!userId) return { ok: false as const };
 
+  // Whitelist the parameter: it reaches a SECURITY DEFINER function and the
+  // caller controls it. (The column also has a CHECK constraint — this is the
+  // belt to its braces, and it fails cleanly rather than as a DB error.)
+  if (network !== "x" && network !== "linkedin") return { ok: false as const };
+
   const supabase = createAdminClient();
   const { error } = await supabase.rpc("claim_social", {
     p_network: network,
@@ -106,13 +134,23 @@ export type DonationResult =
 /**
  * Initiates a donation/support checkout session.
  * TODO: Replace the stub below with your payment provider (Stripe, Polar, etc.).
- * On payment success, the webhook should call `awardDonationPoints(userId, tier)`.
+ *
+ * On payment success the provider's webhook route — after verifying the webhook
+ * signature — should call `awardDonationPoints` from `./queries.ts`. Do NOT
+ * re-export that helper from this file: it would become a public endpoint that
+ * lets anyone grant arbitrary points to any account.
  */
 export async function startDonationCheckout(
   tier: DonationTierKey
 ): Promise<DonationResult> {
   const { userId } = await auth();
   if (!userId) return { ok: false, error: "Please sign in first." };
+
+  // Whitelist the tier before it reaches the database.
+  const VALID_TIERS: readonly string[] = ["supporter", "champion", "founder"];
+  if (!VALID_TIERS.includes(tier)) {
+    return { ok: false, error: "Unknown support tier." };
+  }
 
   // Record payment interest — even before the provider is wired up, every
   // tier click tells us how many users would pay. Best-effort: never blocks
@@ -126,32 +164,10 @@ export async function startDonationCheckout(
   }
 
   // STUB — swap with real Stripe / Polar checkout URL
-  console.log(`[waitlist] donation checkout initiated: ${tier} for ${userId}`);
   return {
     ok: false,
     error: "Payment integration coming soon — stay tuned!",
   };
-}
-
-/**
- * Awards donation points after a confirmed payment webhook.
- * Call this from your /api/webhooks/payment route handler, not from the client.
- */
-export async function awardDonationPoints(userId: string, points: number) {
-  const supabase = createAdminClient();
-  const { data, error: fetchErr } = await supabase
-    .from("waitlist_entries")
-    .select("points")
-    .eq("user_id", userId)
-    .single();
-
-  if (fetchErr || !data) return { ok: false };
-
-  const { error } = await supabase
-    .from("waitlist_entries")
-    .update({ points: ((data as Record<string, unknown>).points as number ?? 0) + points })
-    .eq("user_id", userId);
-  return { ok: !error };
 }
 
 // ── reads ────────────────────────────────────────────────────────────────────
@@ -224,36 +240,4 @@ export async function getDashboard(): Promise<Dashboard | null> {
     status,
     approved,
   };
-}
-
-/** Total signups — drives the live social-proof number on the landing page. */
-export async function getWaitlistCount(): Promise<number | null> {
-  try {
-    const supabase = createAdminClient();
-    const { count, error } = await supabase
-      .from("waitlist_entries")
-      .select("id", { count: "exact", head: true });
-    if (error) {
-      console.error("[waitlist] getWaitlistCount failed:", error.message);
-      return null;
-    }
-    return count;
-  } catch (e) {
-    // e.g. missing env at build time — fall back to the static copy.
-    console.error("[waitlist] getWaitlistCount failed:", e);
-    return null;
-  }
-}
-
-export type LeaderRow = {
-  rank: number;
-  display_name: string;
-  total_points: number;
-  referrals_count: number;
-};
-
-export async function getLeaderboard(limit = 10): Promise<LeaderRow[]> {
-  const supabase = createAdminClient();
-  const { data } = await supabase.rpc("top_leaderboard", { p_limit: limit });
-  return (data as LeaderRow[] | null) ?? [];
 }
