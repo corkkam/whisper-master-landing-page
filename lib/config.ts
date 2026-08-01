@@ -18,8 +18,10 @@ export const product = {
   name: "Whisper Master",
   tagline: "Voice-to-text that never leaves your device.",
   contactEmail: "corkkam.info@gmail.com",
-  // Keep this honest — you want to be able to defend it in the pitch.
-  waitlistCount: "2,400+",
+  // No `waitlistCount` here on purpose. It used to hold a hardcoded "2,400+"
+  // that the hero fell back to whenever Supabase was unreachable at build time
+  // — which shipped a number ~1000× the real one to production. The count now
+  // comes from the database or is omitted; there is no stand-in to drift.
 } as const;
 
 // ─────────────────────────────────────────────────────────────────────────
