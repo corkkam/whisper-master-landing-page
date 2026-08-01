@@ -50,7 +50,7 @@ export const DONATION_TIERS = [
     amount: 15,
     points: POINTS.donationChampion,
     perk: "Jump ~10 spots",
-    color: "text-accent-300",
+    color: "text-ember-bright",
   },
   {
     key: "founder" as const,
