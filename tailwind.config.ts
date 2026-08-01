@@ -36,6 +36,10 @@ const config: Config = {
           DEFAULT: "#ff6a3d",
           bright: "#ff8b64",
           deep: "#d94a20",
+          // Foreground for text sitting *on* an ember fill — a warm near-black
+          // rather than `ink`, which goes cold against the orange. Mirrors
+          // `.btn--primary` in globals.css so the modal matches the page CTAs.
+          ink: "#1a0a04",
         },
         signal: {
           DEFAULT: "#6ee7df",

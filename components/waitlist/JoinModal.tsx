@@ -382,7 +382,7 @@ export default function JoinModal({
         <div
           role="dialog"
           aria-modal="true"
-          className="glass relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl p-6 shadow-glass"
+          className="glass relative max-h-[calc(100vh-2rem)] w-full overflow-y-auto rounded-2xl p-6 shadow-raised"
         >
         <button
           onClick={onClose}
@@ -393,7 +393,7 @@ export default function JoinModal({
         </button>
 
         {initializing && (
-          <div className="flex items-center justify-center py-20 text-accent-300">
+          <div className="flex items-center justify-center py-20 text-ember-bright">
             <Spinner />
           </div>
         )}
@@ -429,7 +429,7 @@ export default function JoinModal({
                         placeholder="you@company.com"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        className="w-full rounded-xl border border-white/10 bg-base-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25"
+                        className="w-full rounded-xl border border-white/10 bg-ink-900/60 px-4 py-3 text-base text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-ember/60 focus-visible:ring-2 focus-visible:ring-ember/25"
                       />
                       {/* Mount point for Clerk's smart CAPTCHA (bot protection is
                           enabled on the instance; required for custom sign-up flows). */}
@@ -437,7 +437,7 @@ export default function JoinModal({
                       <button
                         type="submit"
                         disabled={loading || !signIn || !signUp}
-                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
+                        className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ember px-5 py-3 text-sm font-semibold text-ember-ink shadow-ember transition hover:bg-ember-bright disabled:opacity-70"
                       >
                         {loading ? (
                           <Spinner />
@@ -458,7 +458,7 @@ export default function JoinModal({
             {/* ── OTP ────────────────────────────────────────────────── */}
             {step === "otp" && (
               <div className="text-center">
-                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/15 text-accent-300 ring-1 ring-accent/30">
+                <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ember/15 text-ember-bright ring-1 ring-ember/30">
                   <MailIcon className="h-6 w-6" />
                 </span>
                 <h2 className="mt-4 text-xl font-semibold text-white">
@@ -484,7 +484,7 @@ export default function JoinModal({
                   <button
                     type="submit"
                     disabled={loading || otp.length < 6}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ember px-5 py-3 text-sm font-semibold text-ember-ink shadow-ember transition hover:bg-ember-bright disabled:opacity-70"
                   >
                     {loading ? <Spinner /> : "Verify code"}
                   </button>
@@ -514,7 +514,7 @@ export default function JoinModal({
                   So we tailor your early access.{" "}
                   {email && <span className="text-white/40">({email})</span>}
                 </p>
-                <form onSubmit={handleSubmitDetails} className="mt-5 space-y-3">
+                <form onSubmit={handleSubmitDetails} className="mt-5 space-y-3.5">
                   <Field label="Name">
                     <input
                       required
@@ -543,10 +543,10 @@ export default function JoinModal({
                         onChange={(e) =>
                           setForm({ ...form, role: e.target.value })
                         }
-                        className={inputCls}
+                        className={selectCls}
                       >
                         {ROLE_OPTIONS.map((o) => (
-                          <option key={o} value={o} className="bg-base-800">
+                          <option key={o} value={o} className="bg-ink-800">
                             {o}
                           </option>
                         ))}
@@ -558,10 +558,10 @@ export default function JoinModal({
                         onChange={(e) =>
                           setForm({ ...form, platform: e.target.value })
                         }
-                        className={inputCls}
+                        className={selectCls}
                       >
                         {PLATFORM_OPTIONS.map((o) => (
-                          <option key={o} value={o} className="bg-base-800">
+                          <option key={o} value={o} className="bg-ink-800">
                             {o}
                           </option>
                         ))}
@@ -585,13 +585,13 @@ export default function JoinModal({
                       onChange={(e) =>
                         setForm({ ...form, referralSource: e.target.value })
                       }
-                      className={inputCls}
+                      className={selectCls}
                     >
-                      <option value="" className="bg-base-800">
+                      <option value="" className="bg-ink-800">
                         Select…
                       </option>
                       {REFERRAL_OPTIONS.map((o) => (
-                        <option key={o} value={o} className="bg-base-800">
+                        <option key={o} value={o} className="bg-ink-800">
                           {o}
                         </option>
                       ))}
@@ -600,7 +600,7 @@ export default function JoinModal({
                   <button
                     type="submit"
                     disabled={loading}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300 disabled:opacity-70"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ember px-5 py-3 text-sm font-semibold text-ember-ink shadow-ember transition hover:bg-ember-bright disabled:opacity-70"
                   >
                     {loading ? <Spinner /> : "Claim my spot"}
                   </button>
@@ -613,7 +613,7 @@ export default function JoinModal({
             {step === "success" && dash && (
               <div>
                 <div className="text-center">
-                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent/20 text-accent-300 ring-1 ring-accent/30">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ember/20 text-ember-bright ring-1 ring-ember/30">
                     <CheckIcon className="h-6 w-6" />
                   </span>
                   <h2 className="mt-4 text-2xl font-semibold text-white">
@@ -656,7 +656,7 @@ export default function JoinModal({
                     {dash.approved ? (
                       <a
                         href="/download"
-                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-dark shadow-glow transition hover:bg-accent-300"
+                        className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-ember px-5 py-3 text-sm font-semibold text-ember-ink shadow-ember transition hover:bg-ember-bright"
                       >
                         You&rsquo;re approved — download the beta{" "}
                         <span aria-hidden="true">↓</span>
@@ -669,7 +669,7 @@ export default function JoinModal({
                         </p>
                         <a
                           href="/download"
-                          className="shrink-0 text-xs font-semibold text-accent transition hover:text-accent-300"
+                          className="shrink-0 text-xs font-semibold text-ember transition hover:text-ember-bright"
                         >
                           Get stable <span aria-hidden="true">→</span>
                         </a>
@@ -685,17 +685,17 @@ export default function JoinModal({
                         <input
                           readOnly
                           value={referralLink}
-                          className="w-full truncate rounded-lg border border-white/10 bg-base-900/60 px-3 py-2 text-sm text-white/70"
+                          className="w-full truncate rounded-lg border border-white/10 bg-ink-900/60 px-3 py-2 text-sm text-white/70"
                         />
                         <button
                           onClick={copyLink}
-                          className="shrink-0 rounded-lg bg-accent px-3 py-2 text-sm font-semibold text-accent-dark transition hover:bg-accent-300"
+                          className="shrink-0 rounded-lg bg-ember px-3 py-2 text-sm font-semibold text-ember-ink transition hover:bg-ember-bright"
                         >
                           {copied ? "Copied" : "Copy"}
                         </button>
                       </div>
                       {/* Share — the main action we want */}
-                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-accent/[0.07] px-4 py-3 ring-1 ring-accent/20">
+                      <div className="mt-3 flex items-center justify-between gap-3 rounded-xl bg-ember/[0.07] px-4 py-3 ring-1 ring-ember/20">
                         <div>
                           <p className="text-sm font-medium text-white">
                             Share it — earn more points
@@ -741,7 +741,7 @@ export default function JoinModal({
                               onClick={() => handleDonate(tier.key)}
                               disabled={donationLoading === tier.key}
                               title={`${tier.label} — ${tier.perk}`}
-                              className={`rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold transition hover:border-accent/25 hover:bg-white/[0.06] disabled:opacity-60 ${tier.color}`}
+                              className={`rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold transition hover:border-ember/25 hover:bg-white/[0.06] disabled:opacity-60 ${tier.color}`}
                             >
                               {donationLoading === tier.key ? (
                                 <Spinner />
@@ -777,10 +777,15 @@ export default function JoinModal({
 
 // ── Styles ────────────────────────────────────────────────────────────────────
 
+// `color-scheme:dark` is doing real work, not decoration: without it the
+// platform paints its own widgets light — the select popup, the caret, the
+// autofill wash — straight over a dark form.
 const inputCls =
-  "w-full rounded-lg border border-white/10 bg-base-900/60 px-3 py-2.5 text-sm text-white placeholder:text-white/35 outline-none focus-visible:outline-none focus-visible:border-accent/60 focus-visible:ring-2 focus-visible:ring-accent/25";
+  "w-full rounded-lg border border-white/10 bg-ink-900/60 px-3 py-2.5 text-sm text-white caret-ember placeholder:text-white/35 outline-none transition-colors [color-scheme:dark] hover:border-white/20 focus:border-ember/60 focus:ring-2 focus:ring-ember/25 focus-visible:outline-none";
+/** Native chevron swapped for one at the right weight — see `.field-select`. */
+const selectCls = `${inputCls} field-select`;
 const shareIconCls =
-  "flex h-10 w-10 items-center justify-center rounded-lg text-accent transition hover:bg-accent/15 hover:scale-105";
+  "flex h-10 w-10 items-center justify-center rounded-lg text-ember transition hover:bg-ember/15 hover:scale-105";
 
 // ── Small components ──────────────────────────────────────────────────────────
 
@@ -793,7 +798,7 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-xs font-medium text-white/50">{label}</span>
+      <span className="mb-1.5 block text-xs font-medium text-haze-bright">{label}</span>
       {children}
     </label>
   );
@@ -808,7 +813,7 @@ function RewardsList({
 }) {
   return (
     <>
-      <p className="rounded-lg bg-accent/10 px-3 py-2 text-xs font-medium text-accent-300 ring-1 ring-accent/20">
+      <p className="rounded-lg bg-ember/10 px-3 py-2 text-xs font-medium text-ember-bright ring-1 ring-ember/20">
         {next
           ? `${next.referrals - referrals} more referral${next.referrals - referrals === 1 ? "" : "s"} → ${next.label}`
           : "All rewards unlocked 🏆"}
@@ -823,9 +828,9 @@ function RewardsList({
               <span
                 className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
                   hit
-                    ? "bg-accent/25 text-accent-300"
+                    ? "bg-ember/25 text-ember-bright"
                     : isNext
-                    ? "bg-accent/10 ring-1 ring-accent/30"
+                    ? "bg-ember/10 ring-1 ring-ember/30"
                     : "bg-white/[0.05]"
                 }`}
               >
@@ -836,7 +841,7 @@ function RewardsList({
               </span>
               <span
                 className={`ml-auto font-mono text-[10px] ${
-                  isNext ? "text-accent-300/80" : "text-white/30"
+                  isNext ? "text-ember-bright/80" : "text-white/30"
                 }`}
               >
                 {m.referrals}
