@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { currentUser } from "@clerk/nextjs/server";
 import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
+import JoinButton from "@/components/waitlist/JoinButton";
 import HyperspeedBackdrop from "@/components/chrome/HyperspeedBackdrop";
 import { isBetaUser } from "@/lib/clerk/beta";
 import { getDashboard } from "@/lib/waitlist/actions";
@@ -18,8 +18,6 @@ export const metadata: Metadata = {
 // Auth-dependent, and the artifact URLs are only rendered for signed-in users —
 // so this must never be cached or statically prerendered.
 export const dynamic = "force-dynamic";
-
-const JOIN_HREF = "/?join=1";
 
 export default async function DownloadPage() {
   const user = await currentUser();
@@ -124,10 +122,10 @@ export default async function DownloadPage() {
                 </>
               ) : dash ? (
                 <>
-                  <Link className="btn btn--ghost" href={JOIN_HREF}>
+                  <JoinButton className="btn btn--ghost" cursor="Climb the list">
                     Move up the line
                     <span aria-hidden="true">↗</span>
-                  </Link>
+                  </JoinButton>
                   <p className="dl-req">
                     <Lock /> You&rsquo;re{" "}
                     {dash.rank ? <strong>#{dash.rank}</strong> : "on the waitlist"}
@@ -137,10 +135,10 @@ export default async function DownloadPage() {
                 </>
               ) : (
                 <>
-                  <Link className="btn btn--ghost" href={JOIN_HREF}>
+                  <JoinButton className="btn btn--ghost" cursor="Takes one screen">
                     Join the waitlist
                     <span aria-hidden="true">↗</span>
-                  </Link>
+                  </JoinButton>
                   <p className="dl-req">
                     <Lock /> Beta is for approved waitlist members. Join to get in
                     line — it takes one screen.
