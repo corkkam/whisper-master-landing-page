@@ -1,0 +1,8 @@
+# Security overrides: force patched versions of transitive deps that ship
+# inside `next` and cannot be bumped by upgrading Next alone.
+#   postcss <8.5.18 — sourceMappingURL path traversal / arbitrary .map read
+#                     (GHSA-r28c-9q8g-f849, GHSA-6g55-p6wh-862q) + </style> XSS
+#   sharp   <0.35.0 — inherited libvips CVEs (2026-33327/33328/35590/35591)
+overrides:
+  postcss@<8.5.18: '>=8.5.18'
+  sharp@<0.35.0: '>=0.35.0'
