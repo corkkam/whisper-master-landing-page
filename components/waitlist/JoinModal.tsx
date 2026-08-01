@@ -70,6 +70,7 @@ export default function JoinModal({
   initialStep = "email",
   onClose,
   onJoined,
+  onFailed,
 }: {
   initialEmail?: string;
   initialStep?: Step;
@@ -80,6 +81,12 @@ export default function JoinModal({
    * below, so they never reach the details form this fires from.
    */
   onJoined?: (rank: number | null) => void;
+  /**
+   * Fired when the join itself is rejected. The modal stays open with the
+   * error inline; this is only so the reason survives if the user gives up and
+   * closes it.
+   */
+  onFailed?: (reason: string) => void;
 }) {
   const { isSignedIn, user, isLoaded: userLoaded } = useUser();
   // Clerk v7 "Future" API: signIn/signUp are SignInFutureResource/SignUpFutureResource
@@ -303,6 +310,7 @@ export default function JoinModal({
       setStep("success");
     } else {
       setError(res.error);
+      onFailed?.(res.error);
     }
     setLoading(false);
   }

@@ -31,21 +31,34 @@ export function useJoin() {
   return ctx;
 }
 
+/** What the last join attempt did, held until the modal closes. */
+type Outcome = { ok: true; rank: number | null } | { ok: false; reason: string };
+
 function joinedMessage(rank: number | null) {
   return rank
     ? `You're on the waitlist — #${rank}. We'll email you the moment you're approved.`
     : "You're on the waitlist. We'll email you the moment you're approved.";
 }
 
+function failedMessage(reason: string) {
+  // The server's reason is the useful half; the retry hint is what the toast
+  // adds, since the form it came from is no longer on screen.
+  return `Couldn't add you to the waitlist. ${reason}`;
+}
+
 export default function JoinProvider({ children }: { children: ReactNode }) {
   const [open, setOpenState] = useState(false);
   const [email, setEmail] = useState("");
   const [step, setStep] = useState<Step>("email");
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    variant: "success" | "error";
+  } | null>(null);
 
-  // Set by the modal the moment a join lands, read when it closes. A ref, not
-  // state: nothing should re-render until the confirmation is actually due.
-  const justJoined = useRef<{ rank: number | null } | null>(null);
+  // Set by the modal the moment a join resolves, read when it closes. A ref,
+  // not state: nothing should re-render until the confirmation is actually due.
+  // Last write wins, so a retry that succeeds overwrites the failure before it.
+  const outcome = useRef<Outcome | null>(null);
 
   const openModal = useCallback((o?: OpenOpts) => {
     setEmail(o?.email ?? "");
@@ -54,16 +67,26 @@ export default function JoinProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const handleJoined = useCallback((rank: number | null) => {
-    justJoined.current = { rank };
+    outcome.current = { ok: true, rank };
   }, []);
 
-  // The success screen already congratulates them inside the modal; the toast
-  // is what carries that confirmation back onto the page they return to.
+  const handleFailed = useCallback((reason: string) => {
+    outcome.current = { ok: false, reason };
+  }, []);
+
+  // Both halves already showed inside the modal — the success screen, the
+  // inline error. The toast is what carries either one back onto the page the
+  // user returns to, so a dismissed modal doesn't swallow the result.
   const close = useCallback(() => {
     setOpenState(false);
-    const joined = justJoined.current;
-    justJoined.current = null;
-    if (joined) setToast(joinedMessage(joined.rank));
+    const result = outcome.current;
+    outcome.current = null;
+    if (!result) return;
+    setToast(
+      result.ok
+        ? { message: joinedMessage(result.rank), variant: "success" }
+        : { message: failedMessage(result.reason), variant: "error" }
+    );
   }, []);
 
   const dismissToast = useCallback(() => setToast(null), []);
@@ -92,9 +115,16 @@ export default function JoinProvider({ children }: { children: ReactNode }) {
           initialStep={step}
           onClose={close}
           onJoined={handleJoined}
+          onFailed={handleFailed}
         />
       )}
-      {toast && <Toast message={toast} onDismiss={dismissToast} />}
+      {toast && (
+        <Toast
+          message={toast.message}
+          variant={toast.variant}
+          onDismiss={dismissToast}
+        />
+      )}
       {/* {open && <ClerkWaitlistModal onClose={close} />} */}
     </JoinCtx.Provider>
   );

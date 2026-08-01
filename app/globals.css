@@ -28,6 +28,8 @@
   --ember-bright: #ff8b64;
   --signal: #6ee7df;
   --signal-deep: #3bbdb4;
+  /* Pushed well past --ember's orange so a failure never reads as brand accent. */
+  --alarm: #ff4d5e;
 
   --line: rgba(255, 255, 255, 0.09);
   --line-soft: rgba(255, 255, 255, 0.055);
@@ -2102,6 +2104,21 @@ html.has-cursor [contenteditable="true"] {
     opacity: 0;
     transform: translate(-50%, 14px);
   }
+}
+
+/* A failure earns a red rim and a still dot — the breathing one reads as
+   "recording, all good", which is the opposite of what happened. */
+.toast--error {
+  border-color: rgba(255, 77, 94, 0.4);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05),
+    0 0 0 3px rgba(255, 77, 94, 0.06),
+    0 24px 60px -20px rgba(0, 0, 0, 0.8);
+}
+.toast--error .rec-dot {
+  background: var(--alarm);
+}
+.toast--error .toast-copy {
+  color: var(--bone);
 }
 
 /* Optical alignment with the first line of copy rather than the box. */
