@@ -9,24 +9,31 @@ export const POINTS = {
   referral: 200,
   shareX: 25,
   shareLinkedIn: 25,
-  // Donation points — awarded server-side when payment webhook fires
-  donationSupporter: 300,   // ~$5  — jumps ~3 spots
-  donationChampion: 1000,   // ~$15 — jumps ~10 spots
-  donationFounder: 5000,    // ~$50 — jumps ~50 spots
+  // Donation points were removed along with the donation tiers. The SQL in
+  // 0002_viral.sql still defines the award function; it is simply never called
+  // now that nothing can pay. Leave it — dropping it is a migration, and an
+  // uncalled function is harmless.
 } as const;
 
 export type Milestone = {
   referrals: number;
   label: string;
   key: "beta" | "priority" | "pro_1mo" | "founder" | "lifetime";
+  /**
+   * What the reward is actually worth, in the words we'd use on an invoice.
+   * A reward with no stated value is a placeholder, and a waitlist that
+   * accrues placeholders accrues liability. Every figure here traces to a
+   * published number on /pricing — if you change one, change both.
+   */
+  worth?: string;
 };
 
 export const MILESTONES: Milestone[] = [
   { referrals: 3, label: "Early Beta Access", key: "beta" },
   { referrals: 10, label: "Priority Beta Access", key: "priority" },
-  { referrals: 25, label: "1 Month Pro", key: "pro_1mo" },
+  { referrals: 25, label: "1 Month Pro", key: "pro_1mo", worth: "worth $12" },
   { referrals: 50, label: "Founder Badge", key: "founder" },
-  { referrals: 100, label: "Lifetime Pro", key: "lifetime" },
+  { referrals: 100, label: "Lifetime Pro", key: "lifetime", worth: "worth $149" },
 ];
 
 /** The next milestone a user hasn't hit yet (null once they've maxed out). */
@@ -34,32 +41,19 @@ export function nextMilestone(referrals: number): Milestone | null {
   return MILESTONES.find((m) => referrals < m.referrals) ?? null;
 }
 
-/** Donation tiers — payment integration to be wired up separately. */
-export const DONATION_TIERS = [
-  {
-    key: "supporter" as const,
-    label: "Supporter",
-    amount: 5,
-    points: POINTS.donationSupporter,
-    perk: "Jump ~3 spots",
-    color: "text-white/70",
-  },
-  {
-    key: "champion" as const,
-    label: "Champion",
-    amount: 15,
-    points: POINTS.donationChampion,
-    perk: "Jump ~10 spots",
-    color: "text-ember-bright",
-  },
-  {
-    key: "founder" as const,
-    label: "Founder",
-    amount: 50,
-    points: POINTS.donationFounder,
-    perk: "Jump ~50 spots + Founder badge",
-    color: "text-yellow-400",
-  },
-] as const;
-
-export type DonationTierKey = (typeof DONATION_TIERS)[number]["key"];
+// ── Donation tiers: removed, deliberately ───────────────────────────────────
+//
+// There used to be $5 / $15 / $50 "skip the queue" tiers here. They are gone
+// for three reasons, in ascending order of importance:
+//
+//   1. They did not work. No processor was ever wired, so `startDonationCheckout`
+//      returned "Payment integration coming soon" — every click on a payment
+//      button produced an error message. Asking for money and then failing is
+//      worse than not asking.
+//   2. "Pay to skip the queue" contradicts "free during beta". Once downloads
+//      are public there is no queue to skip, and the offer becomes nonsense.
+//   3. Charging for queue position before charging for the product trains the
+//      wrong expectation and muddies the first real pricing conversation.
+//
+// If a "support the work" tier comes back later, it belongs on /pricing next to
+// the real plans, not bolted onto the waitlist. See docs/10-monetization.md.

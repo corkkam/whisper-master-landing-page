@@ -2294,3 +2294,1088 @@ html.has-cursor [contenteditable="true"] {
     display: none;
   }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   TRUST · LEGAL · PRICING
+   Added for /trust, /privacy, /terms, /pricing.
+
+   These pages carry the commercial and trust argument, so they follow the
+   system's one load-bearing rule strictly: ember = you (your voice, your
+   money, your choice), signal = the machine (what is settled, verified,
+   on-device). Nothing here invents a third accent.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Shared long-form prose ─────────────────────────────────────────────── */
+
+.legal {
+  max-width: 68ch;
+}
+.legal section + section {
+  margin-top: clamp(2.25rem, 4vw, 3.25rem);
+}
+.legal h2 {
+  margin: 0 0 1rem;
+  font-family: var(--display);
+  font-size: clamp(1.15rem, 2.2vw, 1.5rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+.legal h3 {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--bone);
+}
+.legal p,
+.legal li {
+  color: var(--haze-bright);
+  font-size: 0.9375rem;
+  line-height: 1.75;
+}
+.legal p + p {
+  margin-top: 0.9rem;
+}
+.legal ul {
+  margin: 0.9rem 0 0;
+  padding-left: 1.1rem;
+}
+.legal li + li {
+  margin-top: 0.5rem;
+}
+.legal li::marker {
+  color: var(--haze-dim);
+}
+.legal strong {
+  color: var(--bone);
+  font-weight: 600;
+}
+.legal a {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--signal) 40%, transparent);
+  transition: color 0.2s var(--ease);
+}
+.legal a:hover {
+  color: var(--signal-bright, #9df3ed);
+}
+
+.legal-meta {
+  margin-top: 1.25rem;
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+
+/* A single network flow, rendered as a definition block inside the policy. */
+.legal-flow {
+  margin-top: 1.75rem;
+  padding: 1.25rem clamp(1rem, 2.5vw, 1.5rem);
+  border: 1px solid var(--line-soft);
+  border-radius: 14px;
+  background: var(--surface);
+}
+.legal-flow dl {
+  display: grid;
+  gap: 0.4rem 1.25rem;
+  margin: 0;
+}
+.legal-flow dt {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+.legal-flow dd {
+  margin: 0 0 0.6rem;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--haze-bright);
+}
+.legal-flow dd:last-child {
+  margin-bottom: 0;
+}
+@media (min-width: 720px) {
+  .legal-flow dl {
+    grid-template-columns: 7.5rem 1fr;
+    align-items: baseline;
+  }
+  .legal-flow dd {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ── Required / optional tag ────────────────────────────────────────────── */
+
+.flowtag {
+  flex: none;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+/* Required = the machine's own plumbing → signal. */
+.flowtag--required {
+  color: var(--signal);
+  background: color-mix(in srgb, var(--signal) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--signal) 28%, transparent);
+}
+/* Optional = your call → ember. */
+.flowtag--optional {
+  color: var(--ember);
+  background: color-mix(in srgb, var(--ember) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ember) 28%, transparent);
+}
+
+/* ── /trust ─────────────────────────────────────────────────────────────── */
+
+.trust-hero {
+  padding: clamp(1.75rem, 4vw, 2.75rem);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 106, 61, 0.08), transparent 60%),
+    linear-gradient(180deg, var(--ink-700), var(--ink-800));
+}
+.trust-hero-kicker {
+  margin: 0 0 0.9rem;
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+.trust-hero-claim {
+  margin: 0;
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 4.5vw, 2.9rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  color: var(--bone);
+}
+.trust-hero-sub {
+  max-width: 60ch;
+  margin: 1.1rem 0 0;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--haze);
+}
+
+.trust-section {
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+}
+.trust-h2 {
+  margin: 0 0 1.1rem;
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 2.8vw, 1.85rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--bone);
+}
+.trust-note,
+.trust-body {
+  max-width: 68ch;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--haze-bright);
+}
+.trust-body + .trust-body {
+  margin-top: 0.9rem;
+}
+.trust-body a {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.trust-updated {
+  margin-top: 1.5rem;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+
+/* The never-sent list. Signal marks: these are settled machine facts. */
+.trust-never {
+  max-width: 72ch;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.trust-never li {
+  position: relative;
+  padding: 0.9rem 0 0.9rem 1.75rem;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--haze-bright);
+}
+.trust-never li:last-child {
+  border-bottom: none;
+}
+.trust-never-mark {
+  position: absolute;
+  left: 0;
+  top: 1.45rem;
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  background: var(--signal);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--signal) 55%, transparent);
+}
+
+/* ── The flow table ─────────────────────────────────────────────────────── */
+
+.flowtable {
+  margin-top: 1.5rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.flowtable-head {
+  display: none;
+  padding: 0.9rem clamp(1rem, 2.5vw, 1.5rem);
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+.flowrow {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.25rem clamp(1rem, 2.5vw, 1.5rem);
+  border-bottom: 1px solid var(--line-soft);
+}
+.flowrow:last-child {
+  border-bottom: none;
+}
+.flowrow-what {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+}
+.flowrow-what h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--bone);
+}
+.flowrow-cell dt {
+  font-family: var(--mono);
+  font-size: 0.5625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+.flowrow-cell dd {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--haze-bright);
+}
+/* On-by-default optional flows get the ember rule: this is the sentence the
+   reader is actually looking for, so it does not get to hide. */
+.flow-default-on {
+  color: var(--ember-bright, #ff8b64) !important;
+}
+
+@media (min-width: 940px) {
+  .flowtable-head {
+    display: grid;
+    grid-template-columns: 12rem 1fr 1.5fr 1fr;
+    gap: 1.25rem;
+  }
+  .flowrow {
+    grid-template-columns: 12rem 1fr 1.5fr 1fr;
+    gap: 1.25rem;
+    align-items: start;
+  }
+  .flowrow-what {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  .flowrow-cell dt {
+    display: none; /* the header row carries the labels at this width */
+  }
+  .flowrow-cell dd {
+    margin-top: 0;
+  }
+}
+
+/* ── /pricing ───────────────────────────────────────────────────────────── */
+
+.pricing-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.1rem;
+  margin-bottom: clamp(2rem, 4vw, 3rem);
+  padding: 1rem 1.25rem;
+  border: 1px solid color-mix(in srgb, var(--ember) 30%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--ember) 8%, transparent);
+}
+.pricing-banner strong {
+  color: var(--ember-bright, #ff8b64);
+  font-weight: 600;
+}
+.pricing-banner p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--haze-bright);
+}
+
+/* Currency switch — the user's choice, so ember when active. */
+.cur-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.cur-btn {
+  padding: 0.4rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--haze);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s var(--ease), color 0.2s var(--ease);
+}
+.cur-btn:hover {
+  color: var(--bone);
+}
+.cur-btn[aria-pressed="true"] {
+  background: var(--ember);
+  color: #1a0a04;
+}
+
+.plan-grid {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1.75rem;
+}
+@media (min-width: 780px) {
+  .plan-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.plan {
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.35rem, 3vw, 1.85rem);
+  border: 1px solid var(--line-soft);
+  border-radius: 18px;
+  background: linear-gradient(180deg, var(--ink-700), var(--ink-800));
+}
+/* The recommended plan is the one we want chosen → ember, per the rule. */
+.plan--featured {
+  border-color: color-mix(in srgb, var(--ember) 35%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ember) 12%, transparent),
+    0 24px 60px -30px color-mix(in srgb, var(--ember) 45%, transparent);
+}
+.plan-name {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+.plan--featured .plan-name {
+  color: var(--ember);
+}
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  margin: 0.9rem 0 0;
+  font-family: var(--display);
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  color: var(--bone);
+}
+.plan-period {
+  font-family: var(--sans);
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--haze-dim);
+}
+.plan-sub {
+  margin: 0.5rem 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  color: var(--haze);
+}
+.plan-list {
+  margin: 1.35rem 0 0;
+  padding: 0;
+  list-style: none;
+  flex: 1;
+}
+.plan-list li {
+  position: relative;
+  padding: 0.45rem 0 0.45rem 1.4rem;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: var(--haze-bright);
+}
+.plan-list li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.95rem;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--signal);
+}
+.plan-note {
+  margin: 1.35rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line-soft);
+  font-family: var(--mono);
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--haze-dim);
+}
+
+.pricing-faq {
+  margin-top: clamp(3rem, 6vw, 4.5rem);
+  max-width: 72ch;
+}
+.pricing-faq h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bone);
+}
+.pricing-faq p {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.75;
+  color: var(--haze-bright);
+}
+.pricing-faq p a {
+  color: var(--signal);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+.pricing-faq > div + div {
+  margin-top: 1.6rem;
+}
+
+.pricing-switch-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+.cur-hint {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--haze-dim);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   FOR TEAMS — the organisation funnel (/for-teams) and the lead form.
+
+   Visually quieter than the consumer pages on purpose. The reader here is a
+   partner or a practice manager checking whether we are serious, and the
+   aurora-and-motion treatment that sells the product to an individual reads as
+   marketing gloss to someone whose job is to find the catch. Denser type,
+   flatter surfaces, tables over hero moments.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.teams-claim {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 4rem);
+  align-items: start;
+  padding: clamp(1.75rem, 4vw, 2.75rem) 0 clamp(2.5rem, 5vw, 4rem);
+  border-top: 1px solid var(--line);
+}
+@media (max-width: 860px) {
+  .teams-claim { grid-template-columns: 1fr; }
+}
+
+.teams-claim-main h2 {
+  margin: 0 0 1.1rem;
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+.teams-claim-main p {
+  margin: 0 0 1rem;
+  max-width: 62ch;
+  font-size: 1rem;
+  line-height: 1.72;
+  color: var(--haze-bright);
+}
+
+/* The caveat is styled to be *read*, not skimmed past. A limitation buried in
+   body copy reads as a disclaimer; one in its own bordered block reads as
+   candour, which is the effect we want on this particular buyer. */
+.teams-claim-caveat {
+  margin-top: 1.5rem !important;
+  padding: 1rem 1.15rem;
+  border-left: 2px solid var(--ember);
+  border-radius: 0 8px 8px 0;
+  background: rgba(255, 106, 61, 0.05);
+  font-size: 0.9375rem !important;
+  color: var(--haze-bright);
+}
+.teams-claim-caveat strong { color: var(--bone); }
+.teams-claim-caveat em { color: var(--ember-bright); font-style: normal; }
+
+.teams-facts {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.teams-facts li {
+  padding: 1.05rem 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.teams-facts strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.75rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--signal);
+}
+.teams-facts span {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 0.8438rem;
+  line-height: 1.55;
+  color: var(--haze);
+}
+
+.teams-disclosure-note {
+  margin: 1.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--haze-dim);
+}
+.teams-disclosure-note a { color: var(--signal); text-decoration: none; }
+.teams-disclosure-note a:hover { text-decoration: underline; }
+
+.teams-plans {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
+  gap: 1.1rem;
+  margin-top: 2rem;
+}
+.plan-sub--inr {
+  margin-top: -0.35rem !important;
+  font-size: 0.8125rem !important;
+  color: var(--haze-dim) !important;
+}
+
+.teams-anchor {
+  max-width: 68ch;
+  margin: 2rem 0 0;
+  padding: 1.15rem 1.35rem;
+  border: 1px dashed var(--line);
+  border-radius: 12px;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--haze);
+}
+.teams-anchor strong { color: var(--bone); }
+
+.teams-limit-list {
+  display: grid;
+  gap: 0.9rem;
+  margin: 2rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.teams-limit-list li {
+  padding: 1.1rem 1.3rem;
+  border: 1px solid var(--line-soft);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 0.9375rem;
+  line-height: 1.72;
+  color: var(--haze-bright);
+}
+.teams-limit-list strong { color: var(--bone); }
+
+/* ── Lead form ─────────────────────────────────────────────────────────── */
+
+.lead-form { margin-top: 2rem; }
+
+.lead-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.lead-field { display: block; }
+.lead-field--wide { margin-bottom: 1rem; }
+
+.lead-field > span {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.8438rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  color: var(--bone);
+}
+.lead-field > span > i {
+  font-style: normal;
+  color: var(--ember);
+}
+.lead-field > span > em {
+  display: block;
+  margin-top: 0.3rem;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--haze-dim);
+}
+
+.lead-field input,
+.lead-field select,
+.lead-field textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--ink-800);
+  color: var(--bone);
+  font: inherit;
+  font-size: 0.9375rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+.lead-field textarea { resize: vertical; line-height: 1.6; }
+.lead-field input::placeholder,
+.lead-field textarea::placeholder { color: var(--haze-dim); }
+.lead-field input:focus,
+.lead-field select:focus,
+.lead-field textarea:focus {
+  outline: none;
+  border-color: var(--signal-deep);
+  background: var(--ink-700);
+}
+.lead-field select {
+  appearance: none;
+  background-image: linear-gradient(45deg, transparent 50%, var(--haze) 50%),
+    linear-gradient(135deg, var(--haze) 50%, transparent 50%);
+  background-position: calc(100% - 18px) calc(50% + 1px), calc(100% - 13px) calc(50% + 1px);
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  padding-right: 2.25rem;
+}
+.lead-field option { background: var(--ink-800); color: var(--bone); }
+
+/* Honeypot. `display:none` is skipped by some bots precisely because it is the
+   obvious tell, so this is positioned off-canvas and left rendered instead. */
+.lead-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.lead-error {
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.95rem;
+  border: 1px solid rgba(255, 77, 94, 0.35);
+  border-radius: 10px;
+  background: rgba(255, 77, 94, 0.08);
+  font-size: 0.875rem;
+  color: var(--alarm);
+}
+
+.lead-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+.lead-fine {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  color: var(--haze-dim);
+}
+
+.lead-done {
+  margin-top: 2rem;
+  padding: clamp(1.5rem, 4vw, 2.5rem);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--surface);
+}
+.lead-done h3 {
+  margin: 0.75rem 0 0.9rem;
+  font-family: var(--display);
+  font-size: clamp(1.3rem, 2.4vw, 1.7rem);
+  letter-spacing: -0.02em;
+  color: var(--bone);
+}
+.lead-done p {
+  margin: 0 0 0.85rem;
+  max-width: 60ch;
+  font-size: 0.9688rem;
+  line-height: 1.72;
+  color: var(--haze-bright);
+}
+.lead-done strong { color: var(--bone); }
+.lead-done-next { font-size: 0.875rem !important; color: var(--haze) !important; }
+.lead-done a { color: var(--signal); text-decoration: none; }
+.lead-done a:hover { text-decoration: underline; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   PIPELINE (/admin/pipeline) — internal, founder-only.
+
+   Deliberately plain. This is a tool, not a page: no motion, no gradients, high
+   information density, and it has to be usable one-handed on a phone between
+   other things, which is where a solo founder actually works a pipeline.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+.pl-page { max-width: 1080px; }
+
+.pl-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 2.5rem;
+}
+.pl-stat {
+  padding: 1rem 1.15rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+}
+.pl-stat strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 1.6rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--bone);
+}
+.pl-stat--won strong { color: var(--signal); }
+.pl-stat span {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--haze-dim);
+}
+
+.pl-section { margin-bottom: 2.5rem; }
+.pl-section > h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.9rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--haze);
+}
+.pl-section > h2 > i {
+  font-style: normal;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  font-size: 0.75rem;
+  color: var(--haze-bright);
+}
+.pl-section--urgent > h2 { color: var(--ember); }
+
+.pl-list { display: grid; gap: 0.6rem; }
+
+.pl-card {
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--line);
+  border-radius: 10px;
+  background: var(--surface);
+  overflow: hidden;
+}
+.pl-card--hot   { border-left-color: var(--ember); }
+.pl-card--warm  { border-left-color: var(--signal-deep); }
+.pl-card--cold  { border-left-color: var(--line); }
+.pl-card--overdue { background: rgba(255, 106, 61, 0.045); }
+
+.pl-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+.pl-head:hover { background: var(--surface-2); }
+
+.pl-score {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 8px;
+  background: var(--ink-700);
+  font-family: var(--mono);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--bone);
+}
+.pl-card--hot .pl-score { background: rgba(255, 106, 61, 0.16); color: var(--ember-bright); }
+.pl-card--warm .pl-score { background: rgba(110, 231, 223, 0.12); color: var(--signal); }
+
+.pl-ident { min-width: 0; }
+.pl-ident strong {
+  display: block;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--bone);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pl-ident em {
+  display: block;
+  margin-top: 0.15rem;
+  font-style: normal;
+  font-size: 0.8125rem;
+  color: var(--haze-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pl-meta { display: flex; align-items: center; gap: 0.45rem; }
+.pl-seats, .pl-stage {
+  font-style: normal;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.pl-seats { background: var(--ink-700); color: var(--haze-bright); }
+.pl-stage { background: var(--surface-2); color: var(--haze); }
+.pl-stage--won  { background: rgba(110, 231, 223, 0.16); color: var(--signal); }
+.pl-stage--lost { background: rgba(255, 77, 94, 0.12); color: var(--alarm); }
+.pl-stage--proposal, .pl-stage--pilot { background: rgba(255, 106, 61, 0.14); color: var(--ember-bright); }
+
+@media (max-width: 620px) {
+  .pl-head { grid-template-columns: auto minmax(0, 1fr); }
+  .pl-meta { grid-column: 2; margin-top: 0.35rem; }
+}
+
+.pl-next {
+  margin: 0;
+  padding: 0.55rem 1rem 0.7rem 1rem;
+  border-top: 1px dashed var(--line-soft);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--haze-bright);
+}
+.pl-next > span {
+  display: inline-block;
+  margin-right: 0.45rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--haze-dim);
+}
+.pl-next--overdue { color: var(--ember-bright); }
+.pl-next--overdue > span { color: var(--ember); }
+
+.pl-body { padding: 0.25rem 1rem 1.1rem; border-top: 1px solid var(--line-soft); }
+
+.pl-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem 1.25rem;
+  margin: 1rem 0;
+}
+.pl-facts dt {
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--haze-dim);
+}
+.pl-facts dd {
+  margin: 0.2rem 0 0;
+  font-size: 0.875rem;
+  color: var(--bone);
+  word-break: break-word;
+}
+.pl-facts a { color: var(--signal); text-decoration: none; }
+.pl-yes { color: var(--signal) !important; }
+
+.pl-quote {
+  margin: 0.9rem 0;
+  padding: 0.8rem 1rem;
+  border-left: 2px solid var(--signal-deep);
+  border-radius: 0 8px 8px 0;
+  background: var(--ink-800);
+}
+.pl-quote--dim { border-left-color: var(--line); }
+.pl-quote > span {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.6875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--haze-dim);
+}
+.pl-quote p {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--haze-bright);
+  white-space: pre-wrap;
+}
+
+.pl-stages { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
+.pl-stage-btn {
+  padding: 0.35rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--haze);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.pl-stage-btn:hover:not(:disabled) { border-color: var(--signal-deep); color: var(--bone); }
+.pl-stage-btn.is-current {
+  background: var(--surface-2);
+  border-color: var(--signal-deep);
+  color: var(--signal);
+  cursor: default;
+}
+.pl-stage-btn:disabled:not(.is-current) { opacity: 0.4; cursor: not-allowed; }
+
+.pl-edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 0.7rem;
+  align-items: end;
+  padding-top: 0.9rem;
+  border-top: 1px solid var(--line-soft);
+}
+.pl-edit--wide { grid-column: 1 / -1; }
+.pl-edit label { display: block; }
+.pl-edit label > span {
+  display: block;
+  margin-bottom: 0.3rem;
+  font-size: 0.6875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--haze-dim);
+}
+.pl-edit input,
+.pl-edit textarea {
+  width: 100%;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--ink-800);
+  color: var(--bone);
+  font: inherit;
+  font-size: 0.875rem;
+}
+.pl-edit textarea { resize: vertical; line-height: 1.55; }
+.pl-edit input:focus, .pl-edit textarea:focus {
+  outline: none;
+  border-color: var(--signal-deep);
+}
+.pl-edit .btn { padding: 0.55rem 1.1rem; font-size: 0.8125rem; }
+
+.pl-empty {
+  padding: 2rem;
+  border: 1px dashed var(--line);
+  border-radius: 14px;
+  text-align: center;
+}
+.pl-empty h2 { margin: 0 0 0.6rem; font-family: var(--display); color: var(--bone); }
+.pl-empty p {
+  max-width: 54ch;
+  margin: 0 auto;
+  font-size: 0.9375rem;
+  line-height: 1.7;
+  color: var(--haze);
+}
+.pl-empty code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+  color: var(--signal);
+}
+
+/* Checkout button inside a plan card. Sits above .plan-note, full width so the
+   three cards keep a consistent baseline whether or not a plan is purchasable. */
+.plan-buy {
+  display: flex;
+  width: 100%;
+  margin: 1.25rem 0 0.5rem;
+  text-decoration: none;
+}
+.btn--ghost.plan-buy {
+  border-color: var(--line);
+  color: var(--bone);
+}
+.btn--ghost.plan-buy:hover {
+  border-color: var(--signal-deep);
+  background: var(--surface-2);
+}

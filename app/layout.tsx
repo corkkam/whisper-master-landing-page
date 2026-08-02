@@ -11,6 +11,7 @@ import GoogleAnalytics from "@/components/chrome/GoogleAnalytics";
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { product } from "@/lib/config";
+import { siteUrl } from "@/lib/site";
 
 // Display face. Headlines lean on weight 800 and tight tracking (-0.045em to
 // -0.055em) rather than the width axis; see `.hero-name` / `.section-title`.
@@ -40,27 +41,46 @@ const DESCRIPTION =
   "Whisper Master turns speech into clean, formatted text in any Mac app — transcribed entirely on your device. No cloud round-trip, no audio uploaded, works offline.";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://whispermaster.app"),
+  metadataBase: new URL(siteUrl()),
+  // No `template` here on purpose: every sub-page already sets a full
+  // "Page — Whisper Master" title, so a template would suffix the brand twice.
   title: TITLE,
   description: DESCRIPTION,
+  applicationName: product.name,
+  alternates: { canonical: "/" },
+  // Search intent, not vanity terms. These are the queries someone types when
+  // they already know they have this problem — low volume, high conversion —
+  // and they name the actual competitive set rather than "typing".
   keywords: [
-    "voice to text",
-    "mac dictation",
+    "mac dictation app",
+    "offline dictation mac",
     "on-device transcription",
     "private speech to text",
-    "voice productivity",
+    "dictation without cloud",
+    "superwhisper alternative",
+    "macwhisper alternative",
+    "hipaa dictation software",
+    "voice to text mac",
   ],
   openGraph: {
     title: TITLE,
     description: DESCRIPTION,
     type: "website",
     siteName: product.name,
+    locale: "en_US",
+    url: "/",
   },
   twitter: {
     card: "summary_large_image",
     title: TITLE,
     description: "Voice-to-text that never leaves your Mac.",
   },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  category: "productivity",
 };
 
 export const viewport: Viewport = {

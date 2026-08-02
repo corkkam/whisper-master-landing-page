@@ -31,8 +31,16 @@ export default function Footer() {
           <Link href="/#features">Features</Link>
           <Link href="/#how">How it works</Link>
           <Link href="/#principles">Principles</Link>
+          <Link href="/pricing">Pricing</Link>
+          <Link href="/for-teams">For teams</Link>
           <Link href="/roadmap">Roadmap</Link>
           <Link href="/download">Download</Link>
+          {/* The privacy story is the product's strongest argument, so the page
+              that proves it sits in the footer of every page, not buried with
+              the legalese. */}
+          <Link href="/trust">What leaves your Mac</Link>
+          <Link href="/privacy">Privacy</Link>
+          <Link href="/terms">Terms</Link>
           <CookieSettingsLink />
         </nav>
 

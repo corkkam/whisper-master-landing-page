@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useSignIn, useSignUp, useUser } from "@clerk/nextjs";
 import {
   submitWaitlist,
   getDashboard,
   claimSocial,
-  startDonationCheckout,
   type Dashboard,
 } from "@/lib/waitlist/actions";
 import {
@@ -14,11 +14,10 @@ import {
   PLATFORM_OPTIONS,
   REFERRAL_OPTIONS,
 } from "@/lib/waitlist/schema";
-import { MILESTONES, DONATION_TIERS, nextMilestone } from "@/lib/waitlist/points";
+import { MILESTONES, nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
 import { publishDashboard } from "./useWaitlistStatus";
 import Turnstile from "./Turnstile";
-import { track } from "@vercel/analytics";
 import {
   ArrowRightIcon,
   CheckIcon,
@@ -104,7 +103,6 @@ export default function JoinModal({
   const [copied, setCopied] = useState(false);
   const [returning, setReturning] = useState(false);
   const [initializing, setInitializing] = useState(true);
-  const [donationLoading, setDonationLoading] = useState<string | null>(null);
   // Turnstile token for the details submit. Null until the widget solves (or
   // immediately "dev-skip" when no site key is configured); the server verifies
   // it, so this is only about not letting the user submit before it lands.
@@ -354,22 +352,6 @@ export default function JoinModal({
     const d = await getDashboard();
     setDash(d);
     publishDashboard(d);
-  }
-
-  // ── Donation / payment ──────────────────────────────────────────────────────
-
-  async function handleDonate(tierKey: string) {
-    track("payment_interest", { tier: tierKey });
-    setDonationLoading(tierKey);
-    const tier = tierKey as Parameters<typeof startDonationCheckout>[0];
-    const res = await startDonationCheckout(tier);
-    if (res.ok) {
-      window.location.href = res.checkoutUrl;
-    } else {
-      setError(res.error);
-      setTimeout(() => setError(""), 3000);
-    }
-    setDonationLoading(null);
   }
 
   // ── Render ──────────────────────────────────────────────────────────────────
@@ -735,34 +717,26 @@ export default function JoinModal({
                       </div>
                     </div>
 
-                    {/* Donation / skip-the-queue — compact */}
+                    {/* Where the "skip the queue" donation tiers used to sit.
+                        They asked for money the site could not take. This says
+                        the true thing instead, and sends anyone curious about
+                        cost to the page that answers it. */}
                     <div>
                       <div className="flex items-center justify-between gap-3 rounded-lg border border-white/[0.07] bg-white/[0.02] px-3 py-2.5">
                         <div>
                           <p className="text-[11px] font-semibold uppercase tracking-eyebrow text-white/40">
-                            Skip the queue
+                            Free during beta
                           </p>
                           <p className="mt-0.5 text-[10px] text-white/40">
-                            One-time support = instant spot bump.
+                            No card, ever, for the beta.
                           </p>
                         </div>
-                        <div className="flex shrink-0 gap-1.5">
-                          {DONATION_TIERS.map((tier) => (
-                            <button
-                              key={tier.key}
-                              onClick={() => handleDonate(tier.key)}
-                              disabled={donationLoading === tier.key}
-                              title={`${tier.label} — ${tier.perk}`}
-                              className={`rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold transition hover:border-ember/25 hover:bg-white/[0.06] disabled:opacity-60 ${tier.color}`}
-                            >
-                              {donationLoading === tier.key ? (
-                                <Spinner />
-                              ) : (
-                                `$${tier.amount}`
-                              )}
-                            </button>
-                          ))}
-                        </div>
+                        <Link
+                          href="/pricing"
+                          className="shrink-0 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold text-ember-bright transition hover:border-ember/25 hover:bg-white/[0.06]"
+                        >
+                          See pricing
+                        </Link>
                       </div>
                       {error && (
                         <p className="mt-2 text-center text-xs text-white/50">{error}</p>
@@ -850,6 +824,13 @@ function RewardsList({
               </span>
               <span className={hit || isNext ? "text-white/85" : "text-white/50"}>
                 {m.label}
+                {/* State what the reward is worth. An unpriced "Lifetime Pro"
+                    is a promise nobody can size — including us. */}
+                {m.worth && (
+                  <span className="ml-1.5 text-[10px] text-white/35">
+                    {m.worth}
+                  </span>
+                )}
               </span>
               <span
                 className={`ml-auto font-mono text-[10px] ${

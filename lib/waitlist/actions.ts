@@ -23,7 +23,6 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { verifyTurnstile } from "@/lib/turnstile";
 import { waitlistSchema, type WaitlistInput } from "./schema";
 import { REFERRAL_COOKIE } from "./constants";
-import type { DonationTierKey } from "./points";
 
 // ── waitlist write (Clerk-verified, referral-aware) ───────────────────────────
 
@@ -125,50 +124,18 @@ export async function claimSocial(network: "x" | "linkedin") {
   return { ok: !error };
 }
 
-// ── donation / payment support (placeholder — wire payment webhook here) ──────
-
-export type DonationResult =
-  | { ok: true; checkoutUrl: string }
-  | { ok: false; error: string };
-
-/**
- * Initiates a donation/support checkout session.
- * TODO: Replace the stub below with your payment provider (Stripe, Polar, etc.).
- *
- * On payment success the provider's webhook route — after verifying the webhook
- * signature — should call `awardDonationPoints` from `./queries.ts`. Do NOT
- * re-export that helper from this file: it would become a public endpoint that
- * lets anyone grant arbitrary points to any account.
- */
-export async function startDonationCheckout(
-  tier: DonationTierKey
-): Promise<DonationResult> {
-  const { userId } = await auth();
-  if (!userId) return { ok: false, error: "Please sign in first." };
-
-  // Whitelist the tier before it reaches the database.
-  const VALID_TIERS: readonly string[] = ["supporter", "champion", "founder"];
-  if (!VALID_TIERS.includes(tier)) {
-    return { ok: false, error: "Unknown support tier." };
-  }
-
-  // Record payment interest — even before the provider is wired up, every
-  // tier click tells us how many users would pay. Best-effort: never blocks
-  // the checkout path.
-  const supabase = createAdminClient();
-  const { error: trackErr } = await supabase
-    .from("payment_clicks")
-    .insert({ user_id: userId, tier });
-  if (trackErr) {
-    console.error("[waitlist] payment_clicks insert failed:", trackErr.message);
-  }
-
-  // STUB — swap with real Stripe / Polar checkout URL
-  return {
-    ok: false,
-    error: "Payment integration coming soon — stay tuned!",
-  };
-}
+// ── donation / payment support ───────────────────────────────────────────────
+//
+// `startDonationCheckout` lived here and has been removed. It was a stub that
+// unconditionally returned "Payment integration coming soon", so the only thing
+// a user could get from a payment button was an error toast. See the note in
+// `./points.ts` for why the tiers themselves are gone.
+//
+// When real checkout is wired (see docs/10-monetization.md for the processor
+// decision), the action belongs here, and the provider's webhook handler belongs
+// in a route handler that verifies the signature before granting anything. Do
+// NOT re-export a points-granting helper from this file: every export here is a
+// public HTTP endpoint, so that would let anyone grant themselves any entitlement.
 
 // ── reads ────────────────────────────────────────────────────────────────────
 
