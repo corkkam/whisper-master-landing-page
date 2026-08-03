@@ -45,8 +45,24 @@ export const product = {
 // - `beta` is gated: only users with Clerk `publicMetadata.betaAccess === true`
 //   see the real link (see app/download/page.tsx). The beta DMG is produced by
 //   the beta release channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
+// ⚠️ `stable` points at the VERSIONED key, not the WhisperMaster.dmg alias, and
+// must be bumped on every stable release. The alias is unsafe to link:
+// publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached
+// body** for that URL afterwards while HEAD on the same URL reports the new
+// object. On 2026-08-04 that meant dl.corkkam.com/WhisperMaster.dmg kept serving
+// 1.2.8 — carrying the retired model.scoopscore.in feed and the *exposed*
+// SUPublicEDKey — for an unbounded time after 1.2.9 shipped. `cf-cache-status:
+// DYNAMIC` on the HEAD response does not mean the GET path is uncached; do not
+// trust it. A versioned key is written once and never overwritten, so it cannot
+// go stale.
+//
+// To go back to the alias, add a Cloudflare cache purge for that exact URL as the
+// last step of publish-dmg.sh; until that exists, keep linking the versioned key.
 export const downloads = {
-  stable: "https://dl.corkkam.com/WhisperMaster.dmg",
+  stable: "https://dl.corkkam.com/WhisperMaster-1.2.9.dmg",
+  // Same overwrite-staleness hazard applies here — this is an alias too. Lower
+  // stakes because beta is gated and its audience re-downloads often, but if a
+  // beta tester reports installing a build you didn't ship, this is why.
   beta: "https://dl.corkkam.com/WhisperMaster-beta.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
