@@ -63,8 +63,11 @@ export const product = {
 //
 // To go back to the alias, add a Cloudflare cache purge for that exact URL as the
 // last step of publish-dmg.sh; until that exists, keep linking the versioned key.
+// Versioning was reset to 1.0.0 for the launch, so this number is *lower* than
+// the 1.2.x builds referenced above. That is deliberate, not a typo: 1.0.0 is the
+// newest build (its CFBundleVersion still increases, which is what Sparkle reads).
 export const downloads = {
-  stable: "https://dl.corkkam.com/WhisperMaster-1.2.10.dmg",
+  stable: "https://dl.corkkam.com/WhisperMaster-1.0.0.dmg",
   // Same overwrite-staleness hazard applies here — this is an alias too. Lower
   // stakes because beta is gated and its audience re-downloads often, but if a
   // beta tester reports installing a build you didn't ship, this is why.
