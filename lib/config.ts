@@ -56,10 +56,15 @@ export const product = {
 // trust it. A versioned key is written once and never overwritten, so it cannot
 // go stale.
 //
+// Confirmed again on the 1.2.10 release: minutes after publish-dmg.sh uploaded
+// both keys, a plain GET on the alias still returned the 1.2.9 body while the
+// versioned key returned 1.2.10 (different sha256, verified by mounting each).
+// So this is the normal behaviour of that alias, not a one-off.
+//
 // To go back to the alias, add a Cloudflare cache purge for that exact URL as the
 // last step of publish-dmg.sh; until that exists, keep linking the versioned key.
 export const downloads = {
-  stable: "https://dl.corkkam.com/WhisperMaster-1.2.9.dmg",
+  stable: "https://dl.corkkam.com/WhisperMaster-1.2.10.dmg",
   // Same overwrite-staleness hazard applies here — this is an alias too. Lower
   // stakes because beta is gated and its audience re-downloads often, but if a
   // beta tester reports installing a build you didn't ship, this is why.
