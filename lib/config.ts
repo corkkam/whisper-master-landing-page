@@ -27,23 +27,27 @@ export const product = {
 // ─────────────────────────────────────────────────────────────────────────
 // DOWNLOADS
 // Direct-download artifacts on Cloudflare R2, served from the `whisper-master-macos`
-// bucket's public r2.dev host — the same host the app's Sparkle feeds and model
-// mirror use. Keep this host in lock-step with CH_SU_FEED_URL in the app repo's
-// Scripts/channel.sh; a link pointing at a bucket the release scripts don't
-// upload to serves a stale build indefinitely, which is what it did before.
+// bucket via the corkkam custom domain `dl.corkkam.com` — the same host the app's
+// Sparkle feeds and model mirror use. Keep this host in lock-step with
+// CH_SU_FEED_URL in the app repo's Scripts/channel.sh; a link pointing at a bucket
+// the release scripts don't upload to serves a stale build indefinitely, which is
+// what it did before.
 //
-// Note `stable` here is 1.2.8, whose baked SUFeedURL is still the retired
-// model.scoopscore.in host — that is the deliberate hard cutover, so a fresh
-// stable install will not auto-update until a stable release is cut on this
-// bucket. Betas are unaffected: they already poll appcast-beta.xml here.
+// The host moved r2.dev → dl.corkkam.com on 2026-08-04. Same bucket, so `models/`
+// and every artifact came along unchanged — it is a DNS/alias change, not a data
+// migration. The custom domain also gets edge caching and escapes r2.dev's
+// public-bucket rate limits.
 //
-// - `stable` is public: anyone can download it, signed in or not.
+// - `stable` is public and unauthenticated: anyone can download it, signed in or
+//   not, and /download renders this link for signed-out visitors. The *app* still
+//   requires Clerk sign-in on first launch — that gate is deliberate and stays
+//   (see the vault's decisions note), so don't let download copy imply otherwise.
 // - `beta` is gated: only users with Clerk `publicMetadata.betaAccess === true`
 //   see the real link (see app/download/page.tsx). The beta DMG is produced by
 //   the beta release channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
 export const downloads = {
-  stable: "https://pub-98e94ebcf8904c07b38b85605ad49284.r2.dev/WhisperMaster.dmg",
-  beta: "https://pub-98e94ebcf8904c07b38b85605ad49284.r2.dev/WhisperMaster-beta.dmg",
+  stable: "https://dl.corkkam.com/WhisperMaster.dmg",
+  beta: "https://dl.corkkam.com/WhisperMaster-beta.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;

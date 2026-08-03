@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { currentUser } from "@clerk/nextjs/server";
-import { SignInButton, SignUpButton } from "@clerk/nextjs";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
 import JoinButton from "@/components/waitlist/JoinButton";
@@ -12,11 +11,14 @@ import { downloads, product } from "@/lib/config";
 export const metadata: Metadata = {
   title: `Download ${product.name}`,
   description:
-    "Download Whisper Master for macOS. Sign in to get the stable build; the beta channel unlocks once you're approved off the waitlist.",
+    "Download Whisper Master for macOS — the stable build is free and needs no account. The beta channel unlocks once you're approved off the waitlist.",
 };
 
-// Auth-dependent, and the artifact URLs are only rendered for signed-in users —
-// so this must never be cached or statically prerendered.
+// The stable link is public, but the *beta* card still branches on Clerk
+// `publicMetadata.betaAccess` and on waitlist rank, so the page reads
+// `currentUser()` on every request and must not be cached or prerendered.
+// Do not "optimise" this back to static: a cached beta card would either leak
+// the beta artifact URL to unapproved users or hide it from approved ones.
 export const dynamic = "force-dynamic";
 
 export default async function DownloadPage() {
@@ -57,101 +59,80 @@ export default async function DownloadPage() {
           <p className="page-lede">
             {signedIn
               ? "Both builds transcribe entirely on your device. Pick the one that suits how much churn you want."
-              : "Builds live behind a free account so we know which channel you're on and can tell you when there's an update worth having."}
+              : "The stable build is a free download and needs no account. You'll create one the first time you open the app — that's what identifies your licence, and it's the only part that touches the network."}
           </p>
         </header>
 
-        {/* Signed out: one clear action, and no artifact URLs in the markup. */}
-        {!signedIn ? (
-          <section className="dl-gate">
-            <h2>Create a free account</h2>
-            <p>
-              It takes a few seconds with Google or an email code. We use it to
-              check which build you can download — never to see what you dictate.
+        {/* Stable is public and unauthenticated — the download page is the top
+            of the funnel, so nothing gates it. Only the *beta* card branches on
+            auth, because beta access is a manual approval off the waitlist. */}
+        <div className="dl-grid">
+          {/* ── Stable: public, no account required ───────────────────────── */}
+          <section className="dl-card dl-card--stable">
+            <div className="dl-badge">Stable</div>
+            <h2>The reliable build</h2>
+            <p className="dl-desc">
+              What most people run. Tested, notarized, and auto-updating. Pick
+              this if you just want dictation that works.
             </p>
-            <div className="dl-gate-actions">
-              <SignUpButton mode="modal" forceRedirectUrl="/download">
-                <button className="btn btn--primary btn--xl" type="button" data-cursor="Takes a second">
-                  Create your account
-                  <span aria-hidden="true">↗</span>
-                </button>
-              </SignUpButton>
-              <SignInButton mode="modal" forceRedirectUrl="/download">
-                <button className="btn btn--ghost btn--xl" type="button">
-                  I already have one
-                </button>
-              </SignInButton>
-            </div>
+            <a className="btn btn--primary" href={downloads.stable} data-cursor="Let's go">
+              Download for macOS
+              <span aria-hidden="true">↓</span>
+            </a>
             <p className="dl-req">{downloads.requirements}</p>
           </section>
-        ) : (
-          <div className="dl-grid">
-            {/* ── Stable: any signed-in account ─────────────────────────── */}
-            <section className="dl-card dl-card--stable">
-              <div className="dl-badge">Stable</div>
-              <h2>The reliable build</h2>
-              <p className="dl-desc">
-                What most people run. Tested, notarized, and auto-updating. Pick
-                this if you just want dictation that works.
-              </p>
-              <a className="btn btn--primary" href={downloads.stable} data-cursor="Let's go">
-                Download for macOS
-                <span aria-hidden="true">↓</span>
-              </a>
-              <p className="dl-req">{downloads.requirements}</p>
-            </section>
 
-            {/* ── Beta: signed in *and* approved ────────────────────────── */}
-            <section className="dl-card dl-card--beta">
-              <div className="dl-badge dl-badge--beta">Beta</div>
-              <h2>Early builds, first</h2>
-              <p className="dl-desc">
-                New features and fixes before they reach stable, updated often.
-                Installs side by side with the stable app.
-              </p>
+          {/* ── Beta: requires sign-in *and* approval off the waitlist ────── */}
+          <section className="dl-card dl-card--beta">
+            <div className="dl-badge dl-badge--beta">Beta</div>
+            <h2>Early builds, first</h2>
+            <p className="dl-desc">
+              New features and fixes before they reach stable, updated often.
+              Installs side by side with the stable app.
+            </p>
 
-              {beta ? (
-                <>
-                  <a className="btn btn--signal" href={downloads.beta} data-cursor="You're in">
-                    Download the beta
-                    <span aria-hidden="true">↓</span>
-                  </a>
-                  <p className="dl-req">
-                    You&rsquo;re on the beta channel — updates arrive automatically.
-                  </p>
-                </>
-              ) : dash ? (
-                <>
-                  <JoinButton className="btn btn--ghost" cursor="Climb the list">
-                    Move up the line
-                    <span aria-hidden="true">↗</span>
-                  </JoinButton>
-                  <p className="dl-req">
-                    <Lock /> You&rsquo;re{" "}
-                    {dash.rank ? <strong>#{dash.rank}</strong> : "on the waitlist"}
-                    {dash.rank ? " on the waitlist" : ""}. We&rsquo;ll email you the
-                    moment you&rsquo;re approved — referrals move you up.
-                  </p>
-                </>
-              ) : (
-                <>
-                  <JoinButton className="btn btn--ghost" cursor="Takes one screen">
-                    Join the waitlist
-                    <span aria-hidden="true">↗</span>
-                  </JoinButton>
-                  <p className="dl-req">
-                    <Lock /> Beta is for approved waitlist members. Join to get in
-                    line — it takes one screen.
-                  </p>
-                </>
-              )}
-            </section>
-          </div>
-        )}
+            {beta ? (
+              <>
+                <a className="btn btn--signal" href={downloads.beta} data-cursor="You're in">
+                  Download the beta
+                  <span aria-hidden="true">↓</span>
+                </a>
+                <p className="dl-req">
+                  You&rsquo;re on the beta channel — updates arrive automatically.
+                </p>
+              </>
+            ) : dash ? (
+              <>
+                <JoinButton className="btn btn--ghost" cursor="Climb the list">
+                  Move up the line
+                  <span aria-hidden="true">↗</span>
+                </JoinButton>
+                <p className="dl-req">
+                  <Lock /> You&rsquo;re{" "}
+                  {dash.rank ? <strong>#{dash.rank}</strong> : "on the waitlist"}
+                  {dash.rank ? " on the waitlist" : ""}. We&rsquo;ll email you the
+                  moment you&rsquo;re approved — referrals move you up.
+                </p>
+              </>
+            ) : (
+              <>
+                <JoinButton className="btn btn--ghost" cursor="Takes one screen">
+                  Join the waitlist
+                  <span aria-hidden="true">↗</span>
+                </JoinButton>
+                <p className="dl-req">
+                  <Lock /> Beta is for approved waitlist members. Join to get in
+                  line — it takes one screen.
+                </p>
+              </>
+            )}
+          </section>
+        </div>
 
         <p className="dl-foot">
-          Both builds transcribe 100% on your device. Signing in only checks your
-          access — your voice and your transcripts never leave your Mac.
+          Both builds transcribe 100% on your device. The stable download needs
+          no account; the app asks you to sign in on first launch to identify
+          your licence — your voice and your transcripts never leave your Mac.
         </p>
       </main>
       <Footer />
