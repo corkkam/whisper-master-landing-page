@@ -11,11 +11,11 @@ import { downloads, product } from "@/lib/config";
 export const metadata: Metadata = {
   title: `Download ${product.name}`,
   description:
-    "Download Whisper Master for macOS — the stable build is free and needs no account. The beta channel unlocks once you're approved off the waitlist.",
+    "Download Whisper Master for macOS — the stable build is free and needs no account. The beta channel opens once you're approved for early access.",
 };
 
 // The stable link is public, but the *beta* card still branches on Clerk
-// `publicMetadata.betaAccess` and on waitlist rank, so the page reads
+// `publicMetadata.betaAccess` and on early-access rank, so the page reads
 // `currentUser()` on every request and must not be cached or prerendered.
 // Do not "optimise" this back to static: a cached beta card would either leak
 // the beta artifact URL to unapproved users or hide it from approved ones.
@@ -25,7 +25,7 @@ export default async function DownloadPage() {
   const user = await currentUser();
   const signedIn = user != null;
   const beta = isBetaUser(user?.publicMetadata);
-  // Only needed to tell "waiting in line" apart from "never joined".
+  // Only needed to tell "already asked for early access" apart from "never asked".
   const dash = signedIn && !beta ? await getDashboard() : null;
   const firstName = user?.firstName ?? null;
 
@@ -65,7 +65,12 @@ export default async function DownloadPage() {
 
         {/* Stable is public and unauthenticated — the download page is the top
             of the funnel, so nothing gates it. Only the *beta* card branches on
-            auth, because beta access is a manual approval off the waitlist. */}
+            auth, because beta access is still a manual approval.
+
+            Since sign-up went public, the beta queue is the *only* remaining
+            gate, and this card is the only place scarcity language belongs. Every
+            branch below therefore has to leave the visitor holding something:
+            the stable build is theirs today whatever the beta says. */}
         <div className="dl-grid">
           {/* ── Stable: public, no account required ───────────────────────── */}
           <section className="dl-card dl-card--stable">
@@ -82,7 +87,7 @@ export default async function DownloadPage() {
             <p className="dl-req">{downloads.requirements}</p>
           </section>
 
-          {/* ── Beta: requires sign-in *and* approval off the waitlist ────── */}
+          {/* ── Beta: requires sign-in *and* early-access approval ───────── */}
           <section className="dl-card dl-card--beta">
             <div className="dl-badge dl-badge--beta">Beta</div>
             <h2>Early builds, first</h2>
@@ -108,21 +113,26 @@ export default async function DownloadPage() {
                   <span aria-hidden="true">↗</span>
                 </JoinButton>
                 <p className="dl-req">
-                  <Lock /> You&rsquo;re{" "}
-                  {dash.rank ? <strong>#{dash.rank}</strong> : "on the waitlist"}
-                  {dash.rank ? " on the waitlist" : ""}. We&rsquo;ll email you the
-                  moment you&rsquo;re approved — referrals move you up.
+                  <Lock /> You&rsquo;re on the early-access list
+                  {dash.rank ? (
+                    <>
+                      {" "}
+                      at <strong>#{dash.rank}</strong>
+                    </>
+                  ) : null}
+                  . We&rsquo;ll email you the moment the beta opens for you —
+                  referrals move you up.
                 </p>
               </>
             ) : (
               <>
                 <JoinButton className="btn btn--ghost" cursor="Takes one screen">
-                  Join the waitlist
+                  Ask for early access
                   <span aria-hidden="true">↗</span>
                 </JoinButton>
                 <p className="dl-req">
-                  <Lock /> Beta is for approved waitlist members. Join to get in
-                  line — it takes one screen.
+                  <Lock /> Beta builds are invite-only — asking takes one screen.
+                  The stable build is yours right now either way.
                 </p>
               </>
             )}

@@ -3,7 +3,6 @@ import Link from "next/link";
 import { headers } from "next/headers";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
-import JoinButton from "@/components/waitlist/JoinButton";
 import PlanGrid from "@/components/pricing/PlanGrid";
 import { product } from "@/lib/config";
 import { defaultCurrencyForCountry } from "@/lib/pricing";
@@ -127,17 +126,21 @@ export default async function PricingPage() {
         <section className="page-cta">
           <h2>Get it while it&rsquo;s free</h2>
           <p>
-            Beta access is open. Dictate for a week and decide whether any of the
-            numbers above are worth paying.
+            Free while in beta, and the download needs no card. Dictate for a week
+            and decide whether any of the numbers above are worth paying.
           </p>
+          {/* Secondary action used to be "Join the waitlist". With sign-up public
+              that offered a visitor a queue they don't need, on the one page where
+              they've already shown buying intent. Multi-seat is where this page
+              pays for itself, so the second slot points at teams instead. */}
           <div className="page-cta-actions">
             <Link className="btn btn--primary" href="/download" data-cursor="Get the app">
               Download for Mac
               <span aria-hidden="true">↓</span>
             </Link>
-            <JoinButton className="btn btn--ghost" cursor="Join">
-              Join the waitlist
-            </JoinButton>
+            <Link className="btn btn--ghost" href="/for-teams" data-cursor="Seats & billing">
+              Buying for a team?
+            </Link>
           </div>
         </section>
       </main>

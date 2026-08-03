@@ -6,21 +6,17 @@ import Principles from "@/components/sections/Principles";
 import Comparison from "@/components/sections/Comparison";
 import DownloadCTA from "@/components/sections/DownloadCTA";
 import Footer from "@/components/sections/Footer";
-import { getWaitlistCount } from "@/lib/waitlist/queries";
 
-// Re-render on this interval so the live count stays current without a redeploy.
-export const revalidate = 120;
+// Fully static. The hero's live waitlist count was the only server data on this
+// page, and it went out with the waitlist-as-gate framing — so the landing page
+// no longer needs Supabase to render, and can't be taken down by it either.
 
-export default async function Page() {
-  // null when the database can't be reached — the hero drops the line rather
-  // than substituting a number nobody can stand behind.
-  const waitlistCount = await getWaitlistCount();
-
+export default function Page() {
   return (
     <>
       <Nav />
       <main>
-        <Hero waitlistCount={waitlistCount} />
+        <Hero />
         <HowItWorks />
         <FeatureWheel />
         <Principles />

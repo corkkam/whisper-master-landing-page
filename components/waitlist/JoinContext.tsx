@@ -34,16 +34,20 @@ export function useJoin() {
 /** What the last join attempt did, held until the modal closes. */
 type Outcome = { ok: true; rank: number | null } | { ok: false; reason: string };
 
+// "Waitlist" internally (the Supabase table, the queries, this directory) but
+// "early-access list" in anything a visitor reads: sign-up is public now, so the
+// word "waitlist" wrongly implies they're locked out of the product. What they're
+// queued for is the beta channel, nothing more.
 function joinedMessage(rank: number | null) {
   return rank
-    ? `You're on the waitlist — #${rank}. We'll email you the moment you're approved.`
-    : "You're on the waitlist. We'll email you the moment you're approved.";
+    ? `You're on the early-access list at #${rank}. We'll email you the moment the beta opens for you.`
+    : "You're on the early-access list. We'll email you the moment the beta opens for you.";
 }
 
 function failedMessage(reason: string) {
   // The server's reason is the useful half; the retry hint is what the toast
   // adds, since the form it came from is no longer on screen.
-  return `Couldn't add you to the waitlist. ${reason}`;
+  return `Couldn't add you to the early-access list. ${reason}`;
 }
 
 export default function JoinProvider({ children }: { children: ReactNode }) {

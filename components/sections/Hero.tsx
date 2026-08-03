@@ -16,12 +16,7 @@ const rise = {
   show: { opacity: 1, y: 0 },
 };
 
-export default function Hero({
-  waitlistCount,
-}: {
-  /** Live waitlist size, or null when the database couldn't be reached. */
-  waitlistCount: number | null;
-}) {
+export default function Hero() {
   const reduce = useReducedMotion();
   const { user, isLoaded } = useUser();
 
@@ -95,21 +90,16 @@ export default function Hero({
           </a>
         </motion.div>
 
-        {/* The count says waitlist, not usage: these people have signed up to be
-            told when the beta opens, so "already talking to their Macs" was
-            describing something none of them are doing yet. Omitted entirely
-            when the read fails — an absent line beats an invented one. */}
+        {/* The headcount that used to sit here counted waitlist rows — a queue
+            that no longer stands between a visitor and the app. Advertising it
+            now reads as "other people are waiting, so are you", which is both
+            untrue and the opposite of the ask. The measured claims in
+            `.hero-proof` below carry the proof; this line carries the one fact a
+            visitor needs before clicking download. */}
         <motion.p className="hero-meta" variants={rise}>
           <span>{downloads.requirements}</span>
-          {waitlistCount != null && (
-            <>
-              <i aria-hidden="true" />
-              <span>
-                {waitlistCount.toLocaleString("en-US")}{" "}
-                {waitlistCount === 1 ? "person" : "people"} on the waitlist
-              </span>
-            </>
-          )}
+          <i aria-hidden="true" />
+          <span>Free while in beta — no card</span>
         </motion.p>
       </motion.div>
 

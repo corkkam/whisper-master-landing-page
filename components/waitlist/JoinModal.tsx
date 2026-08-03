@@ -160,8 +160,15 @@ export default function JoinModal({
     try {
       const { error: err } = await signIn.sso({
         strategy: "oauth_google",
-        redirectUrl: `${window.location.origin}/sso-callback`,
-        redirectCallbackUrl: `${window.location.origin}/?join=details`,
+        // `redirectUrl` is where the user lands once the flow is COMPLETE;
+        // `redirectCallbackUrl` is the page that FINISHES a flow needing more
+        // information — i.e. our <AuthenticateWithRedirectCallback /> route.
+        // These two were swapped, which sent the "needs more info" branch (the
+        // transfer-to-sign-up every first-time Google user takes) to the bare
+        // homepage, where nothing completes the handshake and the sign-in
+        // silently dead-ends.
+        redirectUrl: `${window.location.origin}/?join=details`,
+        redirectCallbackUrl: `${window.location.origin}/sso-callback`,
       });
       // Surface the real reason (e.g. Google connection disabled, redirect not
       // allowlisted) instead of a generic message — otherwise the button just
@@ -341,8 +348,10 @@ export default function JoinModal({
   }
 
   async function share(network: "x" | "linkedin") {
+    // Deliberately not "I just got early access" — the sharer is usually still
+    // pending, and a claim they can't back is a bad first impression of the app.
     const text =
-      "I just joined the Whisper Master waitlist — talk, and it types. Join with my link:";
+      "I'm on the Whisper Master early-access list — talk, and it types. Join with my link:";
     const url =
       network === "x"
         ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`
@@ -396,9 +405,12 @@ export default function JoinModal({
             {/* ── EMAIL ──────────────────────────────────────────────── */}
             {step === "email" && (
               <div>
-                <h2 className="text-xl font-semibold text-white">Join the waitlist</h2>
+                <h2 className="text-xl font-semibold text-white">
+                  Ask for early access
+                </h2>
                 <p className="mt-1 text-sm text-white/55">
-                  Earn priority access — invite friends to move up the line.
+                  Beta builds before they ship. The stable app is a free download
+                  either way.
                 </p>
 
                 <button
@@ -610,17 +622,20 @@ export default function JoinModal({
                   <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-ember/20 text-ember-bright ring-1 ring-ember/30">
                     <CheckIcon className="h-6 w-6" />
                   </span>
+                  {/* Not "You're in!" — that reads as "you have the beta", which
+                      is exactly what this screen can't promise. It's also the
+                      wrong celebration now that anyone can go download stable. */}
                   <h2 className="mt-4 text-2xl font-semibold text-white">
                     {returning
                       ? `Welcome back${dash.fullName ? `, ${dash.fullName.split(" ")[0]}` : ""} 👋`
-                      : "You're in! 🎉"}
+                      : "You're on the list 🎉"}
                   </h2>
                   <p className="mt-1 text-sm text-white/55">
                     {returning
-                      ? "You're already on the list — share your link or support us to climb higher."
+                      ? "Share your link or support us to move up the list."
                       : dash.movedUp > 0
                       ? `You've already jumped +${dash.movedUp} spots.`
-                      : "Invite friends or support us to climb the line."}
+                      : "Invite friends or support us to move up the list."}
                   </p>
                 </div>
 
