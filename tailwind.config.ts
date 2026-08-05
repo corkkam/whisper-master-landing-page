@@ -3,12 +3,13 @@ import type { Config } from "tailwindcss";
 /**
  * Palette concept: a treated recording room at night.
  *
+ * The ground is a flat neutral stack — no gradients, no tinted fields. Every
+ * background on the site is one of these six values and nothing between them,
+ * so depth comes from the step between surfaces rather than from a blur.
+ *
  * The two accents carry meaning and should not be used interchangeably:
  *   ember  → you. Your voice, the live record light, anything human.
  *   signal → the machine. On-device processing, locked-in text, data.
- *
- * Text is warm (`bone`) on a cool ground (`ink`) — that contrast *is* the
- * product thesis: warm human speech into a cool private machine.
  */
 const config: Config = {
   content: [
@@ -19,17 +20,21 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // The approved flat dark stack. `ink.950` is the warm near-black used
+        // where a surface sits directly under ember.
         ink: {
-          DEFAULT: "#07090e",
-          900: "#07090e",
-          800: "#0b0f17",
-          700: "#101623",
-          600: "#18202f",
+          DEFAULT: "#000000",
+          950: "#131209",
+          900: "#000000",
+          800: "#181818",
+          700: "#1f1f1f",
+          600: "#272727",
+          500: "#313131",
         },
         haze: {
-          DEFAULT: "#8a94a8",
-          bright: "#aab3c4",
-          dim: "#5c6577",
+          DEFAULT: "#9b9b9b",
+          bright: "#c4c4c4",
+          dim: "#6e6e6e",
         },
         bone: "#f2efe9",
         ember: {
@@ -48,20 +53,25 @@ const config: Config = {
         },
       },
       fontFamily: {
-        display: ["var(--font-display)", "Bricolage Grotesque", "ui-sans-serif", "system-ui", "sans-serif"],
-        sans: ["var(--font-sans)", "Instrument Sans", "ui-sans-serif", "system-ui", "sans-serif"],
-        mono: ["var(--font-mono)", "JetBrains Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
+        // `display` is the same face as `sans`; the alias only survives so the
+        // headline rules read as headline rules.
+        display: ["var(--font-sans)", "Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-sans)", "Geist", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "Geist Mono", "ui-monospace", "SFMono-Regular", "Menlo", "monospace"],
       },
       letterSpacing: {
         label: "0.2em",
-        display: "-0.045em",
+        display: "-0.04em",
+      },
+      transitionTimingFunction: {
+        fluid: "cubic-bezier(0.32,0.72,0,1)",
       },
       maxWidth: {
         content: "1240px",
         prose: "62ch",
       },
       boxShadow: {
-        raised: "inset 0 1px rgba(255,255,255,0.07), 0 18px 50px rgba(0,0,0,0.45)",
+        raised: "0 18px 50px rgba(0,0,0,0.45)",
         ember: "0 0 70px -12px rgba(255,106,61,0.55)",
         signal: "0 0 70px -12px rgba(110,231,223,0.45)",
       },

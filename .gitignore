@@ -43,3 +43,9 @@ service-account*.json
 *.p8
 *.p12
 *.mobileprovision
+
+# clerk configuration (can include secrets)
+/.clerk/
+
+# design review screenshots
+/.shots/

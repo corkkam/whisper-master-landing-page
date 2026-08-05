@@ -13,8 +13,15 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { product } from "@/lib/config";
 import { siteUrl } from "@/lib/site";
 
-// Display face. Headlines lean on weight 800 and tight tracking (-0.045em to
-// -0.055em) rather than the width axis; see `.hero-name` / `.section-title`.
+/**
+ * The Mac app's three faces, so the site is set in the product's own voice
+ * rather than one invented for marketing.
+ *
+ * `Sources/WhisperMaster/UI/Theme.swift` fixes these: Bricolage Grotesque for
+ * display and titles, tightly tracked; Instrument Sans for body and UI. The app
+ * uses SF Mono as its utility face — unavailable on the web, and JetBrains Mono
+ * is the substitution its own docs name, so that is what runs here.
+ */
 const display = Bricolage_Grotesque({
   subsets: ["latin"],
   display: "swap",
@@ -22,13 +29,12 @@ const display = Bricolage_Grotesque({
   weight: ["400", "600", "700", "800"],
 });
 
-const sans = Instrument_Sans({
+const body = Instrument_Sans({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-sans",
+  variable: "--font-body",
 });
 
-// Data, labels, and anything the app itself would render in monospace.
 const mono = JetBrains_Mono({
   subsets: ["latin"],
   display: "swap",
@@ -84,7 +90,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07090e",
+  themeColor: "#f4e6cd",
   width: "device-width",
   initialScale: 1,
 };
@@ -98,9 +104,13 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${display.variable} ${sans.variable} ${mono.variable}`}
+        className={`${display.variable} ${body.variable} ${mono.variable}`}
       >
         <body className="antialiased">
+          {/* Keyboard users land here first and can jump the island nav. */}
+          <a className="skip-link" href="#top">
+            Skip to content
+          </a>
           <SmoothScroll>
             <JoinProvider>
               {/* Signature element: a mic-level waveform down the page edge that

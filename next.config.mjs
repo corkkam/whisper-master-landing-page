@@ -50,6 +50,11 @@ const securityHeaders = [
 
 const nextConfig = {
   reactStrictMode: true,
+  // The dev server only serves /_next/* to origins it has been told about.
+  // Without this, opening the dev site through the Tailscale hostname returns
+  // the HTML but 404s every asset, so the page renders unstyled and blank.
+  // Dev-only setting; it has no effect on a production build.
+  allowedDevOrigins: ["linux-1.tail75ba2a.ts.net", "linux-1", "100.90.239.81"],
   // three ships modern ESM; transpiling keeps older bundlers happy. (R3F and
   // drei used to be listed here, but nothing imports them any more.)
   transpilePackages: ["three"],

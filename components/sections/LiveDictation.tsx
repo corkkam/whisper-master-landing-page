@@ -2,34 +2,24 @@
 
 import { useEffect, useReducer, useRef } from "react";
 import { useReducedMotion } from "framer-motion";
-import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import { dictationTakes } from "@/lib/content";
 
 type Phase = "speaking" | "thinking" | "written" | "resting";
 
 type State = { take: number; chars: number; phase: Phase };
 
-/**
- * The orb state each phase is actually in. `solving` for the clean-up pass
- * because that is what it depicts — bands scrambling and clicking back — and
- * `listening` holds through `written`, where the orb is frozen anyway.
- */
-const ORB_FOR_PHASE: Record<Phase, OrbState> = {
-  speaking: "listening",
-  thinking: "solving",
-  written: "listening",
-  resting: "listening",
-};
-
 /** Milliseconds per spoken character — roughly a natural 160 wpm. */
 const CHAR_MS = 42;
 const THINK_MS = 620;
 const HOLD_MS = 2600;
 
-function reducer(state: State, action: "tick" | "settle" | "write" | "next"): State {
-  switch (action) {
-    case "tick":
-      return { ...state, chars: state.chars + 1 };
+function reducer(
+  state: State,
+  action: { type: "chars"; n: number } | { type: "settle" | "write" | "next" }
+): State {
+  switch (action.type) {
+    case "chars":
+      return state.chars === action.n ? state : { ...state, chars: action.n };
     case "settle":
       return { ...state, phase: "thinking" };
     case "write":
@@ -48,7 +38,17 @@ function reducer(state: State, action: "tick" | "settle" | "write" | "next"): St
  * replaces it with the cleaned result. Runs on a loop, pauses when scrolled out
  * of view, and shows the finished state immediately under reduced motion.
  */
-export default function LiveDictation() {
+export default function LiveDictation({
+  onPhase,
+}: {
+  /**
+   * Reports each phase change to the hero, which drives the notch replica and
+   * the pond's ripple from it. The demo stays the single source of truth for
+   * what the product is doing, so the band, the water and the panel can never
+   * disagree — the same reason `NotchActivity` exists in the app.
+   */
+  onPhase?: (phase: Phase) => void;
+} = {}) {
   const reduce = useReducedMotion();
   const [state, dispatch] = useReducer(reducer, {
     take: 0,
@@ -75,52 +75,85 @@ export default function LiveDictation() {
   const take = dictationTakes[state.take];
 
   useEffect(() => {
+    onPhase?.(state.phase);
+  }, [state.phase, onPhase]);
+
+  /**
+   * The speaking pass runs off the clock inside one rAF rather than a chain of
+   * `setTimeout`s, one per character. A timeout chain accumulates every late
+   * frame — the line visibly stutters and the whole take drifts long. Reading
+   * elapsed time each frame is self-correcting: a dropped frame costs nothing
+   * because the next one computes the right character count regardless.
+   */
+  useEffect(() => {
     if (reduce) return;
+    if (state.phase !== "speaking") return;
 
-    let id: number;
+    let raf = 0;
+    let start = 0;
+    const total = take.said.length;
 
-    if (state.phase === "speaking") {
-      if (state.chars < take.said.length) {
-        // Pause a little longer on spaces — it reads as breathing, not typing.
-        const isSpace = take.said[state.chars] === " ";
-        id = window.setTimeout(
-          () => visibleRef.current && dispatch("tick"),
-          CHAR_MS + (isSpace ? 55 : 0)
-        );
+    const step = (now: number) => {
+      if (!start) start = now;
+      if (visibleRef.current) {
+        const n = Math.min(total, Math.floor((now - start) / CHAR_MS));
+        dispatch({ type: "chars", n });
+        if (n >= total) {
+          raf = 0;
+          window.setTimeout(() => dispatch({ type: "settle" }), 420);
+          return;
+        }
       } else {
-        id = window.setTimeout(() => dispatch("settle"), 420);
+        // Off screen: hold the clock rather than racing ahead while hidden.
+        start += 16;
       }
-    } else if (state.phase === "thinking") {
-      id = window.setTimeout(() => dispatch("write"), THINK_MS);
-    } else {
-      id = window.setTimeout(() => dispatch("next"), HOLD_MS);
-    }
+      raf = requestAnimationFrame(step);
+    };
+    raf = requestAnimationFrame(step);
+    return () => {
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [state.phase, state.take, take.said.length, reduce]);
 
+  useEffect(() => {
+    if (reduce) return;
+    if (state.phase === "speaking") return;
+    const id = window.setTimeout(
+      () => dispatch({ type: state.phase === "thinking" ? "write" : "next" }),
+      state.phase === "thinking" ? THINK_MS : HOLD_MS
+    );
     return () => window.clearTimeout(id);
-  }, [state.phase, state.chars, take.said, reduce]);
+  }, [state.phase, reduce]);
 
   const written = reduce || state.phase === "written";
+  /**
+   * The previous take's result stays on the page while the next one is being
+   * spoken. Clearing it left the right-hand column blank for most of every
+   * cycle, which is what made the panel read as a large empty box.
+   */
+  const shown = written
+    ? take.wrote
+    : dictationTakes[(state.take + dictationTakes.length - 1) % dictationTakes.length].wrote;
   const heard = reduce ? take.said : take.said.slice(0, state.chars);
 
   return (
     <div className="capture" ref={hostRef}>
-      <div className="capture-bar">
-        <span className="capture-mark">
-          {/* The glyph and the word are the same claim, so the orb is driven by
-              the phase rather than picked once: hearing you, working it out, then
-              frozen when there is nothing left to do. */}
-          <ThinkingOrb
-            className="capture-orb"
-            state={ORB_FOR_PHASE[state.phase]}
-            size={20}
-            theme="dark"
-            paused={written}
-            aria-hidden="true"
-          />
-          {written ? "written" : state.phase === "thinking" ? "cleaning" : "listening"}
-        </span>
-        <Meter live={!written && !reduce} />
-        <span className="capture-shows">{take.shows}</span>
+      {/* The top edge of the screen, with the band hanging off it exactly as
+          the app draws it: the camera housing centred, the state word in the
+          left wing, your level in the right. See `.screen-edge` in globals. */}
+      <div className="screen-edge">
+        <div className="screen-band">
+          <span className="screen-wing screen-wing--l">
+            {written ? "Delivered" : state.phase === "thinking" ? "Polishing" : "Dictating"}
+          </span>
+          {/* The housing. The band moulds around it; nothing renders behind. */}
+          <span className="screen-housing" aria-hidden="true">
+            <i className="screen-lens" />
+          </span>
+          <span className="screen-wing screen-wing--r">
+            <Meter live={!written && !reduce} />
+          </span>
+        </div>
       </div>
 
       <div className="capture-body">
@@ -132,13 +165,14 @@ export default function LiveDictation() {
           </p>
         </div>
 
-        <div className={`capture-row capture-row--out ${written ? "is-in" : ""}`}>
+        <div className="capture-row capture-row--out is-in" data-fresh={written || undefined}>
           <span className="capture-tag capture-tag--out">It writes</span>
           <p className="capture-wrote" aria-live="polite">
-            {written ? take.wrote : ""}
+            {shown}
           </p>
         </div>
       </div>
+
     </div>
   );
 }

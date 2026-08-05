@@ -8,11 +8,30 @@ import {
 } from "framer-motion";
 import type { ReactNode } from "react";
 
-const EASE = [0.22, 1, 0.36, 1] as const;
+/**
+ * The site's one easing curve — heavy at the start, settling rather than
+ * stopping. Everything that moves resolves through it.
+ */
+const EASE = [0.32, 0.72, 0, 1] as const;
 
+/** 800ms. Long enough that the element reads as having mass. */
+const DURATION = 0.8;
+
+/**
+ * Elements arrive from below and out of focus, not just faded. The blur is what
+ * makes the entrance read as depth instead of opacity.
+ *
+ * `whileInView` compiles to an IntersectionObserver — there is no scroll
+ * listener anywhere in this file, deliberately.
+ */
 export const fadeUp: Variants = {
-  hidden: { opacity: 0, y: 24 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE } },
+  hidden: { opacity: 0, y: 64, filter: "blur(12px)" },
+  show: {
+    opacity: 1,
+    y: 0,
+    filter: "blur(0px)",
+    transition: { duration: DURATION, ease: EASE },
+  },
 };
 
 const container: Variants = {
@@ -39,11 +58,12 @@ export function Reveal({
       whileInView="show"
       viewport={{ once: true, margin: "-80px" }}
       variants={{
-        hidden: { opacity: 0, y: 24 },
+        hidden: { opacity: 0, y: 64, filter: "blur(12px)" },
         show: {
           opacity: 1,
           y: 0,
-          transition: { duration: 0.6, delay, ease: EASE },
+          filter: "blur(0px)",
+          transition: { duration: DURATION, delay, ease: EASE },
         },
       }}
     >
