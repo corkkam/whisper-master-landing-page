@@ -1139,22 +1139,25 @@ cite {
      pushed onto the koi instead of the open water beside it. */
   .hero-water {
     inset: 56px 0 auto;
-    height: 34vh;
-    min-height: 220px;
-    max-height: 300px;
+    height: 30vh;
+    min-height: 200px;
+    max-height: 270px;
   }
   .hero-water .water-img,
   .hero-water .water-canvas {
     object-fit: cover;
     object-position: 84% 26%;
   }
+  /* The fade used to begin at 44%, so over half the band was art on its way
+     out rather than art — which read as dead space on top of the padding below
+     it. It now holds to 72% and finishes inside the band. */
   .hero-water {
-    mask-image: linear-gradient(#000 0%, #000 44%, rgba(0, 0, 0, 0.32) 74%, transparent 96%);
-    -webkit-mask-image: linear-gradient(#000 0%, #000 44%, rgba(0, 0, 0, 0.32) 74%, transparent 96%);
+    mask-image: linear-gradient(#000 0%, #000 72%, transparent 100%);
+    -webkit-mask-image: linear-gradient(#000 0%, #000 72%, transparent 100%);
   }
-  /* Clears the band, and nothing more. */
+  /* Sits directly under the band. */
   .hero {
-    padding-top: calc(34vh + 24px);
+    padding-top: calc(30vh + 8px);
   }
 }
 
