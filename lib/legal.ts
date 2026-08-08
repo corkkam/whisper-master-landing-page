@@ -84,11 +84,11 @@ export const flows: Flow[] = [
     required: false,
   },
   {
-    what: "Anonymous product analytics",
+    what: "Product analytics",
     where: "PostHog and Google Analytics",
     payload:
-      "Six content-free events: app launched, onboarding finished, dictation completed, permission state, update installed, cleanup model downloaded. Word counts and durations are sent as ranges (“10–24 words”, “15–30s”), never exact figures, and never the words themselves.",
-    control: "Settings → General → “Share anonymous usage”. On until you turn it off.",
+      "Content-free events recording which features you use — app launched, dictation completed, a note created, a reminder ticked, a connector approved, and similar — each tagged with the feature area, your app version, your macOS version and your release channel. These are linked to your account: your Clerk user ID, email and name are held on your analytics profile so we can see which features a given customer relies on. Word counts and durations are sent as ranges (“10–24 words”, “15–30s”), never exact figures. Your transcripts, notes and recordings are never sent.",
+    control: "Settings → General → “Share usage data”. On until you turn it off.",
     onByDefault: true,
     required: false,
   },

@@ -151,7 +151,7 @@ export default function ForTeamsPage() {
               },
               {
                 what: "Product analytics",
-                where: "PostHog and Google Analytics — anonymous, content-free",
+                where: "PostHog and Google Analytics — account-linked, content-free",
                 reg: "Disabled and enforced",
                 tag: "optional",
               },

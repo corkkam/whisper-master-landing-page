@@ -131,8 +131,8 @@ export default function PrivacyPage() {
             <h2>5. How long we keep things</h2>
             <p>
               Account details are kept for as long as your account exists, and deleted
-              within 30 days of you closing it. Anonymous product analytics are retained
-              in aggregate and cannot be traced back to you. Daily statistics rollups —
+              within 30 days of you closing it. Product analytics are linked to your
+              account and are deleted along with it. Daily statistics rollups —
               if you have left &ldquo;Back up my stats&rdquo; on — are kept until you
               delete your account or ask us to remove them.
             </p>
