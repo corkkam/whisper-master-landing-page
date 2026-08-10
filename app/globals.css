@@ -984,7 +984,9 @@ cite {
    Set as a part number would be: the name, then the designation. */
 .wordmark {
   display: inline-flex;
-  align-items: baseline;
+  /* Centred, not baseline: the mark is a circle, and sitting a sphere on the
+     text baseline hangs it below the cap height it should be centred against. */
+  align-items: center;
   gap: 8px;
 }
 .wordmark-text {
@@ -1005,27 +1007,15 @@ cite {
   }
 }
 
-.level-mark {
-  display: inline-flex;
-  align-items: flex-end;
-  gap: 2px;
-  height: 12px;
-}
-.level-mark i {
-  width: 2px;
-  background: var(--live);
-}
-.level-mark i:nth-child(1) {
-  height: 40%;
-}
-.level-mark i:nth-child(2) {
-  height: 100%;
-}
-.level-mark i:nth-child(3) {
-  height: 62%;
-}
-.level-mark i:nth-child(4) {
-  height: 28%;
+/* The orb mark. 24px because the dot field needs room to read as a sphere —
+   the meter it replaced was 12px, but below ~20 the field collapses into a
+   plain ember ball and throws away the one thing that makes the mark
+   recognisable. Its own asset is drawn for exactly this box, so don't resize it
+   here without regenerating (`Scripts/make-logo.swift` → wordmarkDisplayPixels). */
+.wordmark-mark {
+  flex: none;
+  width: 24px;
+  height: 24px;
 }
 
 /* ══════════════════════════════════════════════════════════════════════
@@ -1264,10 +1254,6 @@ cite {
   -webkit-backdrop-filter: none;
   box-shadow: none;
   overflow: visible;
-}
-.capture-orb {
-  flex: none;
-  margin-inline: -3px;
 }
 .meter {
   display: inline-flex;
