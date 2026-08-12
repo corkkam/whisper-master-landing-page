@@ -34,8 +34,10 @@ export default function RoadmapPage() {
           </h1>
           <p className="page-lede">
             Everything below is either running on machines today or actively being
-            built. Where we have measured numbers, they&rsquo;re here — including the
-            ones that still need work.
+            built. The version beside each entry says which build it lives in: stable
+            is what a download gives you, beta and dev run ahead of it. Where we have
+            measured numbers, they&rsquo;re here — including the ones that still need
+            work.
           </p>
         </header>
 
