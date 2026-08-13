@@ -32,7 +32,7 @@ const GROUPS: { head: string; links: { href: string; label: string }[] }[] = [
       { href: "/download", label: "Download" },
       // Off the footer while the beta is free — see components/Nav.tsx.
       // { href: "/pricing", label: "Pricing" },
-      { href: "/for-teams", label: "For teams" },
+      // { href: "/for-teams", label: "For teams" },
       { href: "/roadmap", label: "Roadmap" },
     ],
   },

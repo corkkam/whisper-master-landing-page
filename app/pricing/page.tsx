@@ -99,7 +99,11 @@ export default async function PricingPage() {
             </p>
           </div>
 
-          <div>
+          {/* The teams answer is out with the rest of the teams routing — it is
+              the one FAQ entry whose whole purpose is to hand the reader to
+              /for-teams, so leaving it would advertise the page this pass took
+              off the nav and the footer. Restore all three together. */}
+          {/* <div>
             <h3>Is there a team or enterprise plan?</h3>
             <p>
               Yes, and the per-seat prices are published rather than hidden behind
@@ -110,7 +114,7 @@ export default async function PricingPage() {
               security reviewer will ask for and is honest about where we
               don&rsquo;t clear the bar yet.
             </p>
-          </div>
+          </div> */}
 
           <div>
             <h3>Will you raise the price on me later?</h3>
@@ -132,15 +136,17 @@ export default async function PricingPage() {
           {/* Secondary action used to be "Join the waitlist". With sign-up public
               that offered a visitor a queue they don't need, on the one page where
               they've already shown buying intent. Multi-seat is where this page
-              pays for itself, so the second slot points at teams instead. */}
+              pays for itself, so the second slot pointed at teams instead — and
+              is commented out with the rest of the teams routing, leaving the
+              download to carry the CTA on its own. */}
           <div className="page-cta-actions">
             <Link className="btn btn--primary" href="/download" data-cursor="Get the app">
               Download for Mac
               <span aria-hidden="true">↓</span>
             </Link>
-            <Link className="btn btn--ghost" href="/for-teams" data-cursor="Seats & billing">
+            {/* <Link className="btn btn--ghost" href="/for-teams" data-cursor="Seats & billing">
               Buying for a team?
-            </Link>
+            </Link> */}
           </div>
         </section>
       </main>
