@@ -66,12 +66,14 @@ script. "It compiles" is not done.
   `NEXT_PUBLIC_SUPABASE_URL`, not a `*.supabase.co` wildcard.
 - The beta DMG URL is server-only (`lib/config.server.ts`); it must not re-enter
   any client-imported object.
-- `supabase/migrations/0008_lead_upsert_hardening.sql` hardens the lead upsert
-  (no linkage overwrite, bounded notes). **Not yet applied to prod** — apply with
-  the Supabase CLI, with confirmation. The IP rate cap in `lib/leads/queries.ts`
-  still counts the wrong table for repeat emails; a follow-up is noted in 0008.
-- Confirm `TURNSTILE_DISABLED` is **unset** in production — it is an intentional
-  kill switch that opens the unauthenticated lead form to spam while set.
+- `supabase/migrations/0008_lead_upsert_hardening.sql` (lead upsert: no linkage
+  overwrite, bounded notes) and `0009_lead_events_ip_hash.sql` (ip_hash carried
+  on `lead_events`, closing the rate-cap gap where resubmits to a known email
+  were never counted) are both **applied to prod** as of 2026-08-14. The IP rate
+  cap in `lib/leads/queries.ts` now counts `lead_events`, not `leads`.
+- `TURNSTILE_DISABLED` is confirmed **unset** in production (checked 2026-08-14)
+  — it is an intentional kill switch that opens the unauthenticated lead form to
+  spam while set. Recheck after any env var changes to this project.
 
 ## Branch and deploy
 
