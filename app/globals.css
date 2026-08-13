@@ -2477,23 +2477,20 @@ cite {
   position: relative;
   isolation: isolate;
 }
-/* Full-bleed past the content gutter, and only a band at the top — a road
-   running the full height of a page of cards is noise, not atmosphere. */
-.page--download .hs-backdrop {
-  top: 0;
-  bottom: auto;
-  left: 50%;
-  width: 100vw;
-  height: clamp(560px, 86vh, 900px);
-  transform: translateX(-50%);
-}
-/* Let the road show through the cards it overlaps, without costing legibility. */
-.page--download .dl-gate,
-.page--download .dl-card {
-  background-color: rgba(11, 15, 23, 0.72);
-  backdrop-filter: blur(18px);
-  -webkit-backdrop-filter: blur(18px);
-}
+/* The two rules that used to live here — a full-bleed band of the hyperspeed
+   road across the top, and a near-black scrim on the cards to keep text legible
+   over it — are gone, and their removal is the contrast fix.
+
+   `.hs-backdrop` is `display: none !important` under the redesign: the manual
+   has no use for a road. But the scrim it justified stayed behind, hard-coded as
+   `rgba(11, 15, 23, 0.72)` — so it was immune to the palette bridge that
+   re-pointed every *named* dark token at paper. The result was cards still
+   painted near-black while their type had already flipped to ink: `--haze` body
+   copy at #2c3444 on #0b0f17, and `--haze-dim` small print at #4d5566, both far
+   under 3:1. That is what the download page looked like — headings and
+   requirements effectively invisible, on the one page whose whole job is to be
+   read and clicked.
+   ─────────────────────────────────────────────────────────────────────── */
 
 .dl-gate {
   max-width: 34rem;
@@ -2533,27 +2530,35 @@ cite {
   }
 }
 
+/* Two cards on paper, told apart by weight rather than by colour: stable is the
+   brighter stock and carries the filled button, beta sits back on the sunken
+   cut because it is the gated one. Ranking them by surface is what lets the
+   copy stay in plain ink at full contrast in both. */
 .dl-card {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   padding: var(--space-300);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--ink-800);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-card);
+  background: var(--paper-2);
 }
 .dl-card--stable {
-  background: var(--ink-950);
+  background: var(--paper-2);
 }
 .dl-card--beta {
-  background: var(--ink-800);
+  background: var(--paper-3);
 }
+/* The readable cuts, not the vivid ones. These are 11px letterspaced caps on
+   paper — the smallest text on the page — so they take `--ember-ink` (5.1:1)
+   and `--signal-ink`. Vivid ember is 2.6:1 here and was never a text colour;
+   it stays on the filled buttons, which carry their own near-black on-colour. */
 .dl-badge {
   margin-bottom: var(--space-200);
   padding: var(--space-50) var(--space-100);
-  border: 1px solid rgba(255, 106, 61, 0.4);
+  border: 1px solid rgba(181, 56, 18, 0.42);
   border-radius: 999px;
-  color: var(--ember);
+  color: var(--ember-ink);
   font-family: var(--mono);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
@@ -2561,8 +2566,8 @@ cite {
   text-transform: uppercase;
 }
 .dl-badge--beta {
-  border-color: rgba(110, 231, 223, 0.4);
-  color: var(--signal);
+  border-color: rgba(19, 96, 89, 0.42);
+  color: var(--signal-ink);
 }
 .dl-card h2 {
   margin: 0 0 var(--space-100);
@@ -2572,9 +2577,13 @@ cite {
   font-weight: 600;
   letter-spacing: -0.04em;
 }
+/* Named against the current palette rather than the legacy bridge. The bridge
+   is what re-pointed `--haze` from a pale grey to near-black ink, which is
+   exactly how this page ended up with dark-on-dark without anyone editing it —
+   so the page that has to be read names its own ink. */
 .dl-desc {
   margin: 0 0 var(--space-300);
-  color: var(--haze);
+  color: var(--ink-2);
   font-size: var(--text-sm);
   line-height: var(--lh-sm);
 }
@@ -2583,12 +2592,12 @@ cite {
   align-items: flex-start;
   gap: var(--space-50);
   margin: var(--space-200) 0 0;
-  color: var(--haze-dim);
+  color: var(--ink-3);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
 }
 .dl-req strong {
-  color: var(--bone);
+  color: var(--ink);
 }
 .dl-lock svg {
   width: 13px;
@@ -2598,7 +2607,7 @@ cite {
 .dl-foot {
   max-width: 56ch;
   margin: var(--space-500) 0 0;
-  color: var(--haze-dim);
+  color: var(--ink-3);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
 }

@@ -63,7 +63,9 @@ const PLATES = [
 
 /** Pages that are not part of the manual's plate sequence. */
 const PAGES = [
-  { href: "/pricing", label: "Pricing" },
+  // Pricing is off the nav while the beta is free — see the note on the top-bar
+  // link below. The route itself still works; it is just not advertised.
+  // { href: "/pricing", label: "Pricing" },
   { href: "/for-teams", label: "Teams" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/trust", label: "What leaves your Mac" },
@@ -205,9 +207,15 @@ export default function Nav() {
 
           {onHome && <span className="runhead-div" aria-hidden="true" />}
 
-          <Link className="runhead-page" href="/pricing">
+          {/* Pricing is commented out rather than deleted, and stays that way
+              until paid plans actually start. Everything is free during the
+              beta, so a Pricing link in the menu bar asks a question the site
+              then has to talk the visitor out of — it buys an objection for
+              free, right next to the download. Restore this line and the PAGES
+              entry above together when there is something to charge for. */}
+          {/* <Link className="runhead-page" href="/pricing">
             Pricing
-          </Link>
+          </Link> */}
           {/* Only once the hero's own download button has scrolled away. */}
           <Link
             className="btn btn--primary btn--sm runhead-cta"

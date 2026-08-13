@@ -19,7 +19,8 @@ export const metadata: Metadata = {
  */
 const ROUTES = [
   { href: "/download", label: "Download for Mac", note: "Free while in beta" },
-  { href: "/pricing", label: "Pricing", note: "Plans and what each includes" },
+  // Off the 404 while the beta is free — see components/Nav.tsx.
+  // { href: "/pricing", label: "Pricing", note: "Plans and what each includes" },
   { href: "/trust", label: "What leaves your Mac", note: "Every request, listed" },
   { href: "/roadmap", label: "Roadmap", note: "Shipping, building, next" },
 ];

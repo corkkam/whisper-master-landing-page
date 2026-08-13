@@ -746,12 +746,16 @@ export default function JoinModal({
                             No card, ever, for the beta.
                           </p>
                         </div>
-                        <Link
+                        {/* Off while the beta is free — see components/Nav.tsx.
+                            It matters most here: this sits inside the join flow,
+                            so it is the one "see pricing" that could lose
+                            someone mid-signup. */}
+                        {/* <Link
                           href="/pricing"
                           className="shrink-0 rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 text-xs font-semibold text-ember-bright transition hover:border-ember/25 hover:bg-white/[0.06]"
                         >
                           See pricing
-                        </Link>
+                        </Link> */}
                       </div>
                       {error && (
                         <p className="mt-2 text-center text-xs text-white/50">{error}</p>

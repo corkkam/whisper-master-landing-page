@@ -17,7 +17,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const routes: Array<{ path: string; priority: number; changeFrequency: "weekly" | "monthly" }> = [
     { path: "/", priority: 1.0, changeFrequency: "weekly" },
     { path: "/download", priority: 0.9, changeFrequency: "weekly" },
-    { path: "/pricing", priority: 0.8, changeFrequency: "monthly" },
+    // Out of the sitemap while it is off the nav, so search does not surface a
+    // page the site itself is not linking to — see components/Nav.tsx.
+    // { path: "/pricing", priority: 0.8, changeFrequency: "monthly" },
     // Ranked with the conversion pages rather than the informational ones: a
     // single team enquiry is worth more than a large number of consumer
     // downloads, and this is the only page that captures one.
