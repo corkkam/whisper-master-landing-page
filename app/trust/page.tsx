@@ -144,18 +144,28 @@ export default function TrustPage() {
             This page is the plain-English one. The binding documents say the same
             thing in the language lawyers need.
           </p>
-          <div className="page-cta-actions">
-            <Link className="btn btn--ghost" href="/privacy">
-              Privacy Policy
-            </Link>
-            <Link className="btn btn--ghost" href="/terms">
-              Terms of Service
-            </Link>
-            <a className="btn btn--ghost" href={`mailto:${entity.contactEmail}`}>
-              Ask us directly
-            </a>
+          {/* The buttons and the date stamp share one row, so the stamp lands
+              in the card's bottom-right corner and reads as the document's
+              revision mark rather than as a caption crushed under the links.
+              Wraps to its own line, still right-aligned, when the row runs out
+              of width. */}
+          <div className="page-cta-foot">
+            <div className="page-cta-actions">
+              <Link className="btn btn--ghost" href="/privacy">
+                Privacy Policy
+              </Link>
+              <Link className="btn btn--ghost" href="/terms">
+                Terms of Service
+              </Link>
+              <a className="btn btn--ghost" href={`mailto:${entity.contactEmail}`}>
+                Ask us directly
+              </a>
+            </div>
+            <p className="trust-updated">
+              <span>Last updated</span>
+              <b>{LEGAL_UPDATED}</b>
+            </p>
           </div>
-          <p className="trust-updated">Last updated {LEGAL_UPDATED}</p>
         </section>
       </main>
       <Footer />

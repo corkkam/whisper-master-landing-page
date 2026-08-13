@@ -82,6 +82,18 @@
      owning a dark theme. */
   /* The night stock the two dark plates are drawn on, sampled the same way. */
   --void: #141c25;
+  /* The two rungs of the threshold: the ramp that carries paper down into the
+     void where the page enters the machine.
+
+     They are here as explicit stops rather than left to the browser because
+     interpolating straight from `--paper` to `--void` — in sRGB *or* oklab —
+     goes through desaturated grey. The void is a near-neutral cool dark, so the
+     perceptual path from warm cream to it has no warmth to pass through, and
+     the seam came out looking like fog laid over the page. These two are
+     sampled off the warm plates' own shadows, so the fall-off reads as light
+     leaving a room instead. */
+  --dusk-2: #c8aa84;
+  --dusk-1: #6b5843;
   --notch: #07090e;
   --notch-text: #f2efe9;
   --notch-text-2: #aab3c4;
@@ -493,12 +505,18 @@ cite {
   box-shadow: none;
 }
 
-/* On a dark plate the ghost inverts; the filled variants are unchanged, since
-   both accents carry their own on-colour. */
+/* On a dark plate the outline buttons invert; the filled variants are
+   unchanged, since both accents carry their own on-colour.
+   The bare `.btn` is in this selector as well as `.btn--ghost`, because it was
+   not, and the enclosure plate's one link out ("Read what does leave") was
+   therefore sitting at 1.07:1 — ink #10141c on the void's #141c25, invisible.
+   Any unadorned button on a dark plate wants the same inversion. */
+.plate--void .btn:not(.btn--primary):not(.btn--signal),
 .plate--void .btn--ghost {
   border-color: var(--notch-hair);
   color: var(--notch-text);
 }
+.plate--void .btn:not(.btn--primary):not(.btn--signal):hover,
 .plate--void .btn--ghost:hover {
   background: rgba(242, 239, 233, 0.08);
 }
@@ -1770,10 +1788,14 @@ cite {
   color: var(--void-ink);
   font-size: 1rem;
 }
+/* Vivid ember, not `--live`. `--live` is the *paper* cut of the accent (#b53812,
+   picked to stay readable on warm stock) and this list is on the void ground,
+   where it lands at 2.89:1. The accent has two cuts precisely so each ground
+   can have the right one — see the palette note at the top of this file. */
 .never li b {
   flex: none;
   width: 2.5rem;
-  color: var(--live);
+  color: var(--ember);
   font-family: var(--font-note);
   font-size: 0.6875rem;
   font-weight: 500;
@@ -1809,10 +1831,11 @@ cite {
     border-left: 1px solid #2b3d3b;
   }
 }
+/* Vivid, for the same reason as `.never li b` above: this plate is void. */
 .chain-n {
   display: block;
   margin-bottom: 16px;
-  color: var(--live);
+  color: var(--ember);
   font-family: var(--font-note);
   font-size: 0.6875rem;
   letter-spacing: 0.2em;
@@ -2093,7 +2116,9 @@ cite {
    down here, because these are labels rather than links. */
 .colophon-head {
   margin: 0 0 14px;
-  color: var(--ink-faint);
+  /* `--ink-faint` is documented in the palette as 3.4:1 — decoration and
+     non-text only. These are 9px letterspaced caps, so they take `--ink-3`. */
+  color: var(--ink-3);
   font-family: var(--font-note);
   font-size: 0.5625rem;
   letter-spacing: 0.22em;
@@ -2131,7 +2156,8 @@ cite {
 }
 .colophon-fine {
   margin: 0;
-  color: var(--ink-faint);
+  /* See `.colophon-head` — this is the copyright line, not decoration. */
+  color: var(--ink-3);
   font-family: var(--font-note);
   font-size: 0.625rem;
   letter-spacing: 0.1em;
@@ -2329,13 +2355,16 @@ cite {
   text-transform: uppercase;
   color: var(--haze);
 }
+/* The readable cuts: these are 12px letterspaced caps on paper. Vivid ember is
+   2.6:1 there and vivid signal barely 1.2:1 — neither was ever a text colour.
+   The borders deepen to match, so the chip still reads as one object. */
 .tl-chip--shipping {
-  border-color: rgba(255, 106, 61, 0.4);
-  color: var(--ember);
+  border-color: rgba(181, 56, 18, 0.42);
+  color: var(--ember-ink);
 }
 .tl-chip--building {
-  border-color: rgba(110, 231, 223, 0.35);
-  color: var(--signal);
+  border-color: rgba(19, 96, 89, 0.4);
+  color: var(--signal-ink);
 }
 .tl-phase {
   color: var(--haze-dim);
@@ -2966,15 +2995,19 @@ cite {
   color: var(--bone);
   font-weight: 600;
 }
+/* Inline links on paper. Vivid signal measured 1.2:1 here — a link nobody can
+   read is worse than no link, and these carry the audit trail the page is
+   asking to be checked against. */
 .legal a {
-  color: var(--signal);
+  color: var(--signal-ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
-  text-decoration-color: color-mix(in srgb, var(--signal) 40%, transparent);
+  text-decoration-color: color-mix(in srgb, var(--signal-ink) 45%, transparent);
   transition: color 0.2s var(--ease);
 }
 .legal a:hover {
-  color: var(--signal-bright, #9df3ed);
+  color: var(--ink);
+  text-decoration-color: var(--ink);
 }
 
 .legal-meta {
@@ -3029,10 +3062,16 @@ cite {
 
 /* ── Required / optional tag ────────────────────────────────────────────── */
 
+/* The tag brings its own stock. The deep cuts below are 5.3:1 on `--paper-2`
+   but only ~3.9:1 on the sunken paper the flow table is printed on, and a tinted
+   fill made that worse by darkening the ground further. Giving the pill the
+   lighter stock fixes it at the ground instead of by re-darkening ink, and it
+   holds whatever the row underneath is doing. */
 .flowtag {
   flex: none;
   padding: var(--space-50) var(--space-75);
   border-radius: 999px;
+  background: var(--paper-2);
   font-family: var(--mono);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
@@ -3040,17 +3079,19 @@ cite {
   letter-spacing: 0.18em;
   text-transform: uppercase;
 }
-/* Required = the machine's own plumbing → signal. */
+/* Required = the machine's own plumbing → signal. Optional = your call → ember.
+   Both in the readable cut: REQUIRED was measuring 1.01:1 and OPTIONAL 1.76:1,
+   which on a page whose entire argument is "check this yourself" made the two
+   words that carry the argument the least legible things in the table.
+   The border mixes off the deep cut too — a wash of the neon reads as a smudge
+   on warm stock, where the same wash of the deep cut reads as ink. */
 .flowtag--required {
-  color: var(--signal);
-  background: color-mix(in srgb, var(--signal) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--signal) 28%, transparent);
+  color: var(--signal-ink);
+  border: 1px solid color-mix(in srgb, var(--signal-ink) 34%, transparent);
 }
-/* Optional = your call → ember. */
 .flowtag--optional {
-  color: var(--ember);
-  background: color-mix(in srgb, var(--ember) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--ember) 28%, transparent);
+  color: var(--ember-ink);
+  border: 1px solid color-mix(in srgb, var(--ember-ink) 34%, transparent);
 }
 
 /* ── /trust ─────────────────────────────────────────────────────────────── */
@@ -3112,18 +3153,55 @@ cite {
   margin-top: var(--space-200);
 }
 .trust-body a {
-  color: var(--signal);
+  color: var(--signal-ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
+  text-decoration-color: color-mix(in srgb, var(--signal-ink) 45%, transparent);
+  transition: color 0.2s var(--ease);
 }
+.trust-body a:hover {
+  color: var(--ink);
+  text-decoration-color: var(--ink);
+}
+/* The revision stamp, bottom-right of the card. Set as a subheading rather than
+   as small print: a mono eyebrow over the date in the display face, right-ranged
+   so both lines hang off the card's inner edge. It was previously one line of
+   12px mono caps sitting directly under the buttons, where it read as a caption
+   that had lost its figure. */
 .trust-updated {
-  margin-top: var(--space-300);
+  margin: 0;
+  text-align: right;
+}
+.trust-updated span {
+  display: block;
+  color: var(--ink-3);
   font-family: var(--mono);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  letter-spacing: 0.18em;
+  font-size: 0.5625rem;
+  line-height: 1;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--haze-dim);
+}
+.trust-updated b {
+  display: block;
+  margin-top: 6px;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--text-lg);
+  line-height: 1.1;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+/* Buttons left, stamp bottom-right, baselines aligned. Wraps to two rows on a
+   narrow card and the stamp keeps its own alignment. */
+.page-cta-foot {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-200);
+}
+.page-cta-foot .trust-updated {
+  margin-left: auto;
 }
 
 /* The never-sent list. Signal marks: these are settled machine facts. */
@@ -3212,9 +3290,11 @@ cite {
   color: var(--haze-bright);
 }
 /* On-by-default optional flows get the ember rule: this is the sentence the
-   reader is actually looking for, so it does not get to hide. */
+   reader is actually looking for, so it does not get to hide — which is exactly
+   what it was doing at 1.87:1 in `--ember-bright`, the lightest cut of the
+   accent, on paper. */
 .flow-default-on {
-  color: var(--ember-bright, #ff8b64) !important;
+  color: var(--ember-ink) !important;
 }
 
 @media (min-width: 940px) {
@@ -3250,12 +3330,15 @@ cite {
   gap: var(--space-100) var(--space-200);
   margin-bottom: var(--space-400);
   padding: var(--space-200) var(--space-200);
-  border: 1px solid color-mix(in srgb, var(--ember) 30%, transparent);
+  border: 1px solid color-mix(in srgb, var(--ember-ink) 32%, transparent);
   border-radius: 12px;
-  background: color-mix(in srgb, var(--ember) 8%, transparent);
+  /* Washed over the *light* stock rather than over `--paper`: at 8% over the
+     page's own ground this sat dark enough to pull the sentence it exists to
+     emphasise down to 4.06:1. */
+  background: color-mix(in srgb, var(--ember) 5%, var(--paper-2));
 }
 .pricing-banner strong {
-  color: var(--ember-bright, #ff8b64);
+  color: var(--ember-ink);
   font-weight: 600;
 }
 .pricing-banner p {
@@ -3331,7 +3414,7 @@ cite {
   color: var(--haze-dim);
 }
 .plan--featured .plan-name {
-  color: var(--ember);
+  color: var(--ember-ink);
 }
 .plan-price {
   display: flex;
@@ -3412,7 +3495,7 @@ cite {
   color: var(--haze-bright);
 }
 .pricing-faq p a {
-  color: var(--signal);
+  color: var(--signal-ink);
   text-decoration: underline;
   text-underline-offset: 0.2em;
 }
@@ -3487,7 +3570,7 @@ cite {
   color: var(--haze-bright);
 }
 .teams-claim-caveat strong { color: var(--bone); }
-.teams-claim-caveat em { color: var(--ember-bright); font-style: normal; }
+.teams-claim-caveat em { color: var(--ember-ink); font-style: normal; }
 
 .teams-facts {
   display: grid;
@@ -3502,13 +3585,16 @@ cite {
   border-radius: 12px;
   background: var(--surface);
 }
+/* The headline figures. Large text only needs 3:1, and vivid signal did not
+   even reach that on paper (1.32:1) — a 24px number nobody can read is a
+   strange thing to put in the largest type on the section. */
 .teams-facts strong {
   display: block;
   font-family: var(--display);
   font-size: var(--text-2xl);
   line-height: var(--lh-2xl);
   letter-spacing: -0.03em;
-  color: var(--signal);
+  color: var(--signal-ink);
 }
 .teams-facts span {
   display: block;
@@ -3524,7 +3610,7 @@ cite {
   line-height: var(--lh-sm);
   color: var(--haze-dim);
 }
-.teams-disclosure-note a { color: var(--signal); text-decoration: none; }
+.teams-disclosure-note a { color: var(--signal-ink); text-decoration: underline; text-underline-offset: 0.2em; }
 .teams-disclosure-note a:hover { text-decoration: underline; }
 
 .teams-plans {
@@ -4069,6 +4155,75 @@ cite {
   color: var(--notch-text);
   position: relative;
   isolation: isolate;
+}
+
+/* ── Entering and leaving the machine ─────────────────────────────────
+   The void run used to begin and end on a hard horizontal cut, which read as
+   two stylesheets meeting rather than as one document going somewhere. These
+   are the threshold: paper falls off into the dark over the plate's own top
+   padding, and comes back over its bottom padding.
+
+   Sized off that padding on purpose (96px against 128px of pad, 72px against
+   96px) so the lightened band can never reach the plate's type, which is set in
+   `--notch-text` and would lose all its contrast against paper. The threshold
+   lives in the margin; the plate's interior stays fully void.
+
+   `z-index: 0` puts these above the plate's background and below `.plate-inner`,
+   so the artwork and the copy both sit on top of the fade rather than under it.
+   ─────────────────────────────────────────────────────────────────────── */
+.plate--void::before,
+.plate--void::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 0;
+  height: 72px;
+  pointer-events: none;
+}
+@media (min-width: 900px) {
+  .plate--void::before,
+  .plate--void::after {
+    height: 96px;
+  }
+}
+/* Opaque, four stops, interpolated in oklab.
+
+   All three of those matter. Fading paper's *alpha* out over the void put grey
+   fog across the seam, because dropping alpha between a warm light and a cool
+   dark lands on neutral at the midpoint. Going opaque removed the haze but not
+   the grey — the void is near-neutral, so a straight two-stop ramp has no
+   warmth to pass through however it is interpolated. Hence `--dusk-2` and
+   `--dusk-1`: two warm rungs that hold the hue through the middle of the fall,
+   with oklab keeping the spacing perceptually even rather than bunching the
+   dark end the way sRGB does. */
+.plate--void::before {
+  top: 0;
+  background: linear-gradient(
+    to bottom in oklab,
+    var(--paper) 0%,
+    var(--dusk-2) 30%,
+    var(--dusk-1) 62%,
+    var(--void) 100%
+  );
+}
+.plate--void::after {
+  bottom: 0;
+  background: linear-gradient(
+    to top in oklab,
+    var(--paper) 0%,
+    var(--dusk-2) 30%,
+    var(--dusk-1) 62%,
+    var(--void) 100%
+  );
+}
+/* The run is continuous inside itself. A void plate that follows another has no
+   seam at its top, and one followed by another has none at its bottom —
+   otherwise the page would surface back to paper between Enclosure and Chain
+   and the machine would look like two machines. */
+.plate--void + .plate--void::before,
+.plate--void:has(+ .plate--void)::after {
+  content: none;
 }
 .plate--void .plate-inner {
   position: relative;
