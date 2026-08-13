@@ -36,6 +36,9 @@ next-env.d.ts
 # internal handoff docs (contain infra details; keep out of public repo)
 docs/MACOS-SUPABASE-HANDOFF.md
 
+# scratch inputs dropped in for a task — never part of the repo
+/.incoming/
+
 # Credential files — never commit (see SECURITY notes)
 *client_secret*.json
 *-credentials.json

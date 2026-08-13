@@ -4,7 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
 import { currentTier } from "@/lib/billing/entitlements";
-import { downloads, product } from "@/lib/config";
+import { product } from "@/lib/config";
 
 export const metadata: Metadata = {
   title: `Thank you — ${product.name}`,

@@ -3,7 +3,10 @@
 The entry point for any AI agent working in this repository. It overrides the
 machine-level `~/AGENTS.md` where the two disagree.
 
-Last verified against the tree: **2026-08-14**, `main` and `dev` both at `e1a4dd9`.
+Last verified against the tree: **2026-08-14**, `main` and `dev` both at `b4fcff5`.
+A security audit on that date fixed the client-bundle beta-URL leak, tightened the
+CSP, patched a dependency advisory, and added migration `0008`; the working
+reference for day-to-day is **[`CLAUDE.md`](CLAUDE.md)**, which points back here.
 
 ---
 
@@ -38,9 +41,11 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 `lib/leads/` (schema, scoring, stages, actions, queries), `lib/waitlist/`
-(actions, queries, points), `lib/supabase/server.ts`, plus `config.ts`,
-`content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`,
-`turnstile.ts`.
+(actions, queries, points), `lib/supabase/server.ts`, plus `config.ts` (public
+product copy and the stable download URL), `config.server.ts` (`server-only`
+values that must never reach the client bundle — the beta download URL lives
+here), `content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`,
+`admin.ts`, `turnstile.ts`.
 
 ## 3. Build and gates
 
@@ -93,6 +98,11 @@ use the screenshot script. "It compiles" is not done.
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
     `dl.corkkam.com/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
+    The **beta** URL is not there — it is in `lib/config.server.ts` behind
+    `server-only`, because a `"use client"` file that imports one field off an
+    exported object ships the whole object in the public JS. A gated URL that
+    ships to everyone is not gated; do not move `betaDownloadUrl` back into a
+    client-importable module.
 11. **Never weaken an auth gate**, and never commit a secret. `.env.local` is
     git-ignored; document a new variable in `.env.local.example` by name only.
 12. **The middleware's retired-cookie guard is load-bearing.** An unverifiable
@@ -114,10 +124,13 @@ pipeline 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.
 Full annotations in `.env.local.example`.
 
-Migrations are `supabase/migrations/0001` through `0007`. `0006_leads.sql` backs
-the lead funnel; `0007_entitlements.sql` is only needed when charging starts.
-**Whether these have been run against the live project is not knowable from the
-repo — verify with the Supabase CLI, do not assume.**
+Migrations are `supabase/migrations/0001` through `0008`. `0006_leads.sql` backs
+the lead funnel; `0007_entitlements.sql` is only needed when charging starts;
+`0008_lead_upsert_hardening.sql` redefines `upsert_lead` to stop a resubmission
+overwriting an existing Clerk linkage and to bound the appended notes — **it is
+written but not yet applied to the live project.** **Whether any of these have
+been run against the live project is not knowable from the repo — verify with the
+Supabase CLI, do not assume.**
 
 Read live configuration through the CLIs (`vercel env ls`, `supabase`, `gh`).
 Never ask the user to click through a dashboard, and never print a secret value —
