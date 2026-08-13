@@ -16,6 +16,7 @@ import {
 } from "@/lib/waitlist/schema";
 import { MILESTONES, nextMilestone } from "@/lib/waitlist/points";
 import { EMAIL_AUTH_ENABLED } from "@/lib/config";
+import { track } from "@/lib/analytics";
 import { publishDashboard } from "./useWaitlistStatus";
 import Turnstile from "./Turnstile";
 import {
@@ -317,11 +318,26 @@ export default function JoinModal({
       const d = await getDashboard();
       setDash(d);
       publishDashboard(d);
+      // The one conversion this site has. Fired here rather than server-side
+      // because gtag lives in the browser and only runs once the visitor has
+      // accepted cookies — `track` no-ops otherwise, so there is nothing to
+      // guard. No name, email or company: the funnel needs the shape of the
+      // join, not who made it.
+      track("waitlist_joined", {
+        method: otpFlow === "signUp" ? "email" : "google",
+        position: res.position,
+        returning,
+      });
       // `submitWaitlist` already returned a position, so the confirmation
       // still gets a rank even if the dashboard read comes back empty.
       onJoined?.(d?.rank ?? res.position ?? null);
       setStep("success");
     } else {
+      // Failures are tracked too, and deliberately: a join that dies at the
+      // write is invisible from the outside — the visitor sees one toast and
+      // leaves. Without this, a Supabase outage looks identical in the funnel
+      // to nobody signing up that day.
+      track("waitlist_join_failed", { reason: res.error });
       // Turnstile tokens are single-use — a retry needs a fresh one, so clear
       // it and let the widget re-solve rather than replaying a spent token.
       setTurnstileToken(null);
