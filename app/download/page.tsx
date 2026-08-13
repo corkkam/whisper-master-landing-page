@@ -7,6 +7,7 @@ import HyperspeedBackdrop from "@/components/chrome/HyperspeedBackdrop";
 import { isBetaUser } from "@/lib/clerk/beta";
 import { getDashboard } from "@/lib/waitlist/actions";
 import { downloads, product } from "@/lib/config";
+import { betaDownloadUrl } from "@/lib/config.server";
 
 export const metadata: Metadata = {
   title: `Download ${product.name}`,
@@ -98,7 +99,7 @@ export default async function DownloadPage() {
 
             {beta ? (
               <>
-                <a className="btn btn--signal" href={downloads.beta} data-cursor="You're in">
+                <a className="btn btn--signal" href={betaDownloadUrl} data-cursor="You're in">
                   Download the beta
                   <span aria-hidden="true">↓</span>
                 </a>

@@ -42,9 +42,12 @@ export const product = {
 //   not, and /download renders this link for signed-out visitors. The *app* still
 //   requires Clerk sign-in on first launch — that gate is deliberate and stays
 //   (see the vault's decisions note), so don't let download copy imply otherwise.
-// - `beta` is gated: only users with Clerk `publicMetadata.betaAccess === true`
-//   see the real link (see app/download/page.tsx). The beta DMG is produced by
-//   the beta release channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
+// - The beta link is NOT here on purpose. It lives in `lib/config.server.ts`
+//   behind `server-only`, because everything exported here is fair game for a
+//   client component to import, and bundlers do not tree-shake a single property
+//   off an exported object — Hero/Unit import `downloads` for `.requirements`, so
+//   anything in this object ships in the public homepage JS. A gated URL that
+//   ships to every visitor is not gated. See app/download/page.tsx.
 // ⚠️ `stable` points at the VERSIONED key, not the WhisperMaster.dmg alias, and
 // must be bumped on every stable release. The alias is unsafe to link:
 // publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached
@@ -68,10 +71,6 @@ export const product = {
 // newest build (its CFBundleVersion still increases, which is what Sparkle reads).
 export const downloads = {
   stable: "https://dl.corkkam.com/WhisperMaster-1.0.0.dmg",
-  // Same overwrite-staleness hazard applies here — this is an alias too. Lower
-  // stakes because beta is gated and its audience re-downloads often, but if a
-  // beta tester reports installing a build you didn't ship, this is why.
-  beta: "https://dl.corkkam.com/WhisperMaster-beta.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;
