@@ -123,6 +123,18 @@ Read live configuration through the CLIs (`vercel env ls`, `supabase`, `gh`).
 Never ask the user to click through a dashboard, and never print a secret value —
 print the command that sets it.
 
+## 5b. Agent skills
+
+Skills are vendored into `.agents/skills/` and symlinked into `.claude/skills/`.
+`skills-lock.json` pins each one, so add and update them with
+`npx skills add <repo> --skill <name>`. Do not hand-edit a vendored skill; the
+next lock-driven install overwrites it.
+
+Installed: the `clerk/skills` set, and `brag` (`latent-spaces/brag`) which builds
+a launch video from the site. `/brag` needs Node 22+, FFmpeg, and the Hyperframes
+CLI, and it writes to `brag-output/`, which is git-ignored. Its 18 MB of bundled
+music and sound effects is the bulk of `.agents/skills/`.
+
 ## 6. Branch and deploy
 
 - Branch `<feature|bug>/<COR-###>-<kebab-description>` off `dev`. Linear team
