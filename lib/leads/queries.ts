@@ -60,10 +60,15 @@ async function isRateLimited(ipHash: string | null): Promise<boolean> {
   try {
     const supabase = createAdminClient();
     const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60_000).toISOString();
+    // Count lead_events, not leads: a resubmission to a known email updates
+    // the existing leads row instead of inserting one, so counting leads
+    // rows makes repeat submissions to one email invisible to this cap
+    // (see the NOTE in migration 0008, fixed by 0009's lead_events.ip_hash).
     const { count, error } = await supabase
-      .from("leads")
+      .from("lead_events")
       .select("id", { count: "exact", head: true })
       .eq("ip_hash", ipHash)
+      .in("kind", ["created", "resubmitted"])
       .gte("created_at", since);
     if (error) return false;
     return (count ?? 0) >= RATE_LIMIT_MAX_PER_WINDOW;
