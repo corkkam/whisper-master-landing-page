@@ -6,6 +6,8 @@ import JoinProvider from "@/components/waitlist/JoinContext";
 import SmoothScroll from "@/components/chrome/SmoothScroll";
 import Cursor from "@/components/chrome/Cursor";
 import SignalSpine from "@/components/chrome/SignalSpine";
+import ScreenFrame from "@/components/chrome/ScreenFrame";
+import DictationProvider from "@/components/chrome/DictationContext";
 import CookieConsent from "@/components/chrome/CookieConsent";
 import GoogleAnalytics from "@/components/chrome/GoogleAnalytics";
 import { Analytics } from "@vercel/analytics/next";
@@ -113,12 +115,18 @@ export default function RootLayout({
           </a>
           <SmoothScroll>
             <JoinProvider>
-              {/* Signature element: a mic-level waveform down the page edge that
-                  reacts to scroll velocity. Purely decorative, hidden from AT. */}
-              <SignalSpine />
-              {children}
+              {/* One clock for the demo, shared by the notch in the bezel and
+                  the capture panel in the hero — see DictationContext. */}
+              <DictationProvider>
+                {/* Signature element: a mic-level waveform down the page edge
+                    that reacts to scroll velocity. Decorative, hidden from AT. */}
+                <SignalSpine />
+                {children}
+              </DictationProvider>
             </JoinProvider>
           </SmoothScroll>
+          {/* The viewport is being read as a Mac display; these are its corners. */}
+          <ScreenFrame />
           <Cursor />
           <CookieConsent />
           <SpeedInsights />

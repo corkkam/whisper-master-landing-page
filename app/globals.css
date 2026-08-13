@@ -106,6 +106,46 @@
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --t-settle: 420ms;
   --t-quick: 250ms;
+
+  /* ── The display ────────────────────────────────────────────────────
+     The viewport is a Mac screen, so it has a bezel, and the bezel has the
+     proportions of the real one: thick along the top because that is the edge
+     holding the camera, a hairline of the same ink down the other three sides.
+     Every measurement in the menu bar and the notch is derived from these, so
+     the whole assembly stays in register at any width. */
+  --bezel: 10px;
+  --bezel-side: 4px;
+  --screen-r: 18px;
+
+  /* The notch. `--notch-w` is the closed shape — the camera island — and it is
+     wide-to-tall at roughly 5:1 because that is the ratio on the machine; a
+     squarer pill reads as a badge stuck to the page instead. The wings grow
+     outward from it and are equal by construction, which is what keeps the
+     island pinned to the centre of the screen through every state. */
+  --notch-w: 132px;
+  --notch-h: 26px;
+  --notch-wing: 88px;
+  --notch-r: 12px;
+  /* Menu bar height, measured below the bezel. */
+  --bar-h: 38px;
+}
+
+/* Narrow. One breakpoint re-scales the whole display, because every part of it
+   is derived from these six numbers and they have to move together — a bezel
+   that stayed at desktop weight around a 390px viewport is 2.5% of the screen
+   instead of 0.7%, and a band that stayed open would eat the wordmark.
+   The wings fold away here; see the notch's own rules for why. */
+@media (max-width: 980px) {
+  :root {
+    --bezel: 8px;
+    --bezel-side: 3px;
+    --screen-r: 14px;
+    --notch-w: 96px;
+    --notch-h: 22px;
+    --notch-wing: 0px;
+    --notch-r: 10px;
+    --bar-h: 34px;
+  }
 }
 
 /* ── Legacy palette bridge ────────────────────────────────────────────
@@ -739,119 +779,296 @@ cite {
   opacity: 1;
 }
 
-/* ── The running head, printed ────────────────────────────────────────
-   No fill, no float, no glass. This is set on the paper like everything else
-   on the page — see components/Nav.tsx for why the notch had to go.
+/* ── The running head, as a menu bar ──────────────────────────────────
+   Three tracks: identity, camera island, status. The middle one is a fixed
+   width — see components/Nav.tsx for why it cannot be sized to its content.
+
+   The arrangement is macOS's, not a web nav's, and the difference is the whole
+   point. A Mac menu bar puts *who you are* to the left of the housing and
+   *what the machine is doing* to the right, and it never centres a row of
+   links, because the housing is already occupying the centre. So the left is
+   the wordmark and the name of the plate you are standing on, the right is the
+   contents rail and the way out, and the middle is a hole in a machine.
    ─────────────────────────────────────────────────────────────────────── */
 
 .runhead {
+  /* The band at full extension, plus air. The centre track is pinned to this
+     so the two sides never move when the notch opens. */
+  --notch-track: calc(var(--notch-w) + 2 * var(--notch-wing) + 56px);
   position: fixed;
   inset: 0 0 auto;
-  z-index: 60;
-  display: flex;
-  align-items: baseline;
-  gap: 24px;
-  padding: 18px var(--gutter) 14px;
+  /* Above the sheet (62), not below it. The menu bar is part of the machine:
+     it does not get covered by a window opening inside the screen, and the
+     button you used to open the sheet has to still be there to shut it. */
+  z-index: 64;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--notch-track) minmax(0, 1fr);
+  align-items: center;
+  gap: 18px;
+  /* The bar starts below the bezel — the band is what reaches up into it. */
+  height: calc(var(--bezel) + var(--bar-h));
+  padding: var(--bezel) calc(var(--gutter) - var(--bezel-side)) 0;
   /* Descends once, on load. */
   opacity: 0;
   transform: translateY(-10px);
-  transition: opacity 520ms var(--ease), transform 620ms var(--ease),
-    background 420ms var(--ease);
+  transition: opacity 520ms var(--ease), transform 620ms var(--ease);
+}
+@media (max-width: 980px) {
+  .runhead {
+    /* Shut, so the track only has to clear the island and its flares. */
+    --notch-track: calc(var(--notch-w) + 2 * var(--notch-r) + 8px);
+    gap: 10px;
+  }
 }
 .runhead[data-dropped="true"] {
   opacity: 1;
   transform: none;
 }
-/* A wash of the paper's own stock, so the type stays readable where the
-   illustration runs under it — the same colour as the page, so it reads as the
-   sheet continuing rather than as a bar laid on top. */
+
+/* The two sides, centred on the bar rather than on the box, so the type sits
+   on the menu bar's own optical line. */
+.runhead-side {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.runhead-side--l {
+  justify-content: flex-start;
+}
+.runhead-side--r {
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* Glass, the way the menu bar is glass: a wash of the paper's own stock so the
+   type stays readable where the illustration runs under it, graded top to
+   bottom so the bar catches a little light off the bezel above it. */
 @supports (backdrop-filter: blur(1px)) {
   .runhead {
-    background: rgba(244, 230, 205, 0.72);
-    backdrop-filter: blur(10px) saturate(115%);
-    -webkit-backdrop-filter: blur(10px) saturate(115%);
+    background: linear-gradient(
+      to bottom,
+      rgba(250, 241, 222, 0.88),
+      rgba(244, 230, 205, 0.7)
+    );
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
   }
 }
 
-
 .runhead-mark {
   flex: none;
+  min-width: 0;
   transition: opacity var(--t-quick) var(--ease);
 }
 .runhead-mark:hover {
   opacity: 0.65;
 }
+/* Narrow: the orb alone.
+   The name needs ~150px and a 390px screen leaves the left track ~115px once
+   the island has the centre, so the two were overlapping and the wordmark was
+   losing its last four letters to the notch. Setting the name in 11pt to save
+   it would be worse than dropping it: the orb is the site's mark, it is
+   legible at 24px, and the top of a narrow screen is the one place where the
+   centre belongs to the hardware and not to us. The name is in the <title>,
+   the footer, and the aria-label on this link. */
+@media (max-width: 620px) {
+  .runhead-mark .wordmark-text {
+    display: none;
+  }
+}
 
-/* The contents index, set the way the plates are: mono for the number, the
-   display face for the label. */
-.runhead-toc {
+/* ── You are here, named ──────────────────────────────────────────────
+   The slot macOS gives the frontmost app's name, doing the job the plate
+   number does on the page: mono index, display-face label. It re-keys on every
+   section change so the label drops in from above — the one motion in the bar
+   that reports something, rather than decorating.  */
+.runhead-plate {
   display: none;
-  margin: 0 auto;
-  padding: 0;
-  list-style: none;
+  align-items: center;
+  gap: 8px;
+  padding-left: 14px;
+  border-left: 1px solid var(--hair);
+  min-height: 16px;
+  overflow: hidden;
 }
-@media (min-width: 1060px) {
-  .runhead-toc { display: flex; align-items: baseline; gap: 22px; }
+@media (min-width: 1040px) {
+  .runhead-plate {
+    display: inline-flex;
+  }
 }
-.runhead-toc a {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 7px;
-  white-space: nowrap;
-  transition: color var(--t-quick) var(--ease);
-}
-.runhead-toc a b {
-  color: var(--ink-faint);
+.runhead-plate b {
+  flex: none;
+  color: var(--ember-ink);
   font-family: var(--font-note);
   font-size: 0.5625rem;
   font-weight: 500;
   letter-spacing: 0.14em;
-  transition: color var(--t-quick) var(--ease);
 }
-.runhead-toc a span {
-  color: var(--ink-3);
+.runhead-plate > span {
+  color: var(--ink-2);
   font-family: var(--font-plate);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: -0.012em;
-  transition: color var(--t-quick) var(--ease);
+  white-space: nowrap;
+  animation: plate-name 460ms var(--ease) both;
 }
-.runhead-toc a:hover span {
-  color: var(--ink);
-}
-/* You are here. Marked by ink weight and an ember number — no chip, because a
-   filled box is the sort of thing a printed page does not have. */
-.runhead-toc a.is-here span {
-  color: var(--ink);
-}
-.runhead-toc a.is-here b {
-  color: var(--ember-ink);
+@keyframes plate-name {
+  from {
+    opacity: 0;
+    transform: translateY(-7px);
+  }
 }
 
-.runhead-end {
+/* ── The contents rail ────────────────────────────────────────────────
+   Seven ticks, one per plate, in the slot a Mac keeps for status items.
+
+   This replaced seven numbered word-links, which is the honest reason it
+   exists: the labels needed ~520px, they had to share one side of the bar with
+   the wordmark and the CTA, and the result crushed all three and collided with
+   the notch. Ticks cost 112px and lose nothing — the plate you are on is named
+   in full on the left of the housing, each tick names itself on hover, and the
+   whole labelled contents is one click away in the sheet.
+
+   It also happens to look like the app's level meter, which is the correct
+   accident: this is a readout of position, drawn the way the product draws a
+   readout of level. */
+.runhead-index {
+  display: none;
+  align-items: center;
+  margin: 0 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+@media (min-width: 1040px) {
+  .runhead-index {
+    display: flex;
+  }
+}
+.runhead-index a {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: 14px;
-  flex: none;
+  justify-content: center;
+  width: 16px;
+  height: 24px;
 }
+.runhead-index i {
+  display: block;
+  width: 2px;
+  height: 8px;
+  border-radius: 1px;
+  background: var(--ink-faint);
+  opacity: 0.5;
+  transition: height 320ms var(--ease), opacity 320ms var(--ease),
+    background 320ms var(--ease);
+}
+/* Read: passed. Darker ink, the way a page you have turned is behind you. */
+.runhead-index a[data-state="past"] i {
+  height: 11px;
+  background: var(--ink-3);
+  opacity: 0.75;
+}
+/* Standing on it. Ember and full height — the same signal the rule under the
+   bar uses for position, so the two agree. */
+.runhead-index a[data-state="here"] i {
+  height: 16px;
+  background: var(--ember);
+  opacity: 1;
+}
+.runhead-index a:hover i,
+.runhead-index a:focus-visible i {
+  height: 16px;
+  background: var(--ink);
+  opacity: 1;
+}
+.runhead-index a[data-state="here"]:hover i {
+  background: var(--ember);
+}
+/* Each tick names itself, on a chip of the paper's own stock. */
+.runhead-index span {
+  position: absolute;
+  top: calc(100% + 7px);
+  left: 50%;
+  padding: 4px 8px 3px;
+  border: 1px solid var(--hair);
+  border-radius: 6px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  line-height: 1;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -5px);
+  pointer-events: none;
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+}
+.runhead-index a:hover span,
+.runhead-index a:focus-visible span {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
 .runhead-page {
   display: none;
-  color: var(--ink-3);
+  position: relative;
+  color: var(--ink-2);
   font-family: var(--font-plate);
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: -0.012em;
   transition: color var(--t-quick) var(--ease);
 }
-.runhead-page:hover { color: var(--ember-ink); }
+/* The underline is drawn rather than switched on — a rule laid under a word,
+   which is what the rest of the manual does to mark a term. */
+.runhead-page::after {
+  content: "";
+  position: absolute;
+  inset: auto 0 -4px;
+  height: 1px;
+  background: var(--ember-ink);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--t-quick) var(--ease);
+}
+.runhead-page:hover {
+  color: var(--ember-ink);
+}
+.runhead-page:hover::after,
+.runhead-page:focus-visible::after {
+  transform: none;
+}
 @media (min-width: 900px) {
-  .runhead-page { display: block; }
+  .runhead-page {
+    display: block;
+  }
+}
+/* A hairline between the rail and the page links, so the right side reads as
+   two groups — status, then destinations — rather than one long queue. */
+.runhead-div {
+  display: none;
+  width: 1px;
+  height: 16px;
+  background: var(--hair);
+  flex: none;
+}
+@media (min-width: 1040px) {
+  .runhead-div {
+    display: block;
+  }
 }
 
 /* Appears only once the hero's own download button has scrolled away. */
 .runhead-cta {
   max-width: 0;
   padding-inline: 0;
+  height: 26px;
+  font-size: 0.75rem;
+  white-space: nowrap;
   opacity: 0;
   overflow: hidden;
   pointer-events: none;
@@ -860,7 +1077,7 @@ cite {
 }
 .runhead-cta[data-shown="true"] {
   max-width: 12rem;
-  padding-inline: 16px;
+  padding-inline: 15px;
   opacity: 1;
   pointer-events: auto;
 }
@@ -882,35 +1099,45 @@ cite {
   will-change: transform;
 }
 
-/* ── Menu toggle ──────────────────────────────────────────────────────── */
+/* ── Menu toggle ──────────────────────────────────────────────────────
+   Visible at every width now, which is a fix and not a flourish: the contents
+   rail is unlabelled and /for-teams, /roadmap and /trust had no route from the
+   top of a desktop page at all — you had to reach the footer to find them.
+
+   The glyph is two rules set ragged-right, the way a contents list is set.
+   They square up under the cursor and cross on open. */
 .menu-toggle {
   position: relative;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 26px;
   flex: none;
   border: 1px solid var(--hair);
-  border-radius: 6px;
-  background: none;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.24);
   cursor: pointer;
-  transition: background var(--t-quick) var(--ease);
+  transition: background var(--t-quick) var(--ease),
+    border-color var(--t-quick) var(--ease);
 }
-.menu-toggle:hover { background: rgba(16, 20, 28, 0.06); }
+.menu-toggle:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(16, 20, 28, 0.22);
+}
 .menu-toggle i {
   position: absolute;
   left: 50%;
-  width: 13px;
   height: 1px;
   margin-left: -6.5px;
   background: var(--ink);
-  transition: transform var(--t-settle) var(--ease), top var(--t-settle) var(--ease);
+  transform-origin: center;
+  transition: transform var(--t-settle) var(--ease), top var(--t-settle) var(--ease),
+    width var(--t-settle) var(--ease);
 }
-.menu-toggle i:nth-child(1) { top: 11px; }
-.menu-toggle i:nth-child(2) { top: 17px; }
-.menu-toggle[aria-expanded="true"] i:nth-child(1) { top: 14.5px; transform: rotate(45deg); }
-.menu-toggle[aria-expanded="true"] i:nth-child(2) { top: 14.5px; transform: rotate(-45deg); }
-@media (min-width: 1060px) {
-  .menu-toggle { display: none; }
-}
+.menu-toggle i:nth-child(1) { top: 9px; width: 13px; }
+.menu-toggle i:nth-child(2) { top: 15px; width: 8px; }
+.menu-toggle:hover i:nth-child(2) { width: 13px; }
+.menu-toggle[aria-expanded="true"] i { top: 12px; width: 13px; }
+.menu-toggle[aria-expanded="true"] i:nth-child(1) { transform: rotate(45deg); }
+.menu-toggle[aria-expanded="true"] i:nth-child(2) { transform: rotate(-45deg); }
 
 /* ── The sheet: the manual's contents page ────────────────────────────── */
 .menu-sheet {
@@ -923,6 +1150,29 @@ cite {
   transition: opacity var(--t-settle) var(--ease), visibility var(--t-settle) var(--ease);
 }
 .menu-sheet[data-open="false"] { opacity: 0; visibility: hidden; }
+
+/* Now that this opens at desktop widths too, it needs to be a contents *page*
+   and not a phone drawer stretched to 1440. Two columns on the manual's own
+   measure: the plate sequence in the wide one, everything off-sequence in the
+   narrow one, with the download at the foot of it. */
+.menu-sheet-inner {
+  max-width: var(--content);
+  margin-inline: auto;
+}
+@media (min-width: 900px) {
+  .menu-sheet {
+    padding-top: 108px;
+  }
+  .menu-sheet-inner {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 0 72px;
+    align-items: start;
+  }
+}
+.menu-sheet-cta {
+  margin-top: 4px;
+}
 .menu-sheet-head {
   margin: 0 0 12px;
   color: var(--ink-faint);
@@ -968,6 +1218,19 @@ cite {
   font-size: 0.625rem;
   font-weight: 500;
   letter-spacing: 0.16em;
+}
+/* The plate you were standing on when you opened this, marked the way the
+   contents rail marks it: a rule in ember, not a highlight. */
+.menu-plates a[aria-current="true"] {
+  position: relative;
+}
+.menu-plates a[aria-current="true"]::before {
+  content: "";
+  position: absolute;
+  inset: 14px auto 14px -14px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ember);
 }
 .menu-pages a {
   display: block;
@@ -4260,103 +4523,185 @@ cite {
 }
 
 /* ══════════════════════════════════════════════════════════════════════
-   THE SCREEN EDGE
-   The specimen opens on the actual thing: the top edge of a Mac display, the
-   camera housing centred in it, and Whisper Master's band moulded around the
-   housing and hanging down — which is exactly where and how it appears when
-   you hold the key.
+   THE DISPLAY
+   The specimen opens on the actual thing, and the actual thing is not a
+   picture: the viewport *is* the Mac screen. It has a bezel, thick along the
+   top the way the machine's is; it has radiused corners with bezel showing
+   outside the curve; and the camera island is centred in the top edge with
+   Whisper Master's band moulded around it, which is exactly where and how the
+   band appears when you hold the key.
 
    This is why the black is allowed here and nowhere else on the page. It is
-   not a UI panel dropped onto paper; it is a *depiction of a bezel*, and a
-   bezel is black. The rest of the page draws its subjects; this draws this one.
+   not a UI panel dropped onto paper; it is a bezel, and a bezel is black. The
+   rest of the page draws its subjects. This one is the machine you are on.
    ══════════════════════════════════════════════════════════════════════ */
 
-.screen-edge {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  /* The edge itself: the top of the display, running the full measure. */
-  border-top: 1px solid var(--ink-3);
-  padding-bottom: 26px;
+/* One element, one ring. Thicker at the top because that edge holds the
+   camera, a hairline of the same ink down the other three sides, radiused at
+   the corners — those four numbers are the entire MacBook. The unequal widths
+   are not a shortcut: they are the proportions of the lid.
+
+   Inert by construction: fixed, no state, no listeners, no pointer events.
+   Above every layer including the sheet, because the machine does not go
+   behind the software running on it. */
+.screen-bezel {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  border: var(--bezel-side) solid var(--notch);
+  border-top-width: var(--bezel);
+  border-radius: var(--screen-r);
+  /* The glass edge, just inside the bezel. Without it the panel meets the
+     paper as a hard cut and the corners read as a decorative frame. */
+  box-shadow: inset 0 0 0 1px rgba(16, 20, 28, 0.16);
 }
 
-/* The band. Top corners are *concave*, flaring out to the edge, so it reads as
-   moulded out of the bezel rather than stuck under it — `NotchShape.swift`. */
-.screen-band {
+/* ── The notch ────────────────────────────────────────────────────────
+   The centre track of the running head. The cell holds the space; the band
+   itself is absolutely positioned so it can reach back up through the bar's
+   top padding and into the bezel, which is where it has to start from.
+   ─────────────────────────────────────────────────────────────────────── */
+.runhead-notch {
   position: relative;
+  align-self: stretch;
+}
+
+/* The band. Top corners are *concave*, flaring out to full width at the bezel,
+   so it reads as moulded out of the lid rather than stuck under it —
+   `NotchShape.swift`. The ink matches the bezel's exactly, so the seam where
+   the two meet does not exist. */
+.screen-band {
+  position: absolute;
+  top: calc(-1 * var(--bezel));
+  left: 50%;
   display: flex;
   align-items: center;
-  gap: 0;
-  height: 30px;
-  padding: 0 16px;
-  background: #07090e;
-  border-radius: 0 0 11px 11px;
+  height: calc(var(--bezel) + var(--notch-h));
+  /* The bezel's depth is padding, not offset: the content sits in the part of
+     the shape that hangs below the lid, where you would actually read it. */
+  padding: var(--bezel) 13px 0;
+  background: var(--notch);
+  border-radius: 0 0 var(--notch-r) var(--notch-r);
+  transform: translateX(-50%);
+  /* Everything that changes when the band opens and shuts moves on one curve
+     and one duration, so the shape grows as a shape. */
+  transition: padding 620ms var(--ease);
 }
+/* The flares. Positioned off the bezel's inner edge rather than the band's top,
+   which is what makes the curve continue the lid instead of cutting it. */
 .screen-band::before,
 .screen-band::after {
   content: "";
   position: absolute;
-  top: 0;
-  width: 11px;
-  height: 11px;
+  top: var(--bezel);
+  width: var(--notch-r);
+  height: var(--notch-r);
 }
 .screen-band::before {
-  left: -11px;
-  background: radial-gradient(circle at 0 100%, transparent 10.5px, #07090e 11px);
+  left: calc(-1 * var(--notch-r));
+  background: radial-gradient(
+    circle at 0 100%,
+    transparent calc(var(--notch-r) - 0.5px),
+    var(--notch) var(--notch-r)
+  );
 }
 .screen-band::after {
-  right: -11px;
-  background: radial-gradient(circle at 100% 100%, transparent 10.5px, #07090e 11px);
+  right: calc(-1 * var(--notch-r));
+  background: radial-gradient(
+    circle at 100% 100%,
+    transparent calc(var(--notch-r) - 0.5px),
+    var(--notch) var(--notch-r)
+  );
 }
 
-/* The wings either side of the housing. The state word goes left, your level
-   goes right — the app's own arrangement. */
+/* The wings either side of the island. The state word goes left, your voice
+   goes right — the app's own arrangement.
+
+   They are the same width whether or not they need to be, because the island
+   must not move: it is a hole in a machine. So the label gets a fixed track and
+   the orb gets an identical one, and the shape stays symmetric about the centre
+   of the screen through every state. */
 .screen-wing {
   display: inline-flex;
   align-items: center;
-  min-width: 92px;
-  color: #f2efe9;
+  flex: none;
+  width: var(--notch-wing);
+  max-width: var(--notch-wing);
+  overflow: hidden;
+  color: var(--notch-text);
   font-family: var(--font-read);
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: -0.005em;
   white-space: nowrap;
+  transition: max-width 620ms var(--ease), opacity 300ms var(--ease);
 }
 .screen-wing--r {
   justify-content: flex-end;
 }
 
-/* The camera housing. Slightly proud of the band and a shade blacker, because
-   on a real machine it is a hole rather than a screen. */
+/* Shut. This is the state that earns the shape its name: the wings fold to
+   nothing, the island's margins go with them, and what is left in the bezel is
+   a notch with a camera in it and no opinion about anything. A band that were
+   always open would be a badge — see REST_MS in DictationContext for the gap
+   that makes this state exist at all. */
+.screen-band[data-live="false"] {
+  padding-inline: 0;
+}
+.screen-band[data-live="false"] .screen-wing {
+  max-width: 0;
+  opacity: 0;
+}
+
+/* The camera island — the closed notch. No fill of its own: on the machine the
+   whole cutout is one black shape and the lens is the only thing in it, so a
+   panel here would put a seam through the middle of the shut state. */
 .screen-housing {
   position: relative;
   flex: none;
-  width: 78px;
-  height: 30px;
-  margin: 0 14px;
-  background: #000;
-  border-radius: 0 0 8px 8px;
+  width: var(--notch-w);
+  height: var(--notch-h);
+  margin: 0 11px;
+  transition: margin 620ms var(--ease);
 }
+.screen-band[data-live="false"] .screen-housing {
+  margin: 0;
+}
+/* The lens. Never lit, in any state: it is a camera on a lid, and the one
+   thing the bezel must not do is join in with the software. Everything the
+   machine has to say happens in the wings. */
 .screen-lens {
   position: absolute;
-  top: 9px;
+  top: 50%;
   left: 50%;
-  width: 4px;
-  height: 4px;
-  margin-left: -2px;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
   border-radius: 99px;
-  background: #1c2430;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  background: #1b2330;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07),
+    0 0 0 2.5px rgba(255, 255, 255, 0.025);
 }
 
-/* The level meter, in the right wing. Ember, because it is your voice. */
-.screen-wing .meter {
-  height: 12px;
+/* Narrow: the band is shut for good. There is no width here to put a status
+   readout beside a wordmark, and a half-open band would just be a black bar
+   with padding in it — so the phone gets the notch and nothing else, which is
+   also what the phone's own hardware does. */
+@media (max-width: 980px) {
+  .screen-wing {
+    display: none;
+  }
+  .screen-band {
+    padding-inline: 0;
+  }
+  .screen-housing {
+    margin: 0;
+  }
 }
-.screen-wing .meter i {
-  background: rgba(242, 239, 233, 0.28);
-}
-.screen-wing .meter.is-live i {
-  background: var(--ember);
-  animation: meter-bounce 0.85s ease-in-out infinite alternate;
-}
+
+/* Reduced motion is handled globally — see the blanket rule further up, which
+   flattens every transition and animation on the page. The band's own answer to
+   it is upstream of CSS anyway: `DictationContext` stops the clock and holds
+   the band open on its finished state, rather than opening and shutting on a
+   timer nobody asked for. */
