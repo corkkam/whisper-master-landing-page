@@ -7,6 +7,7 @@ import SmoothScroll from "@/components/chrome/SmoothScroll";
 import Cursor from "@/components/chrome/Cursor";
 import SignalSpine from "@/components/chrome/SignalSpine";
 import ScreenFrame from "@/components/chrome/ScreenFrame";
+import ScreenScrollbar from "@/components/chrome/ScreenScrollbar";
 import DictationProvider from "@/components/chrome/DictationContext";
 import CookieConsent from "@/components/chrome/CookieConsent";
 import GoogleAnalytics from "@/components/chrome/GoogleAnalytics";
@@ -114,6 +115,10 @@ export default function RootLayout({
             Skip to content
           </a>
           <SmoothScroll>
+            {/* Inside SmoothScroll on purpose: the rail writes scroll position,
+                and while Lenis owns the window those writes have to go through
+                it or the next wheel event snaps the page back. */}
+            <ScreenScrollbar />
             <JoinProvider>
               {/* One clock for the demo, shared by the notch in the bezel and
                   the capture panel in the hero — see DictationContext. */}

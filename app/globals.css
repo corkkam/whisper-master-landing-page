@@ -127,7 +127,16 @@
      the whole assembly stays in register at any width. */
   --bezel: 10px;
   --bezel-side: 4px;
+  /* The chin. Heavier than the sides and lighter than the top: on the real
+     machine the bottom edge is the one carrying the hinge, and giving it its own
+     number stops the lid reading as an evenly weighted picture frame while still
+     keeping the top the heaviest edge — which is what sells the notch. */
+  --bezel-bottom: 6px;
   --screen-r: 18px;
+  /* The glass sits inside the ink, so its corners are the lid's radius less the
+     ink it is set into. Derived rather than typed, so the two curves stay
+     concentric at any breakpoint instead of drifting apart. */
+  --glass-r: calc(var(--screen-r) - var(--bezel-side));
 
   /* The notch. `--notch-w` is the closed shape — the camera island — and it is
      wide-to-tall at roughly 5:1 because that is the ratio on the machine; a
@@ -151,6 +160,7 @@
   :root {
     --bezel: 8px;
     --bezel-side: 3px;
+    --bezel-bottom: 5px;
     --screen-r: 14px;
     --notch-w: 96px;
     --notch-h: 22px;
@@ -247,6 +257,7 @@ a {
   border-radius: 2px;
 }
 
+/* Inner scrollers keep a real scrollbar, styled to the paper. */
 ::-webkit-scrollbar {
   width: 11px;
 }
@@ -257,6 +268,26 @@ a {
   background: var(--hair);
   border: 3px solid var(--paper-2);
   border-radius: 99px;
+}
+
+/* ── The document scrollbar ───────────────────────────────────────────
+   Hidden, and replaced by `.screen-scroll` further down.
+
+   Not a cosmetic preference. A classic (non-overlay) scrollbar takes its width
+   out of the layout, and the bezel is `position: fixed; inset: 0`, which
+   resolves against the *client* box — so the scrollbar is laid out in the strip
+   outside the lid and the machine ends up with a grey rail bolted to its right
+   edge. There is no way to inset the root scrollbar, so the only fix that keeps
+   the frame intact is to stop drawing it and put our own inside the glass.
+   Scoped to the document scroller alone; the rules above still apply
+   everywhere else.
+   ─────────────────────────────────────────────────────────────────────── */
+html {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 p {
@@ -2655,11 +2686,18 @@ cite {
   padding: var(--space-200);
   border: 1px solid var(--line);
   border-radius: 16px;
-  background: rgba(11, 15, 23, 0.92);
+  /* Paper, not the near-black this was. The old value was hard-coded
+     `rgba(11, 15, 23, 0.92)`, so it was immune to the palette bridge that
+     re-pointed every *named* dark token at ink — the same fault the download
+     gate had, and with the same result: `--haze-bright` body copy at #2c3444 on
+     a near-black card, and a "Decline" button reading as dark-on-dark. The card
+     is the thing that was wrong, so the card moves to paper rather than the
+     type moving back. */
+  background: color-mix(in oklab, var(--paper-2) 92%, transparent);
   backdrop-filter: blur(18px);
   -webkit-backdrop-filter: blur(18px);
-  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05),
-    0 24px 60px -20px rgba(0, 0, 0, 0.8);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.5),
+    0 24px 60px -20px rgba(31, 24, 12, 0.35);
   animation: consent-rise 0.5s var(--ease) both;
 }
 
@@ -4711,14 +4749,140 @@ cite {
 .screen-bezel {
   position: fixed;
   inset: 0;
+  /* iOS sizes a `fixed; inset: 0` box to the viewport it has *now*, while the
+     document keeps painting into the taller one behind the browser toolbar — so
+     the sheet ran on past the chin and the machine appeared to leak page out of
+     its own bottom edge. `dvh` is the one length that tracks the toolbar as it
+     comes and goes, which keeps the chin on the last visible row in both
+     states. `inset: 0` above stays as the fallback for anything without it. */
+  height: 100dvh;
+  bottom: auto;
   z-index: 70;
   pointer-events: none;
   border: var(--bezel-side) solid var(--notch);
   border-top-width: var(--bezel);
+  border-bottom-width: var(--bezel-bottom);
   border-radius: var(--screen-r);
-  /* The glass edge, just inside the bezel. Without it the panel meets the
-     paper as a hard cut and the corners read as a decorative frame. */
-  box-shadow: inset 0 0 0 1px rgba(16, 20, 28, 0.16);
+  /* Inset shadows are clipped to the padding box, so all three of these land on
+     the glass rather than the ink:
+       1. the hairline where glass meets bezel — without it the panel meets the
+          paper as a hard cut and the corners read as a decorative frame;
+       2. the shadow the top edge casts down onto the sheet, which is what makes
+          the paper sit *behind* the lid instead of flush inside it;
+       3. the same thing at a fraction of the strength on the other three sides,
+          so the recess closes all the way round. */
+  box-shadow:
+    inset 0 0 0 1px rgba(16, 20, 28, 0.2),
+    inset 0 7px 16px -9px rgba(7, 9, 14, 0.55),
+    inset 0 -3px 12px -9px rgba(7, 9, 14, 0.35);
+}
+
+/* Both layers below are sized to the *border* box, not the padding box: a
+   child's `inset: 0` resolves against the padding box, which here is the glass,
+   so each edge is pulled back out by the ink it sits in. */
+
+/* The top face. A dead-flat black lid is the one detail that reads as a CSS
+   border rather than an object — a real anodised edge catches the room light
+   along the face that points up at it. Confined to the top ink by height, so it
+   never touches the glass, and it paints over the notch band as well as the
+   bezel (z 70 against the bar's 64), which is what keeps the two continuous:
+   one lid catching one light, rather than a band stuck under a frame. */
+.screen-bezel::before {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--bezel));
+  right: calc(-1 * var(--bezel-side));
+  left: calc(-1 * var(--bezel-side));
+  height: var(--bezel);
+  border-radius: var(--screen-r) var(--screen-r) 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.075),
+    rgba(255, 255, 255, 0)
+  );
+}
+
+/* The outer edge, and the chin. One hairline of light around the extreme
+   outside so the machine has a machined edge against the browser chrome
+   instead of bleeding into it, plus a shade that sinks the bottom ink away from
+   the light — the gradient is fully transparent above the chin's own depth, so
+   the glass is untouched. */
+.screen-bezel::after {
+  content: "";
+  position: absolute;
+  top: calc(-1 * var(--bezel));
+  right: calc(-1 * var(--bezel-side));
+  bottom: calc(-1 * var(--bezel-bottom));
+  left: calc(-1 * var(--bezel-side));
+  border-radius: inherit;
+  background: linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.45),
+    rgba(0, 0, 0, 0) var(--bezel-bottom)
+  );
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
+}
+
+/* ── The scrollbar, inside the glass ──────────────────────────────────
+   Replaces the native document scrollbar, which had to go because it is laid
+   out in the strip *outside* a `fixed; inset: 0` bezel — see the
+   `html::-webkit-scrollbar` note up top. Inset from the ink by the same
+   hairline the glass edge uses, and it starts below the menu bar so it never
+   crosses the running head.
+
+   Below the bezel (70) so the lid still passes in front of it, above the
+   contents sheet (62) so it stays reachable while a panel is open.
+   ─────────────────────────────────────────────────────────────────────── */
+.screen-scroll {
+  position: fixed;
+  right: calc(var(--bezel-side) + 5px);
+  top: calc(var(--bezel) + var(--bar-h) + 10px);
+  bottom: calc(var(--bezel-bottom) + 10px);
+  z-index: 66;
+  /* Wider than the thumb it holds: the visible rail can stay a hairline while
+     the grab target stays a target. */
+  width: 11px;
+  display: flex;
+  justify-content: center;
+  cursor: default;
+  opacity: 0;
+  transition: opacity var(--t-quick) var(--ease);
+}
+.screen-scroll[data-active="true"] {
+  opacity: 1;
+}
+
+.screen-scroll-thumb {
+  width: 4px;
+  border-radius: 99px;
+  background: color-mix(in oklab, var(--ink) 26%, transparent);
+  /* Positioned by transform from the component; height is set there too. */
+  will-change: transform;
+  transition: width var(--t-quick) var(--ease),
+    background var(--t-quick) var(--ease);
+}
+.screen-scroll:hover .screen-scroll-thumb {
+  width: 6px;
+  background: color-mix(in oklab, var(--ink) 42%, transparent);
+}
+.screen-scroll[data-held="true"] .screen-scroll-thumb {
+  width: 6px;
+  background: color-mix(in oklab, var(--ink) 62%, transparent);
+}
+
+/* Touch gets nothing. iOS and Android already draw an overlay scrollbar that
+   takes no layout width, so it never breaks the frame — and a rail you cannot
+   hover is furniture on a screen with none to spare. */
+@media (hover: none), (pointer: coarse) {
+  .screen-scroll {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .screen-scroll,
+  .screen-scroll-thumb {
+    transition: none;
+  }
 }
 
 /* ── The notch ────────────────────────────────────────────────────────
