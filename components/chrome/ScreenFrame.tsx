@@ -16,7 +16,19 @@
  * Server-rendered and inert: no state, no listeners, no pointer events. It sits
  * above every layer including the contents sheet, because the machine does not
  * go behind the software running on it.
+ *
+ * `.screen-corners` is the second half of "bezel showing outside the curve"
+ * above. The bezel is a rounded box, so the four wedges between its radius and
+ * the square viewport were never its to paint — the page canvas showed through
+ * them instead, putting a cream notch in each corner of an otherwise black lid.
+ * A separate square layer fills them, because a rounded element cannot paint
+ * outside its own radius.
  */
 export default function ScreenFrame() {
-  return <div className="screen-bezel" aria-hidden="true" />;
+  return (
+    <>
+      <div className="screen-bezel" aria-hidden="true" />
+      <div className="screen-corners" aria-hidden="true" />
+    </>
+  );
 }

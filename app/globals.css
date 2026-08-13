@@ -4823,6 +4823,52 @@ cite {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07);
 }
 
+/* The corners. Four wedges of ink between the lid's radius and the square
+   viewport — the part of "bezel showing outside the curve" the bezel itself
+   cannot draw, since a rounded box clips its own paint to its radius. Left
+   unpainted, the page canvas showed through as a cream notch in each corner.
+
+   Each wedge is one radial gradient with its centre on the corner's centre of
+   curvature: transparent inside the radius, where the lid's own rounded corner
+   already sits, ink outside it. The half-pixel before the stop is the
+   antialiasing seam — without it the two curves meet on a hard edge and the
+   join reads as a scratch.
+
+   Above the bezel rather than below it. Below, the page would still be painting
+   into the same wedges and would win. */
+.screen-corners {
+  position: fixed;
+  inset: 0;
+  height: 100dvh;
+  bottom: auto;
+  z-index: 71;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      circle at 100% 100%,
+      transparent calc(var(--screen-r) - 0.5px),
+      var(--notch) var(--screen-r)
+    ),
+    radial-gradient(
+      circle at 0 100%,
+      transparent calc(var(--screen-r) - 0.5px),
+      var(--notch) var(--screen-r)
+    ),
+    radial-gradient(
+      circle at 100% 0,
+      transparent calc(var(--screen-r) - 0.5px),
+      var(--notch) var(--screen-r)
+    ),
+    radial-gradient(
+      circle at 0 0,
+      transparent calc(var(--screen-r) - 0.5px),
+      var(--notch) var(--screen-r)
+    );
+  background-size: var(--screen-r) var(--screen-r);
+  background-position: top left, top right, bottom left, bottom right;
+  background-repeat: no-repeat;
+}
+
 /* ── The scrollbar, inside the glass ──────────────────────────────────
    Replaces the native document scrollbar, which had to go because it is laid
    out in the strip *outside* a `fixed; inset: 0` bezel — see the
