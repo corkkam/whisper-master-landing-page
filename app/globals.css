@@ -1368,6 +1368,95 @@ cite {
 .hero-water {
   z-index: 0;
 }
+
+/* ── The pond is an instrument ────────────────────────────────────────
+   The band takes a press. `.water` is `pointer-events: none` so the plates it
+   backs never eat a click; the hero's is the one that answers, because holding
+   it is the product's only gesture. It stays at `z-index: 0` under the copy, so
+   the headline and the CTA still win every pointer they are actually under.
+
+   `pan-y` matters: on a phone this band is a third of the first screen, and a
+   surface that swallowed a scroll to listen for a hold would be a worse
+   offence than any animation. Vertical drags stay with the page and arrive
+   here as `pointercancel`, which ends the utterance cleanly. */
+.hero-water {
+  pointer-events: auto;
+  touch-action: pan-y;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.hero-water * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ── "Hold one key" ───────────────────────────────────────────────────
+   The control is the phrase, set in the running text at the same size and
+   weight as the sentence around it. It has to read as prose first and as a
+   button second, or the paragraph turns into a toolbar — so no fill, no box,
+   just a dotted rule under it and the record dot in front.
+
+   Inert until the headline has settled, because until then there is nothing to
+   interrupt and the offer would only compete with the line resolving. */
+.hold-key {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  cursor: default;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-user-select: none;
+  user-select: none;
+  border-bottom: 1px dotted transparent;
+  transition: color var(--t-quick) var(--ease), border-color var(--t-quick) var(--ease);
+}
+.hold-key.is-live {
+  cursor: pointer;
+  border-bottom-color: rgba(181, 56, 18, 0.45);
+}
+.hold-key.is-live:hover {
+  color: var(--ember-ink);
+  border-bottom-color: var(--ember-ink);
+}
+.hold-key:focus-visible {
+  outline: 2px solid var(--ember-ink);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+/* The record dot: ember, because in this palette ember is you. Absent until the
+   control is live, so the sentence reads plainly on first pass. */
+.hold-key i {
+  display: none;
+  width: 0.42em;
+  height: 0.42em;
+  margin-right: 0.34em;
+  border-radius: 50%;
+  vertical-align: 0.06em;
+  background: var(--ember-ink);
+  opacity: 0.5;
+  transition: opacity var(--t-quick) var(--ease), box-shadow var(--t-quick) var(--ease);
+}
+.hold-key.is-live i {
+  display: inline-block;
+}
+/* Live while the key is down. The dot is the only thing that changes state,
+   which is the same contract the app's record light has. */
+.hero:has(.hero-water[data-held]) .hold-key {
+  color: var(--ember-ink);
+  border-bottom-color: var(--ember-ink);
+}
+.hero:has(.hero-water[data-held]) .hold-key i {
+  opacity: 1;
+  box-shadow: 0 0 0 0.28em rgba(255, 106, 61, 0.18);
+}
+/* Nothing to hold if nothing is allowed to move. */
+@media (prefers-reduced-motion: reduce) {
+  .hold-key i { display: none; }
+  .hold-key { border-bottom-color: transparent; cursor: default; }
+  .hero-water { pointer-events: none; cursor: auto; }
+}
 /* ── The water layer ──────────────────────────────────────────────────
    The canvas sits exactly over the still image and replaces it once GL is up.
    Both are `pointer-events: none` so the headline and CTA above stay clickable
@@ -1387,13 +1476,24 @@ cite {
   display: block;
   object-fit: cover;
 }
-.water-canvas {
+/* The canvas starts hidden and is revealed by `data-live` on its host, once the
+   shader has actually drawn a frame — see the cross-fade further down. There
+   used to be a `.water-canvas[data-ready]` rule here claiming to do that job;
+   nothing has ever set that attribute, so it never fired and it described the
+   opposite of what happens. */
+/* The hero shader's two source layers — the pond and the koi. They have to be
+   in the document for the browser to fetch and decode them, but the browser
+   never paints either; the canvas composites them. `display: none` is not safe
+   here, since it leaves `decode()` pending in some engines and the upload then
+   never happens, so they are hidden by size and opacity instead. */
+.water-src {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
   opacity: 0;
-  transition: opacity 600ms var(--ease);
-}
-/* Swap to the live surface only once it has actually drawn a frame. */
-.water-canvas[data-ready] {
-  opacity: 1;
+  pointer-events: none;
 }
 /* The hero box is far taller than the artwork, so covering it either cropped
    the koi off the right edge or zoomed into its flank. Instead the art keeps
@@ -1439,11 +1539,19 @@ cite {
      empty water above the plate number before any content started. The band is
      now sized to the drawing rather than to the viewport, and the crop is
      pushed onto the koi instead of the open water beside it. */
+  /* Sized from the width, not the viewport height.
+     `30vh` made the band's *aspect* a function of how tall the window happened
+     to be — 1.63 on a tall phone, 1.98 once Safari's URL bar appeared. The koi
+     is the long axis of this drawing, and `cover` starts cutting its head and
+     tail off the moment the band goes wider than the plate's own 1.78. So the
+     same page framed the fish correctly or beheaded it depending on whether
+     the user had scrolled. Tying height to width fixes the aspect at ~1.61 for
+     every phone, which is inside 1.78, so the crop falls on the open water at
+     the left and the whole fish always survives. */
   .hero-water {
     inset: 56px 0 auto;
-    height: 30vh;
-    min-height: 200px;
-    max-height: 270px;
+    height: 62vw;
+    max-height: 320px;
   }
   .hero-water .water-img,
   .hero-water .water-canvas {
@@ -1457,9 +1565,11 @@ cite {
     mask-image: linear-gradient(#000 0%, #000 72%, transparent 100%);
     -webkit-mask-image: linear-gradient(#000 0%, #000 72%, transparent 100%);
   }
-  /* Sits directly under the band. */
+  /* Sits directly under the band, tracking the same width-derived height. The
+     overlap is deliberate: the bottom 28% of the band is masked out, so the
+     plate number starts inside the fade rather than below a hard edge. */
   .hero {
-    padding-top: calc(30vh + 8px);
+    padding-top: calc(62vw + 24px);
   }
 }
 
@@ -1683,6 +1793,13 @@ cite {
 }
 .spec {
   display: grid;
+  /* Rows sit at their content height and stack from the top.
+     Without this the grid's default `align-content: normal` stretches the auto
+     rows to fill whatever height the tallest column forces on the row — so a
+     spec whose note wraps to two lines has less slack to hand out, and its
+     figure, label and note all end up on different baselines from its
+     neighbours'. The columns are read across, so the labels have to line up. */
+  align-content: start;
   gap: 6px;
   padding: 28px 0;
   border-bottom: 1px solid var(--hair);
@@ -4677,21 +4794,18 @@ cite {
    See components/plates/Water.tsx.
    ══════════════════════════════════════════════════════════════════════ */
 
-.water {
-  position: absolute;
-  inset: 0;
-  overflow: hidden;
-  pointer-events: none;
-}
-.water-img,
-.water-canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+/* Only the cross-fade lives here.
+   This block used to restate `.water`, `.water-img/.water-canvas` and the
+   hero's `object-fit` as well — all of it a duplicate of PLATE 00 above, and
+   all of it landing *after* that section's `max-width: 900px` override. The
+   duplicate therefore won on phones, forcing the still image back to
+   `contain / top center` while the shader kept cropping to `84% 26%`. The two
+   layers framed the plate differently, so the hand-off between them was a
+   visible jump rather than a fade — and the band showed a letterboxed plate
+   where it was supposed to show the koi. Restating settled rules far from
+   where they were decided is how that happened; the rules stay in one place
+   now. */
+
 /* Cross-fade rather than swap: a hard cut between the two is visible as a
    one-frame flash, because the shader's first frame is already displaced. */
 .water-canvas {
@@ -4704,17 +4818,6 @@ cite {
 .water[data-live="true"] .water-img {
   opacity: 0;
   transition: opacity 900ms var(--ease);
-}
-
-/* The hero's band, sized the way the still plate was. */
-/* The shader does its own aspect-correct fit, so the canvas fills its box and
-   only the still image needs `object-fit`. */
-.hero-water .water-img {
-  object-fit: contain;
-  object-position: top center;
-}
-.hero-water .water-canvas {
-  object-fit: fill;
 }
 
 /* The plate number's rule runs to the edge of the column, which is fine on the
