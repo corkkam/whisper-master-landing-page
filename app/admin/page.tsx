@@ -7,7 +7,6 @@ import Bars from "@/components/admin/Bars";
 import Breakdown from "@/components/admin/Breakdown";
 import { isAdmin } from "@/lib/admin";
 import { listBetaQueue } from "@/lib/beta/queue";
-import { pipelineSummary } from "@/lib/leads/queries";
 import {
   activeSince,
   breakdown,
@@ -26,8 +25,8 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Never cached, for the same reason as the pipeline: a stale dashboard is a
-// dashboard that gets mistrusted and then ignored.
+// Never cached. A stale dashboard is a dashboard that gets mistrusted and then
+// ignored, and the reads are cheap at this scale.
 export const dynamic = "force-dynamic";
 
 /**
@@ -45,17 +44,11 @@ export default async function AdminOverviewPage() {
   // 404 rather than 403. A 403 confirms the route exists and is worth probing.
   if (!(await isAdmin())) notFound();
 
-  const [queue, usage, pipeline] = await Promise.all([
-    listBetaQueue(),
-    getUsageStats(),
-    pipelineSummary(),
-  ]);
+  const [queue, usage] = await Promise.all([listBetaQueue(), getUsageStats()]);
 
   const { rows, counts } = queue;
   const waiting = rows.filter((r) => !r.approved && r.requested);
-  const openLeads = pipeline
-    .filter((r) => r.stage !== "won" && r.stage !== "lost")
-    .reduce((n, r) => n + Number(r.count ?? 0), 0);
+  const dictating = rows.filter((r) => usage.byUser.has(r.userId)).length;
 
   const weeks = signupsByWeek(rows, 8);
   const new7 = createdSince(rows, 7);
@@ -64,7 +57,7 @@ export default async function AdminOverviewPage() {
   return (
     <>
       <Nav />
-      <main className="page pl-page">
+      <main className="page ad-page">
         <header className="page-head">
           <p className="label">
             <i className="rec-dot" />
@@ -106,35 +99,35 @@ export default async function AdminOverviewPage() {
           </p>
         )}
 
-        <div className="pl-summary">
-          <div className="pl-stat">
+        <div className="ad-summary">
+          <div className="ad-stat">
             <strong>{queue.totalAccounts.toLocaleString()}</strong>
             <span>accounts</span>
           </div>
-          <div className="pl-stat">
+          <div className="ad-stat">
             <strong>{counts.approved.toLocaleString()}</strong>
             <span>in beta</span>
           </div>
-          <div className={`pl-stat${counts.waiting > 0 ? " ad-stat--due" : ""}`}>
+          <div className={`ad-stat${counts.waiting > 0 ? " ad-stat--due" : ""}`}>
             <strong>{counts.waiting.toLocaleString()}</strong>
             <span>waiting</span>
           </div>
-          <div className="pl-stat">
+          <div className="ad-stat">
             <strong>{new7.toLocaleString()}</strong>
             <span>new this week</span>
           </div>
-          <div className="pl-stat pl-stat--won">
+          <div className="ad-stat ad-stat--good">
             <strong>{usage.available ? usage.activeUsers.d7.toLocaleString() : "n/a"}</strong>
             <span>dictated this week</span>
           </div>
-          <div className="pl-stat">
-            <strong>{openLeads.toLocaleString()}</strong>
-            <span>open leads</span>
+          <div className="ad-stat">
+            <strong>{dictating.toLocaleString()}</strong>
+            <span>ever dictated</span>
           </div>
         </div>
 
         {/* ── Who is waiting ───────────────────────────────────────────── */}
-        <section className={`pl-section${counts.waiting > 0 ? " pl-section--urgent" : ""}`}>
+        <section className={`ad-section${counts.waiting > 0 ? " ad-section--urgent" : ""}`}>
           <h2>
             Beta queue <i>{counts.waiting}</i>
           </h2>
@@ -163,7 +156,7 @@ export default async function AdminOverviewPage() {
         </section>
 
         {/* ── What the product is actually doing ───────────────────────── */}
-        <section className="pl-section">
+        <section className="ad-section">
           <h2>
             Usage <i>last {usage.windowDays} days</i>
           </h2>
@@ -186,28 +179,28 @@ export default async function AdminOverviewPage() {
                   The usage read hit its row cap, so these totals are partial and low.
                 </p>
               )}
-              <div className="pl-summary">
-                <div className="pl-stat">
+              <div className="ad-summary">
+                <div className="ad-stat">
                   <strong>{compact(usage.totals.words)}</strong>
                   <span>words dictated</span>
                 </div>
-                <div className="pl-stat">
+                <div className="ad-stat">
                   <strong>{compact(usage.totals.dictations)}</strong>
                   <span>dictations</span>
                 </div>
-                <div className="pl-stat">
+                <div className="ad-stat">
                   <strong>{duration(usage.totals.seconds)}</strong>
                   <span>time held</span>
                 </div>
-                <div className="pl-stat pl-stat--won">
+                <div className="ad-stat ad-stat--good">
                   <strong>{compact(usage.totals.wordsCorrected)}</strong>
                   <span>words corrected</span>
                 </div>
-                <div className="pl-stat">
+                <div className="ad-stat">
                   <strong>{usage.activeUsers.d30.toLocaleString()}</strong>
                   <span>active users</span>
                 </div>
-                <div className="pl-stat">
+                <div className="ad-stat">
                   <strong>
                     {usage.totals.dictations > 0
                       ? Math.round(usage.totals.words / usage.totals.dictations)
@@ -274,7 +267,7 @@ export default async function AdminOverviewPage() {
         </section>
 
         {/* ── Where the accounts came from ─────────────────────────────── */}
-        <section className="pl-section">
+        <section className="ad-section">
           <h2>
             Signups <i>{new30} in 30 days</i>
           </h2>
@@ -321,17 +314,17 @@ export default async function AdminOverviewPage() {
           </div>
         </section>
 
-        <section className="pl-section">
+        <section className="ad-section">
           <h2>Elsewhere</h2>
           <ul className="ad-links">
             <li>
-              <Link href="/admin/beta">
-                Beta queue <i>{counts.waiting} waiting</i>
+              <Link href="/admin/users">
+                All users <i>{queue.totalAccounts} accounts</i>
               </Link>
             </li>
             <li>
-              <Link href="/admin/pipeline">
-                Sales pipeline <i>{openLeads} open</i>
+              <Link href="/admin/beta">
+                Beta queue <i>{counts.waiting} waiting</i>
               </Link>
             </li>
           </ul>

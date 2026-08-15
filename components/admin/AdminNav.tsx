@@ -10,8 +10,8 @@ import Link from "next/link";
  */
 const TABS = [
   { href: "/admin", label: "Overview", key: "overview" },
+  { href: "/admin/users", label: "Users", key: "users" },
   { href: "/admin/beta", label: "Beta", key: "beta" },
-  { href: "/admin/pipeline", label: "Pipeline", key: "pipeline" },
 ] as const;
 
 export type AdminTab = (typeof TABS)[number]["key"];

@@ -144,7 +144,9 @@ export const plans: Plan[] = [
  * HONESTY CONSTRAINT
  * Every line below has to survive contact with a compliance officer. Nothing
  * here should promise an artifact that does not exist — SOC 2 in particular is
- * deliberately absent, and /for-teams says so in plain text.
+ * deliberately absent. The page that used to say so in plain text was
+ * /for-teams; it was removed with the lead funnel, so whoever restores a
+ * multi-seat surface owes that disclosure a new home.
  */
 export type TeamPlan = {
   key: "team" | "regulated" | "enterprise";

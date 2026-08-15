@@ -2,6 +2,7 @@ import { Polar } from "@polar-sh/sdk";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isPlanSlug, PLANS, polarServer, productIdFor } from "@/lib/billing/plans";
+import { product } from "@/lib/config";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -45,9 +46,13 @@ export async function GET(req: NextRequest) {
 
   const plan = PLANS[slug];
   if (!plan.selfServe) {
-    // Not an error the buyer caused — send them to the conversation this tier
-    // actually requires rather than showing them a dead end.
-    return NextResponse.redirect(new URL("/for-teams#enquire", siteUrl()));
+    // Not an error the buyer caused. This used to redirect to the /for-teams
+    // enquiry form; that route is gone, so name the address instead of bouncing
+    // the buyer to a 404. A multi-seat tier still needs a human either way.
+    return NextResponse.json(
+      { error: `That plan is sold directly. Email ${product.contactEmail}.` },
+      { status: 409 }
+    );
   }
 
   const productId = productIdFor(slug);

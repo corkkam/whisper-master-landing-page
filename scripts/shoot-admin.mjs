@@ -30,23 +30,30 @@ if (page.url().includes("factor-one")) {
 await page.waitForTimeout(3000);
 console.log("after sign-in:", page.url());
 
-for (const [name, path] of [
-  ["overview", "/admin"],
-  ["beta", "/admin/beta"],
-  ["beta-approved", "/admin/beta?filter=approved"],
-  ["pipeline", "/admin/pipeline"],
-]) {
+async function shoot(name, path) {
   const res = await page.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
   console.log(path, res?.status());
   await page.waitForTimeout(800);
   await page.screenshot({ path: `${OUT}/${name}.png`, fullPage: true });
 }
 
+await shoot("overview", "/admin");
+await shoot("users", "/admin/users");
+await shoot("users-by-usage", "/admin/users?sort=usage");
+await shoot("beta", "/admin/beta");
+
+// The detail page needs a real id, so take one off the list rather than
+// hard-coding a fixture that the seeder regenerates on every run.
+// Sorted by usage, so the detail shot lands on someone who actually dictates.
+await page.goto(`${BASE}/admin/users?sort=usage`, { waitUntil: "domcontentloaded" });
+const href = await page.locator("a.ad-urow").first().getAttribute("href");
+if (href) await shoot("user-detail", href);
+else console.log("no user rows to open");
+
 // Narrow, because this is a tool used one-handed between other things.
 await page.setViewportSize({ width: 430, height: 900 });
-await page.goto(`${BASE}/admin/beta`, { waitUntil: "domcontentloaded" });
-await page.waitForTimeout(600);
-await page.screenshot({ path: `${OUT}/beta-mobile.png`, fullPage: true });
+await shoot("users-mobile", "/admin/users");
+if (href) await shoot("user-detail-mobile", href);
 
 await browser.close();
 console.log("done");

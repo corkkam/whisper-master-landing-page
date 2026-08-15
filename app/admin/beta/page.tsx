@@ -68,7 +68,7 @@ export default async function BetaQueuePage({
   return (
     <>
       <Nav />
-      <main className="page pl-page">
+      <main className="page ad-page">
         <header className="page-head">
           <p className="label">
             <i className="rec-dot" />
@@ -110,20 +110,20 @@ export default async function BetaQueuePage({
           </p>
         )}
 
-        <div className="pl-summary">
-          <div className={`pl-stat${counts.waiting > 0 ? " ad-stat--due" : ""}`}>
+        <div className="ad-summary">
+          <div className={`ad-stat${counts.waiting > 0 ? " ad-stat--due" : ""}`}>
             <strong>{counts.waiting.toLocaleString()}</strong>
             <span>waiting</span>
           </div>
-          <div className="pl-stat pl-stat--won">
+          <div className="ad-stat ad-stat--good">
             <strong>{counts.approved.toLocaleString()}</strong>
             <span>in beta</span>
           </div>
-          <div className="pl-stat">
+          <div className="ad-stat">
             <strong>{counts.noRequest.toLocaleString()}</strong>
             <span>never asked</span>
           </div>
-          <div className="pl-stat">
+          <div className="ad-stat">
             <strong>{queue.totalAccounts.toLocaleString()}</strong>
             <span>accounts</span>
           </div>
@@ -161,12 +161,12 @@ export default async function BetaQueuePage({
         </div>
 
         {shown.length === 0 ? (
-          <section className="pl-empty">
+          <section className="ad-empty">
             <h2>{query ? "No account matches that." : emptyTitle(filter)}</h2>
             <p>{query ? "Try an email address, or clear the search." : emptyBody(filter)}</p>
           </section>
         ) : (
-          <section className="pl-section">
+          <section className="ad-section">
             {/* The tab strip above already names the filter and its count, so a
                 heading only earns its space when a search has narrowed it. */}
             {query && (
@@ -174,7 +174,7 @@ export default async function BetaQueuePage({
                 Matching {query} <i>{filtered.length}</i>
               </h2>
             )}
-            <div className="pl-list">
+            <div className="ad-list">
               {shown.map((r) => (
                 <BetaRow key={r.userId} row={r} />
               ))}

@@ -23,7 +23,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // Ranked with the conversion pages rather than the informational ones: a
     // single team enquiry is worth more than a large number of consumer
     // downloads, and this is the only page that captures one.
-    { path: "/for-teams", priority: 0.8, changeFrequency: "monthly" },
     { path: "/trust", priority: 0.7, changeFrequency: "monthly" },
     { path: "/roadmap", priority: 0.6, changeFrequency: "weekly" },
     { path: "/privacy", priority: 0.3, changeFrequency: "monthly" },

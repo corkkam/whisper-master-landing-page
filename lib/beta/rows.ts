@@ -1,8 +1,8 @@
 // Beta-queue vocabulary and row shape — shared by server and client.
 //
-// Same split as `lib/leads/stages.ts`, for the same reason: the queue UI is a
-// client component (it has expand state and optimistic approve buttons) and it
-// needs the row type and the filter list. If those lived in `./queue.ts`,
+// Split out of `./queue.ts` because the queue UI is a client component (it has
+// expand state and optimistic approve buttons) and it needs the row type and
+// the filter list. If those lived in `./queue.ts`,
 // importing them would drag the Clerk secret key and the service-role Supabase
 // client into the client graph — which `server-only` correctly refuses.
 //

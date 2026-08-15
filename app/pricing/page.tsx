@@ -99,22 +99,6 @@ export default async function PricingPage() {
             </p>
           </div>
 
-          {/* The teams answer is out with the rest of the teams routing — it is
-              the one FAQ entry whose whole purpose is to hand the reader to
-              /for-teams, so leaving it would advertise the page this pass took
-              off the nav and the footer. Restore all three together. */}
-          {/* <div>
-            <h3>Is there a team or enterprise plan?</h3>
-            <p>
-              Yes, and the per-seat prices are published rather than hidden behind
-              &ldquo;contact us&rdquo; — see <Link href="/for-teams">for teams</Link>.
-              On-device transcription is often the only option for legal, medical
-              and finance practices whose obligations rule out sending audio to a
-              cloud service, so that page leads with the disclosure table your
-              security reviewer will ask for and is honest about where we
-              don&rsquo;t clear the bar yet.
-            </p>
-          </div> */}
 
           <div>
             <h3>Will you raise the price on me later?</h3>
@@ -133,20 +117,16 @@ export default async function PricingPage() {
             Free while in beta, and the download needs no card. Dictate for a week
             and decide whether any of the numbers above are worth paying.
           </p>
-          {/* Secondary action used to be "Join the waitlist". With sign-up public
-              that offered a visitor a queue they don't need, on the one page where
-              they've already shown buying intent. Multi-seat is where this page
-              pays for itself, so the second slot pointed at teams instead — and
-              is commented out with the rest of the teams routing, leaving the
-              download to carry the CTA on its own. */}
+          {/* One action, deliberately. The second slot held "Join the waitlist"
+              and later "Buying for a team?"; the first offered a queue nobody
+              needs now that sign-up is public, and the second pointed at
+              /for-teams, which has been removed along with the rest of the lead
+              funnel. Multi-seat buyers email the address on /trust. */}
           <div className="page-cta-actions">
             <Link className="btn btn--primary" href="/download" data-cursor="Get the app">
               Download for Mac
               <span aria-hidden="true">↓</span>
             </Link>
-            {/* <Link className="btn btn--ghost" href="/for-teams" data-cursor="Seats & billing">
-              Buying for a team?
-            </Link> */}
           </div>
         </section>
       </main>

@@ -3555,287 +3555,15 @@ cite {
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   FOR TEAMS — the organisation funnel (/for-teams) and the lead form.
+   ADMIN CONSOLE (/admin, /admin/users, /admin/beta) — internal, founder-only.
 
-   Visually quieter than the consumer pages on purpose. The reader here is a
-   partner or a practice manager checking whether we are serious, and the
-   aurora-and-motion treatment that sells the product to an individual reads as
-   marketing gloss to someone whose job is to find the catch. Denser type,
-   flatter surfaces, tables over hero moments.
-   ══════════════════════════════════════════════════════════════════════════ */
+   Deliberately plain. This is a tool, not a page: no motion, no gradients, high
+   information density, and it has to stay usable one-handed on a phone between
+   other things, which is where a solo founder actually works.
 
-.teams-claim {
-  display: grid;
-  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
-  gap: var(--space-400);
-  align-items: start;
-  padding: var(--space-300) 0 var(--space-500);
-  border-top: 1px solid var(--line);
-}
-@media (max-width: 860px) {
-  .teams-claim { grid-template-columns: 1fr; }
-}
-
-.teams-claim-main h2 {
-  margin: 0 0 var(--space-200);
-  font-family: var(--display);
-  font-size: var(--text-xl);
-  line-height: var(--lh-xl);
-  letter-spacing: -0.02em;
-  color: var(--bone);
-}
-.teams-claim-main p {
-  margin: 0 0 var(--space-200);
-  max-width: 62ch;
-  font-size: var(--text-base);
-  line-height: var(--lh-base);
-  color: var(--haze-bright);
-}
-
-/* The caveat is styled to be *read*, not skimmed past. A limitation buried in
-   body copy reads as a disclaimer; one in its own bordered block reads as
-   candour, which is the effect we want on this particular buyer. */
-.teams-claim-caveat {
-  margin-top: var(--space-300) !important;
-  padding: var(--space-200);
-  /* Bordered on all four sides. The single ember rule down the left edge read
-     as a pull-quote, which is the opposite of the weight a caveat wants. */
-  border: 1px solid var(--ember);
-  border-radius: 12px;
-  background: var(--ink-950);
-  font-size: var(--text-sm) !important;
-  line-height: var(--lh-sm) !important;
-  color: var(--haze-bright);
-}
-.teams-claim-caveat strong { color: var(--bone); }
-.teams-claim-caveat em { color: var(--ember-ink); font-style: normal; }
-
-.teams-facts {
-  display: grid;
-  gap: var(--space-100);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-.teams-facts li {
-  padding: var(--space-200) var(--space-200);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
-}
-/* The headline figures. Large text only needs 3:1, and vivid signal did not
-   even reach that on paper (1.32:1) — a 24px number nobody can read is a
-   strange thing to put in the largest type on the section. */
-.teams-facts strong {
-  display: block;
-  font-family: var(--display);
-  font-size: var(--text-2xl);
-  line-height: var(--lh-2xl);
-  letter-spacing: -0.03em;
-  color: var(--signal-ink);
-}
-.teams-facts span {
-  display: block;
-  margin-top: var(--space-75);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  color: var(--haze);
-}
-
-.teams-disclosure-note {
-  margin: var(--space-200) 0 0;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  color: var(--haze-dim);
-}
-.teams-disclosure-note a { color: var(--signal-ink); text-decoration: underline; text-underline-offset: 0.2em; }
-.teams-disclosure-note a:hover { text-decoration: underline; }
-
-.teams-plans {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 270px), 1fr));
-  gap: var(--space-200);
-  margin-top: var(--space-400);
-}
-.plan-sub--inr {
-  margin-top: -0.35rem !important;
-  font-size: var(--text-xs) !important;
-  line-height: var(--lh-xs) !important;
-  color: var(--haze-dim) !important;
-}
-
-.teams-anchor {
-  max-width: 68ch;
-  margin: var(--space-400) 0 0;
-  padding: var(--space-200) var(--space-300);
-  border: 1px dashed var(--line);
-  border-radius: 12px;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  color: var(--haze);
-}
-.teams-anchor strong { color: var(--bone); }
-
-.teams-limit-list {
-  display: grid;
-  gap: var(--space-200);
-  margin: var(--space-400) 0 0;
-  padding: 0;
-  list-style: none;
-}
-.teams-limit-list li {
-  padding: var(--space-200) var(--space-300);
-  border: 1px solid var(--line-soft);
-  border-radius: 12px;
-  background: var(--surface);
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  color: var(--haze-bright);
-}
-.teams-limit-list strong { color: var(--bone); }
-
-/* ── Lead form ─────────────────────────────────────────────────────────── */
-
-.lead-form { margin-top: 2rem; }
-
-.lead-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: var(--space-200);
-  margin-bottom: var(--space-200);
-}
-
-.lead-field { display: block; }
-.lead-field--wide { margin-bottom: 1rem; }
-
-.lead-field > span {
-  display: block;
-  margin-bottom: var(--space-75);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  font-weight: 600;
-  letter-spacing: -0.005em;
-  color: var(--bone);
-}
-.lead-field > span > i {
-  font-style: normal;
-  color: var(--ember);
-}
-.lead-field > span > em {
-  display: block;
-  margin-top: var(--space-50);
-  font-style: normal;
-  font-weight: 400;
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  color: var(--haze-dim);
-}
-
-.lead-field input,
-.lead-field select,
-.lead-field textarea {
-  width: 100%;
-  padding: var(--space-100) var(--space-200);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--ink-800);
-  color: var(--bone);
-  font: inherit;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  transition: border-color 700ms var(--ease), background 700ms var(--ease);
-}
-.lead-field textarea { resize: vertical; line-height: 1.6; }
-.lead-field input::placeholder,
-.lead-field textarea::placeholder { color: var(--haze-dim); }
-.lead-field input:focus,
-.lead-field select:focus,
-.lead-field textarea:focus {
-  outline: none;
-  border-color: var(--signal-deep);
-  background: var(--ink-700);
-}
-.lead-field select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%239b9b9b' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1.75 6 6.25 11 1.75'/></svg>");
-  background-position: right 12px center;
-  background-size: 11px;
-  background-repeat: no-repeat;
-  padding-right: var(--space-400);
-}
-.lead-field option { background: var(--ink-800); color: var(--bone); }
-
-/* Honeypot. `display:none` is skipped by some bots precisely because it is the
-   obvious tell, so this is positioned off-canvas and left rendered instead. */
-.lead-hp {
-  position: absolute;
-  left: -9999px;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-}
-
-.lead-error {
-  margin: 0 0 var(--space-200);
-  padding: var(--space-100) var(--space-200);
-  border: 1px solid rgba(255, 77, 94, 0.35);
-  border-radius: 8px;
-  background: rgba(255, 77, 94, 0.08);
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  color: var(--alarm);
-}
-
-.lead-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-200);
-  margin-top: var(--space-200);
-}
-.lead-fine {
-  flex: 1 1 260px;
-  margin: 0;
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  color: var(--haze-dim);
-}
-
-.lead-done {
-  margin-top: var(--space-400);
-  padding: var(--space-300);
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--surface);
-}
-.lead-done h3 {
-  margin: var(--space-100) 0 var(--space-200);
-  font-family: var(--display);
-  font-size: var(--text-xl);
-  line-height: var(--lh-xl);
-  letter-spacing: -0.02em;
-  color: var(--bone);
-}
-.lead-done p {
-  margin: 0 0 var(--space-100);
-  max-width: 60ch;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  color: var(--haze-bright);
-}
-.lead-done strong { color: var(--bone); }
-.lead-done-next { font-size: 0.875rem !important; color: var(--haze) !important; }
-.lead-done a { color: var(--signal); text-decoration: none; }
-.lead-done a:hover { text-decoration: underline; }
-
-/* ══════════════════════════════════════════════════════════════════════════
-   ADMIN CONSOLE (/admin, /admin/beta) — internal, founder-only.
-
-   Shares the pipeline's rules below and most of its furniture: `.pl-summary`,
-   `.pl-stat`, `.pl-section` and `.pl-facts` are reused verbatim rather than
-   restyled, so the three admin surfaces read as one tool. What is added here is
-   only what the pipeline had no equivalent of — a tab strip, a bar strip, a
-   ranked count list, and the approve control.
+   One namespace, `ad-`. The shared furniture at the bottom of this block used
+   to be the pipeline sheet's `.pl-*` and was renamed when the pipeline was
+   removed, so nothing here is named after a feature that no longer exists.
 
    Two rules carry over from the site's own system and are worth restating,
    because an internal tool is exactly where they get quietly dropped:
@@ -3956,9 +3684,10 @@ cite {
   padding-bottom: 1px;
   border-bottom: 1px solid var(--hair);
 }
+.ad-bars--dense { gap: 1px; }
 .ad-bar {
   flex: 1;
-  min-width: 3px;
+  min-width: 2px;
   /* Capped, so an 8-point series draws bars and not slabs. Without it the
      weekly chart stretches each bar to ~150px and the shape stops reading as a
      measurement. */
@@ -4150,6 +3879,101 @@ cite {
 .ad-btn--revoke { color: var(--ink-3); }
 .ad-btn--revoke:hover:not(:disabled) { color: var(--ember-ink); border-color: var(--ember-ink); }
 
+.ad-actions { display: grid; gap: var(--space-75); justify-items: start; }
+.ad-actions--lg .ad-btn { padding: var(--space-100) var(--space-300); font-size: var(--text-sm); }
+
+/* ── User detail header ───────────────────────────────────────────────── */
+.ad-back { border-bottom: 1px solid var(--hair); }
+.ad-back:hover { border-bottom-color: var(--ember-ink); }
+
+.ad-userhead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-200);
+  padding-bottom: var(--space-300);
+  margin-bottom: var(--space-400);
+  border-bottom: 1px solid var(--hair);
+}
+.ad-userhead-line {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
+  color: var(--ink-2);
+}
+.ad-userhead-line a { color: var(--signal-ink); }
+.ad-userhead-line a:hover { text-decoration: underline; }
+.ad-userhead-line span { color: var(--ink-3); }
+
+/* ── Users list row ───────────────────────────────────────────────────────
+   A link, so the whole row is the target. Four columns that answer, left to
+   right: what are they, who are they, do they use it, and are they still
+   around. The two numeric columns are right-aligned and set in mono so a long
+   list scans as a column of figures rather than as prose. */
+.ad-urow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-200);
+  padding: var(--space-100) var(--space-200);
+  border: 1px solid var(--hair);
+  border-radius: 8px;
+  background: var(--paper-2);
+  transition: background var(--t-quick) var(--ease),
+    border-color var(--t-quick) var(--ease);
+}
+.ad-urow:hover { background: var(--paper-3); border-color: var(--ink-faint); }
+.ad-urow--waiting { border-color: rgba(181, 56, 18, 0.35); }
+
+.ad-urow-usage,
+.ad-urow-seen {
+  display: grid;
+  justify-items: end;
+  text-align: right;
+  min-width: 5.5rem;
+}
+.ad-urow-usage b,
+.ad-urow-seen b {
+  font-family: var(--mono);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--ink);
+}
+.ad-urow-usage i,
+.ad-urow-seen i {
+  font-style: normal;
+  font-size: var(--text-xs);
+  line-height: var(--lh-xs);
+  color: var(--ink-3);
+}
+/* An account that has never dictated is a finding, not a blank. */
+.ad-urow-idle { color: var(--ink-faint) !important; }
+
+/* Narrow: identity on the first line, both readouts on the second. Each cell
+   gets an explicit row *and* column, because giving two of them the same slot
+   stacks them on top of each other rather than beside each other. The stacked
+   label/value pairs also go inline here, so a row stays two lines tall. */
+@media (max-width: 720px) {
+  .ad-urow {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    row-gap: 0.4rem;
+  }
+  .ad-urow .ad-state { grid-column: 1; grid-row: 1; }
+  .ad-urow .ad-ident { grid-column: 2 / -1; grid-row: 1; }
+  .ad-urow-usage,
+  .ad-urow-seen {
+    display: flex;
+    align-items: baseline;
+    gap: 0.3rem;
+    grid-row: 2;
+    text-align: left;
+    min-width: 0;
+  }
+  .ad-urow-usage { grid-column: 2; }
+  .ad-urow-seen { grid-column: 3; }
+}
+
 /* ── Account row ──────────────────────────────────────────────────────── */
 .ad-row {
   border: 1px solid var(--hair);
@@ -4264,49 +4088,49 @@ cite {
   color: var(--ink-3);
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   PIPELINE (/admin/pipeline) — internal, founder-only.
 
-   Deliberately plain. This is a tool, not a page: no motion, no gradients, high
-   information density, and it has to be usable one-handed on a phone between
-   other things, which is where a solo founder actually works a pipeline.
-   ══════════════════════════════════════════════════════════════════════════ */
+/* ── Shared furniture ─────────────────────────────────────────────────────
+   Page frame, stat tiles, section headers, fact grids and empty states. These
+   started life in the pipeline sheet as `.pl-*` and are renamed here because
+   the pipeline is gone: a namespace named after a deleted feature is a trap
+   for whoever reads it next. They also drop the legacy palette bridge and name
+   the paper tokens directly. */
 
-.pl-page { max-width: 1080px; }
+.ad-page { max-width: 1080px; }
 
-.pl-summary {
+.ad-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: var(--space-100);
   margin-bottom: var(--space-500);
 }
-.pl-stat {
-  padding: var(--space-200) var(--space-200);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--surface);
+.ad-stat {
+  padding: var(--space-200);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-control);
+  background: var(--paper-2);
 }
-.pl-stat strong {
+.ad-stat strong {
   display: block;
   font-family: var(--display);
   font-size: var(--text-2xl);
   line-height: var(--lh-2xl);
   letter-spacing: -0.03em;
-  color: var(--bone);
+  color: var(--ink);
 }
-.pl-stat--won strong { color: var(--signal); }
-.pl-stat span {
+.ad-stat--good strong { color: var(--signal-ink); }
+.ad-stat span {
   display: block;
   margin-top: var(--space-50);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: var(--haze-dim);
+  color: var(--ink-3);
 }
 
-.pl-section { margin-bottom: 2.5rem; }
-.pl-section > h2 {
+.ad-section { margin-bottom: 2.5rem; }
+.ad-section > h2 {
   display: flex;
   align-items: center;
   gap: var(--space-75);
@@ -4316,167 +4140,55 @@ cite {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: var(--haze);
+  color: var(--ink-2);
 }
-.pl-section > h2 > i {
+.ad-section > h2 > i {
   font-style: normal;
   padding: var(--space-25) var(--space-75);
-  border-radius: 999px;
-  background: var(--surface-2);
+  border-radius: var(--r-pill);
+  background: var(--paper-3);
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
-  color: var(--haze-bright);
+  color: var(--ink-2);
 }
-/* Readable cut, not the vivid fill. On this paper stock `--ember` measures
-   2.6:1 and this is a 12px tracked label, which is exactly the case the
-   system's two-cut rule exists for. Same below for `--signal`. */
-.pl-section--urgent > h2 { color: var(--ember-ink); }
+/* Readable cut, not the vivid fill: `--ember` measures 2.6:1 on this stock and
+   this is a 12px tracked label. The same rule governs `--signal` below. */
+.ad-section--urgent > h2 { color: var(--ember-ink); }
 
-.pl-list { display: grid; gap: 0.6rem; }
+.ad-list { display: grid; gap: 0.6rem; }
 
-.pl-card {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--surface);
-  overflow: hidden;
-}
-/* Temperature colours the whole rim rather than one edge of it. */
-.pl-card--hot   { border-color: var(--ember); }
-.pl-card--warm  { border-color: var(--signal-deep); }
-.pl-card--cold  { border-color: var(--line); }
-.pl-card--overdue { background: rgba(255, 106, 61, 0.045); }
-
-.pl-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-200);
-  width: 100%;
-  padding: var(--space-100) var(--space-200);
-  border: 0;
-  background: none;
-  text-align: left;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-}
-.pl-head:hover { background: var(--surface-2); }
-
-.pl-score {
-  display: grid;
-  place-items: center;
-  width: 2.35rem;
-  height: 2.35rem;
-  border-radius: 8px;
-  background: var(--ink-700);
-  font-family: var(--mono);
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  font-weight: 600;
-  color: var(--bone);
-}
-.pl-card--hot .pl-score { background: rgba(255, 106, 61, 0.16); color: var(--ember-bright); }
-.pl-card--warm .pl-score { background: rgba(110, 231, 223, 0.12); color: var(--signal); }
-
-.pl-ident { min-width: 0; }
-.pl-ident strong {
-  display: block;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-  font-weight: 600;
-  color: var(--bone);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.pl-ident em {
-  display: block;
-  margin-top: var(--space-25);
-  font-style: normal;
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  color: var(--haze-dim);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pl-meta { display: flex; align-items: center; gap: 0.45rem; }
-.pl-seats, .pl-stage {
-  font-style: normal;
-  padding: var(--space-50) var(--space-75);
-  border-radius: 999px;
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  font-weight: 600;
-  white-space: nowrap;
-}
-.pl-seats { background: var(--ink-700); color: var(--haze-bright); }
-.pl-stage { background: var(--surface-2); color: var(--haze); }
-.pl-stage--won  { background: rgba(110, 231, 223, 0.16); color: var(--signal); }
-.pl-stage--lost { background: rgba(255, 77, 94, 0.12); color: var(--alarm); }
-.pl-stage--proposal, .pl-stage--pilot { background: rgba(255, 106, 61, 0.14); color: var(--ember-bright); }
-
-@media (max-width: 620px) {
-  .pl-head { grid-template-columns: auto minmax(0, 1fr); }
-  .pl-meta { grid-column: 2; margin-top: 0.35rem; }
-}
-
-.pl-next {
-  margin: 0;
-  padding: var(--space-75) var(--space-200) var(--space-100) var(--space-200);
-  border-top: 1px dashed var(--line-soft);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  color: var(--haze-bright);
-}
-.pl-next > span {
-  display: inline-block;
-  margin-right: var(--space-75);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--haze-dim);
-}
-.pl-next--overdue { color: var(--ember-bright); }
-.pl-next--overdue > span { color: var(--ember); }
-
-.pl-body { padding: 0.25rem 1rem 1.1rem; border-top: 1px solid var(--line-soft); }
-
-.pl-facts {
+.ad-facts {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: var(--space-100) var(--space-200);
   margin: var(--space-200) 0;
 }
-.pl-facts dt {
+.ad-facts dt {
   font-size: var(--text-xs);
   line-height: var(--lh-xs);
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--haze-dim);
+  color: var(--ink-3);
 }
-.pl-facts dd {
+.ad-facts dd {
   margin: var(--space-50) 0 0;
   font-size: var(--text-sm);
   line-height: var(--lh-sm);
-  color: var(--bone);
+  color: var(--ink);
   word-break: break-word;
 }
-.pl-facts a { color: var(--signal-ink); text-decoration: none; }
-.pl-yes { color: var(--signal-ink) !important; }
+.ad-facts a { color: var(--signal-ink); text-decoration: none; }
+.ad-facts a:hover { text-decoration: underline; }
+.ad-yes { color: var(--signal-ink) !important; }
 
-.pl-quote {
+.ad-quote {
   margin: var(--space-200) 0;
   padding: var(--space-100) var(--space-200);
-  border: 1px solid var(--signal-deep);
-  border-radius: 8px;
-  background: var(--ink-800);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-control);
+  background: var(--paper-3);
 }
-.pl-quote--dim { border-color: var(--line); }
-.pl-quote > span {
+.ad-quote > span {
   display: block;
   margin-bottom: var(--space-50);
   font-size: var(--text-xs);
@@ -4484,93 +4196,35 @@ cite {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.09em;
-  color: var(--haze-dim);
+  color: var(--ink-3);
 }
-.pl-quote p {
+.ad-quote p {
   margin: 0;
   font-size: var(--text-sm);
   line-height: var(--lh-sm);
-  color: var(--haze-bright);
+  color: var(--ink-2);
   white-space: pre-wrap;
 }
 
-.pl-stages { display: flex; flex-wrap: wrap; gap: 0.35rem; margin: 1rem 0; }
-.pl-stage-btn {
-  padding: var(--space-50) var(--space-100);
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: none;
-  font: inherit;
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  font-weight: 600;
-  color: var(--haze);
-  cursor: pointer;
-  transition: border-color 700ms var(--ease), color 700ms var(--ease),
-    background 700ms var(--ease);
-}
-.pl-stage-btn:hover:not(:disabled) { border-color: var(--signal-deep); color: var(--bone); }
-.pl-stage-btn.is-current {
-  background: var(--surface-2);
-  border-color: var(--signal-deep);
-  color: var(--signal);
-  cursor: default;
-}
-.pl-stage-btn:disabled:not(.is-current) { opacity: 0.4; cursor: not-allowed; }
-
-.pl-edit {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: var(--space-100);
-  align-items: end;
-  padding-top: var(--space-200);
-  border-top: 1px solid var(--line-soft);
-}
-.pl-edit--wide { grid-column: 1 / -1; }
-.pl-edit label { display: block; }
-.pl-edit label > span {
-  display: block;
-  margin-bottom: var(--space-50);
-  font-size: var(--text-xs);
-  line-height: var(--lh-xs);
-  text-transform: uppercase;
-  letter-spacing: 0.09em;
-  color: var(--haze-dim);
-}
-.pl-edit input,
-.pl-edit textarea {
-  width: 100%;
-  padding: var(--space-75) var(--space-100);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--ink-800);
-  color: var(--bone);
-  font: inherit;
-  font-size: var(--text-sm);
-  line-height: var(--lh-sm);
-}
-.pl-edit textarea { resize: vertical; line-height: 1.55; }
-.pl-edit input:focus, .pl-edit textarea:focus {
-  outline: none;
-  border-color: var(--signal-deep);
-}
-.pl-edit .btn { padding: 0.55rem 1.1rem; font-size: 0.8125rem; }
-
-.pl-empty {
+.ad-empty {
   padding: var(--space-400);
-  border: 1px dashed var(--line);
-  border-radius: 12px;
+  border: 1px dashed var(--hair);
+  border-radius: var(--r-control);
   text-align: center;
 }
-.pl-empty h2 { margin: 0 0 0.6rem; font-family: var(--display); color: var(--bone); }
-.pl-empty p {
+.ad-empty h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--display);
+  color: var(--ink);
+}
+.ad-empty p {
   max-width: 54ch;
   margin: 0 auto;
   font-size: var(--text-sm);
   line-height: var(--lh-sm);
-  color: var(--haze);
+  color: var(--ink-2);
 }
-.pl-empty code {
+.ad-empty code {
   font-family: var(--mono);
   font-size: 0.85em;
   color: var(--signal-ink);

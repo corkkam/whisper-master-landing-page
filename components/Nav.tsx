@@ -66,9 +66,6 @@ const PAGES = [
   // Pricing is off the nav while the beta is free — see the note on the top-bar
   // link below. The route itself still works; it is just not advertised.
   // { href: "/pricing", label: "Pricing" },
-  // Teams is off the nav too, on the same terms: the route still works and the
-  // enquiry form still files leads, it is just not advertised anywhere.
-  // { href: "/for-teams", label: "Teams" },
   { href: "/roadmap", label: "Roadmap" },
   { href: "/trust", label: "What leaves your Mac" },
 ];

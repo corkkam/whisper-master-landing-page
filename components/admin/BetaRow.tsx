@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { approveBetaUser, revokeBetaUser } from "@/lib/beta/admin-actions";
 // From ./rows, not ./queue — queue.ts is `server-only` and importing it here
@@ -96,7 +97,7 @@ export default function BetaRow({ row }: { row: BetaUserRow }) {
 
       {open && (
         <div className="ad-row-body">
-          <dl className="pl-facts">
+          <dl className="ad-facts">
             <div>
               <dt>Email</dt>
               <dd>
@@ -138,7 +139,7 @@ export default function BetaRow({ row }: { row: BetaUserRow }) {
             {row.approved && (
               <div>
                 <dt>Beta since</dt>
-                <dd className="pl-yes">{row.betaJoinedAt ?? "date not stamped"}</dd>
+                <dd className="ad-yes">{row.betaJoinedAt ?? "date not stamped"}</dd>
               </div>
             )}
             <div>
@@ -149,8 +150,12 @@ export default function BetaRow({ row }: { row: BetaUserRow }) {
             </div>
           </dl>
 
+          <Link href={`/admin/users/${row.userId}`} className="ad-more">
+            Open their full record and usage
+          </Link>
+
           {row.useCase && (
-            <div className="pl-quote">
+            <div className="ad-quote">
               <span>What they want it for</span>
               <p>{row.useCase}</p>
             </div>

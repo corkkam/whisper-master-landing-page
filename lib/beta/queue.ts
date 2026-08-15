@@ -1,6 +1,6 @@
 // Server-only reads and writes behind the beta queue. NOT client-callable.
 //
-// Same rule as `lib/leads/queries.ts`: every export from a `"use server"`
+// Same rule as `lib/waitlist/queries.ts`: every export from a `"use server"`
 // module becomes a public HTTP endpoint with a stable id that ships in the
 // client bundle. The functions here list every account with its email address
 // and flip the beta gate — if any of them lived in an actions file, an
@@ -68,8 +68,56 @@ type WaitlistEntry = {
   created_at: string | null;
 };
 
+const WAITLIST_COLUMNS =
+  "user_id, email, full_name, company, role, use_case, platform, referral_source, referral_code, referred_by, status, points, position, created_at";
+
 function iso(ms: number | null | undefined): string | null {
   return typeof ms === "number" && ms > 0 ? new Date(ms).toISOString() : null;
+}
+
+/**
+ * Join one Clerk account to its waitlist submission.
+ *
+ * Clerk wins on identity and on the gate; the Supabase entry only fills gaps
+ * (a name typed into the form when the Clerk profile has none) and supplies
+ * what the person told us. Shared by the list read and the single-user read so
+ * the two can never disagree about what a row means.
+ */
+function toRow(
+  u: ClerkUser,
+  entry: WaitlistEntry | null,
+  referrals: number
+): BetaUserRow {
+  const primary =
+    u.emailAddresses.find((a) => a.id === u.primaryEmailAddressId)?.emailAddress ??
+    u.emailAddresses[0]?.emailAddress ??
+    entry?.email ??
+    "";
+  const name =
+    [u.firstName, u.lastName].filter(Boolean).join(" ").trim() || entry?.full_name || null;
+  const meta = u.publicMetadata as Record<string, unknown> | null;
+
+  return {
+    userId: u.id,
+    email: primary,
+    name,
+    createdAt: new Date(u.createdAt).toISOString(),
+    lastActiveAt: iso(u.lastActiveAt),
+    lastSignInAt: iso(u.lastSignInAt),
+    approved: meta?.betaAccess === true,
+    betaJoinedAt: typeof meta?.betaJoinedAt === "string" ? meta.betaJoinedAt : null,
+    requested: entry != null,
+    requestedAt: entry?.created_at ?? null,
+    company: entry?.company ?? null,
+    role: entry?.role ?? null,
+    platform: entry?.platform ?? null,
+    useCase: entry?.use_case ?? null,
+    referralSource: entry?.referral_source ?? null,
+    points: entry?.points ?? null,
+    position: entry?.position ?? null,
+    referrals,
+    mirroredStatus: entry?.status ?? null,
+  };
 }
 
 /**
@@ -98,38 +146,10 @@ export async function listBetaQueue(): Promise<BetaQueue> {
 
   const rows: BetaUserRow[] = clerk.users.map((u) => {
     const entry = byUserId.get(u.id) ?? null;
-    const primary =
-      u.emailAddresses.find((a) => a.id === u.primaryEmailAddressId)?.emailAddress ??
-      u.emailAddresses[0]?.emailAddress ??
-      entry?.email ??
-      "";
-    const name =
-      [u.firstName, u.lastName].filter(Boolean).join(" ").trim() ||
-      entry?.full_name ||
-      null;
-    const meta = u.publicMetadata as Record<string, unknown> | null;
-
-    return {
-      userId: u.id,
-      email: primary,
-      name,
-      createdAt: new Date(u.createdAt).toISOString(),
-      lastActiveAt: iso(u.lastActiveAt),
-      lastSignInAt: iso(u.lastSignInAt),
-      approved: meta?.betaAccess === true,
-      betaJoinedAt: typeof meta?.betaJoinedAt === "string" ? meta.betaJoinedAt : null,
-      requested: entry != null,
-      requestedAt: entry?.created_at ?? null,
-      company: entry?.company ?? null,
-      role: entry?.role ?? null,
-      platform: entry?.platform ?? null,
-      useCase: entry?.use_case ?? null,
-      referralSource: entry?.referral_source ?? null,
-      points: entry?.points ?? null,
-      position: entry?.position ?? null,
-      referrals: entry?.referral_code ? referralsByCode.get(entry.referral_code) ?? 0 : 0,
-      mirroredStatus: entry?.status ?? null,
-    };
+    const referrals = entry?.referral_code
+      ? referralsByCode.get(entry.referral_code) ?? 0
+      : 0;
+    return toRow(u, entry, referrals);
   });
 
   // Longest wait first. The queue's whole job is "who has been waiting", and a
@@ -151,6 +171,51 @@ export async function listBetaQueue(): Promise<BetaQueue> {
     clerkError: clerk.error,
     waitlistError: waitlist.error,
   };
+}
+
+/**
+ * One account, for the detail page.
+ *
+ * Two point reads instead of walking the whole userbase and filtering. The
+ * list pages already pay for the full walk; a page about one person should not.
+ * Returns null when Clerk has no such user, which the page turns into a 404 —
+ * a detail page for an id that does not exist is a 404, not an empty shell.
+ */
+export async function getBetaUser(userId: string): Promise<BetaUserRow | null> {
+  let user: ClerkUser;
+  try {
+    const client = await clerkClient();
+    user = await client.users.getUser(userId);
+  } catch (e) {
+    console.error("[beta] getBetaUser failed:", e instanceof Error ? e.message : e);
+    return null;
+  }
+
+  let entry: WaitlistEntry | null = null;
+  let referrals = 0;
+  try {
+    const supabase = createAdminClient();
+    const { data } = await supabase
+      .from("waitlist_entries")
+      .select(WAITLIST_COLUMNS)
+      .eq("user_id", userId)
+      .maybeSingle();
+    entry = (data as WaitlistEntry | null) ?? null;
+
+    if (entry?.referral_code) {
+      const { count } = await supabase
+        .from("waitlist_entries")
+        .select("id", { count: "exact", head: true })
+        .eq("referred_by", entry.referral_code);
+      referrals = count ?? 0;
+    }
+  } catch (e) {
+    // The account and its beta state come from Clerk, so a Supabase outage
+    // costs the submitted detail and nothing that matters for access.
+    console.error("[beta] getBetaUser detail read threw:", e);
+  }
+
+  return toRow(user, entry, referrals);
 }
 
 type ClerkUser = Awaited<
@@ -196,9 +261,7 @@ async function fetchWaitlist(): Promise<{
     const supabase = createAdminClient();
     const { data, error } = await supabase
       .from("waitlist_entries")
-      .select(
-        "user_id, email, full_name, company, role, use_case, platform, referral_source, referral_code, referred_by, status, points, position, created_at"
-      )
+      .select(WAITLIST_COLUMNS)
       .order("created_at", { ascending: true })
       .limit(MAX_ACCOUNTS);
 

@@ -10,10 +10,18 @@ Last verified against the tree: **2026-08-14**, `main` and `dev` both at `e1a4dd
 ## 1. What this repository is
 
 The public web surface for Whisper Master: the marketing site, the download page,
-sign-in, pricing, the trust and legal pages, the B2B lead funnel, and the billing
-plumbing. It is **not** a waitlist page any more, whatever the git history and the
-old README said. Stable downloads are open to everyone; the beta build stays
-behind a Clerk flag.
+sign-in, pricing, the trust and legal pages, and the billing plumbing. It is
+**not** a waitlist page any more, whatever the git history and the old README
+said. Stable downloads are open to everyone; the beta build stays behind a Clerk
+flag.
+
+It is **not a B2B lead funnel any more either.** `/for-teams`, `lib/leads/`,
+`components/leads/` and `/admin/pipeline` were removed on 2026-08-15 at the
+owner's instruction. The site now has no inbound enquiry form, so a multi-seat
+buyer has only the address in `lib/config.ts`; `../docs/11-gtm-playbook.md` still
+describes the funnel as the revenue path and is stale on that point. Restoring
+it means restoring the form, the scoring, the notifier and the pipeline
+together — half of it is worse than none, because enquiries would land nowhere.
 
 **Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 3 · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
@@ -28,10 +36,10 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 | `/` | the marketing page, assembled from `components/sections/` |
 | `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
 | `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
-| `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
-| `/admin` | founder overview: account, beta and product-usage stats. Same gate |
-| `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control |
-| `/admin/pipeline` | the lead pipeline. All three are gated by `ADMIN_USER_IDS` and fail closed with a 404 |
+| `/admin` | founder overview: account, beta and product-usage stats |
+| `/admin/users` | every account with its usage; rows open a per-user record |
+| `/admin/users/[userId]` | one account: 90 days of its usage, plus approve/revoke |
+| `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control. All four `/admin` routes are gated by `ADMIN_USER_IDS` and fail closed with a 404 |
 | `/roadmap` | public roadmap, data in `lib/content.ts` |
 | `/trust`, `/privacy`, `/terms` | the disclosure surface, copy in `lib/legal.ts` |
 | `/welcome`, `/sign-in`, `/sign-up`, `/sso-callback` | Clerk auth flow |
@@ -40,8 +48,7 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
-aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
-queries), `lib/waitlist/`
+aggregation, pure derivations), `lib/waitlist/`
 (actions, queries, points), `lib/supabase/server.ts`, plus `config.ts`,
 `content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`,
 `turnstile.ts`.
@@ -136,14 +143,18 @@ Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_SITE_URL`.
 
 Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (every
-`/admin` route 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
-`LEAD_NOTIFY_TELEGRAM_*`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` +
+`/admin` route 404s until it is set), `NEXT_PUBLIC_TURNSTILE_SITE_KEY` +
 `TURNSTILE_SECRET_KEY` (or `TURNSTILE_DISABLED=true`),
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.
 Full annotations in `.env.local.example`.
 
-Migrations are `supabase/migrations/0001` through `0007`. `0006_leads.sql` backs
-the lead funnel; `0007_entitlements.sql` is only needed when charging starts.
+Migrations are `supabase/migrations/0001` through `0009`. `0007_entitlements.sql`
+is only needed when charging starts. **`0006`, `0008` and `0009` back the lead
+funnel, which was removed on 2026-08-15.** The migration files stay, because a
+migration is a ledger and deleting an applied one makes the history lie, and the
+`leads` / `lead_events` tables stay populated with real prospect records. No
+code reads or writes them any more. Dropping them is a deliberate, destructive
+decision that needs a human, not a cleanup pass.
 **Whether these have been run against the live project is not knowable from the
 repo — verify with the Supabase CLI, do not assume.**
 

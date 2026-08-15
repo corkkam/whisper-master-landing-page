@@ -59,9 +59,10 @@ export type PlanDefinition = {
    * `false` for Team and Practice deliberately. The Practice tier promises a
    * signed DPA and a written answer to a security questionnaire — commitments
    * that require a human to have read the questionnaire first. Selling that
-   * self-serve would be selling something we have not yet agreed to do. Those
-   * tiers route through /for-teams, and the founder generates a checkout link
-   * once the conversation has happened.
+   * self-serve would be selling something we have not yet agreed to do. These
+   * tiers used to route through /for-teams; that form is gone, so /api/checkout
+   * now answers with the contact address and the founder generates a checkout
+   * link once the conversation has happened.
    */
   selfServe: boolean;
   /** Polar's native per-seat quantity. Only meaningful for seat-based plans. */
