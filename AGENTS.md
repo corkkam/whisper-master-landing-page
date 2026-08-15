@@ -29,7 +29,9 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 | `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
 | `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
 | `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
-| `/admin/pipeline` | the lead pipeline, gated by `ADMIN_USER_IDS`, fails closed with a 404 |
+| `/admin` | founder overview: account, beta and product-usage stats. Same gate |
+| `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control |
+| `/admin/pipeline` | the lead pipeline. All three are gated by `ADMIN_USER_IDS` and fail closed with a 404 |
 | `/roadmap` | public roadmap, data in `lib/content.ts` |
 | `/trust`, `/privacy`, `/terms` | the disclosure surface, copy in `lib/legal.ts` |
 | `/welcome`, `/sign-in`, `/sign-up`, `/sso-callback` | Clerk auth flow |
@@ -37,7 +39,9 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 | `/api/checkout`, `/api/portal`, `/api/webhooks/polar` | Polar billing |
 
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
-`lib/leads/` (schema, scoring, stages, actions, queries), `lib/waitlist/`
+`lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
+aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
+queries), `lib/waitlist/`
 (actions, queries, points), `lib/supabase/server.ts`, plus `config.ts`,
 `content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`,
 `turnstile.ts`.
@@ -48,15 +52,32 @@ Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 pnpm install
 pnpm dev            # http://localhost:3000
 pnpm build          # the real gate — it type-checks the whole app
-pnpm lint
 node scripts/shoot.mjs   # Playwright screenshots of the site
 ```
 
 **`pnpm build` passing is the gate.** There is no test suite. Use pnpm; an
-`npm install` here is wrong.
+`npm install` here is wrong. `pnpm lint` is *not* a gate: no ESLint config has
+ever been added here, so `next lint` drops into its interactive setup prompt and
+exits non-zero. Do not report it as a failure, and do not add a config to make
+it pass without being asked.
 
 **Verify visually before claiming a UI change.** Run the dev server and look, or
 use the screenshot script. "It compiles" is not done.
+
+**Seeing `/admin` locally takes two steps**, because it is gated and the local
+database starts empty:
+
+```bash
+supabase start                              # needs OrbStack running
+python3 scripts/seed-dev-admin.py seed      # fixture accounts + 30 days of usage
+#   then put the printed user id in ADMIN_USER_IDS in .env.local, restart dev
+node scripts/shoot-admin.mjs                # signs in and captures admin-shots/
+python3 scripts/seed-dev-admin.py clean     # removes every +clerk_test fixture
+```
+
+Both scripts refuse to run against anything but an `sk_test` Clerk key and a
+`127.0.0.1` Supabase URL. Sign-in uses Clerk's development-instance convention:
+any `+clerk_test@` address accepts `424242` as its email code.
 
 ## 4. Hard rules
 
@@ -99,6 +120,13 @@ use the screenshot script. "It compiles" is not done.
     Clerk token is treated as no session rather than allowed to throw — an
     unhandled throw in `clerkMiddleware()` is a 500 on every route in the matcher.
     Read the comment at the top of `middleware.ts` before changing it.
+13. **`/admin/beta` writes the beta gate, so its actions are the highest-value
+    endpoints on the site.** `lib/beta/admin-actions.ts` is the only
+    browser-callable module that can set `publicMetadata.betaAccess`, and every
+    export in it calls `requireAdmin()` first. The reads and the Clerk writes
+    live in `lib/beta/queue.ts` behind `server-only`. Keep that split: an
+    approval helper exported from a `"use server"` file without an admin check
+    is a public "give me the beta build" endpoint.
 
 ## 5. Configuration
 
@@ -107,8 +135,8 @@ Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_SCHEMA`,
 `NEXT_PUBLIC_SITE_URL`.
 
-Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (the lead
-pipeline 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
+Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (every
+`/admin` route 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
 `LEAD_NOTIFY_TELEGRAM_*`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` +
 `TURNSTILE_SECRET_KEY` (or `TURNSTILE_DISABLED=true`),
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.

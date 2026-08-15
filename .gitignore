@@ -52,3 +52,6 @@ service-account*.json
 
 # /brag skill renders (plan, brief, copy, brag.mp4)
 /brag-output/
+
+# admin dashboard screenshots (scripts/shoot-admin.mjs)
+/admin-shots/
