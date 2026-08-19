@@ -66,6 +66,23 @@ export async function POST(request: Request) {
   }
 
   const rules = parseCases(typeof body.cases === "string" ? body.cases : null);
+
+  /**
+   * How many cases the rules file does not cover.
+   *
+   * A case with no rule can only fail on word error, so pushing a run with the
+   * wrong `cases.jsonl` does not error — it silently scores higher. That has
+   * happened: the audio suite's ids are prefixed (`tts-`, `hfp-`, `noisy-`,
+   * `ls-`) and only exist in the generated `.eval-scratch/audio_cases.jsonl`,
+   * so pushing an audio run with the baseline file inflates the pass count by
+   * every keyword failure in it. The count goes back in the response and the
+   * pusher prints it, rather than being enforced here: a rule-less case is
+   * legitimate, it just should never be a surprise.
+   */
+  const unmatchedCases = new Set(
+    (results as ResultRow[]).filter((r) => !rules.has(r.id)).map((r) => r.id)
+  ).size;
+
   const prepared = prepareRun(results as ResultRow[], rules, {
     label: typeof body.label === "string" ? body.label : null,
     gitCommit: typeof body.gitCommit === "string" ? body.gitCommit : null,
@@ -78,6 +95,7 @@ export async function POST(request: Request) {
       id,
       totalRuns: prepared.totalRuns,
       totalCases: prepared.totalCases,
+      unmatchedCases,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "database error";
