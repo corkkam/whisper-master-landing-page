@@ -39,6 +39,10 @@ export interface RunSummary {
   label: string | null;
   gitCommit: string | null;
   branch: string | null;
+  /** Marketing version this run graded, when a release cut it. */
+  version: string | null;
+  /** stable | beta | dev, when a release cut it. */
+  channel: string | null;
   totalRuns: number;
   totalCases: number;
   audioCases: number;

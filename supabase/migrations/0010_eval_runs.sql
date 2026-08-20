@@ -23,6 +23,12 @@ create table if not exists public.eval_runs (
   label        text,
   git_commit   text,
   branch       text,
+  -- Set when the run was cut by Scripts/release.sh, so the history reads as
+  -- "how did 1.1.0-beta.9 score" and not just "how did some commit score".
+  -- Null for a run pushed by hand, and for the nine imported from Mongo, which
+  -- predate the release hook.
+  version      text,
+  channel      text,               -- stable | beta | dev
   total_runs   integer not null,   -- case x target rows
   total_cases  integer not null,
   audio_cases  integer not null,
@@ -30,6 +36,9 @@ create table if not exists public.eval_runs (
   aggregate    jsonb not null default '{}'::jsonb
 );
 create index if not exists eval_runs_created_idx on public.eval_runs (created_at desc);
+-- "every run for version X, newest first" is the per-version view's only query.
+create index if not exists eval_runs_version_idx
+  on public.eval_runs (version, created_at desc) where version is not null;
 
 -- ── eval_results: one scored case x target row within a run ──────────────
 create table if not exists public.eval_results (

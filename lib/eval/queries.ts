@@ -10,7 +10,7 @@
 // with no policy, so the anon key reads nothing even if it leaks.
 import "server-only";
 
-import { createAdminClient } from "@/lib/supabase/server";
+import { createClient } from "@supabase/supabase-js";
 import type { Aggregate } from "./scoring";
 import type { PreparedRun } from "./ingest";
 import {
@@ -30,8 +30,37 @@ import {
 const ROW_PAGE = 1000;
 const ROW_CAP = 10_000;
 
+/**
+ * The eval history is pinned to the `public` schema in every environment.
+ *
+ * Everything else in this app follows `SUPABASE_DB_SCHEMA`, which is `dev` on
+ * preview deployments, because that data is per-user and a preview must not
+ * touch production rows. Eval runs are the opposite: they are one public
+ * record of how the shipped Mac app scores, and there is no such thing as
+ * "the preview's eval history". Splitting them per environment would mean
+ * mirroring the tables into `dev` and then looking at an empty page during
+ * every review.
+ *
+ * This is a read pin. Writes go through /api/eval/ingest, which needs
+ * `EVAL_INGEST_TOKEN`; leave that unset on preview so a preview deployment
+ * cannot publish a run.
+ */
+const EVAL_SCHEMA = "public";
+
+function createEvalClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      // Cast: no generated DB types here, so `schema` is typed as "public".
+      db: { schema: EVAL_SCHEMA as "public" },
+      auth: { autoRefreshToken: false, persistSession: false },
+    }
+  );
+}
+
 const RUN_COLUMNS =
-  "id, created_at, label, git_commit, branch, total_runs, total_cases, audio_cases, aggregate";
+  "id, created_at, label, git_commit, branch, version, channel, total_runs, total_cases, audio_cases, aggregate";
 
 type RunRow = {
   id: string;
@@ -39,6 +68,8 @@ type RunRow = {
   label: string | null;
   git_commit: string | null;
   branch: string | null;
+  version: string | null;
+  channel: string | null;
   total_runs: number;
   total_cases: number;
   audio_cases: number;
@@ -70,6 +101,8 @@ function toRunSummary(r: RunRow): RunSummary {
     label: r.label,
     gitCommit: r.git_commit,
     branch: r.branch,
+    version: r.version,
+    channel: r.channel,
     totalRuns: r.total_runs,
     totalCases: r.total_cases,
     audioCases: r.audio_cases,
@@ -100,7 +133,7 @@ function toResultDTO(r: ResultRow): ResultDTO {
 /** Paginated run history, newest first. Throws if the read fails. */
 export async function listRunsPaged(page: number, pageSize: number): Promise<RunsPage> {
   const from = (page - 1) * pageSize;
-  const { data, error, count } = await createAdminClient()
+  const { data, error, count } = await createEvalClient()
     .from("eval_runs")
     .select(RUN_COLUMNS, { count: "exact" })
     .order("created_at", { ascending: false })
@@ -117,7 +150,7 @@ export async function listRunsPaged(page: number, pageSize: number): Promise<Run
 
 /** One run's metadata and aggregate, without the result rows. */
 export async function getRunSummary(id: string): Promise<RunSummary | null> {
-  const { data, error } = await createAdminClient()
+  const { data, error } = await createEvalClient()
     .from("eval_runs")
     .select(RUN_COLUMNS)
     .eq("id", id)
@@ -128,7 +161,7 @@ export async function getRunSummary(id: string): Promise<RunSummary | null> {
 }
 
 async function readAllResults(runId: string): Promise<ResultDTO[]> {
-  const client = createAdminClient();
+  const client = createEvalClient();
   const rows: ResultDTO[] = [];
   for (let from = 0; from < ROW_CAP; from += ROW_PAGE) {
     const { data, error } = await client
@@ -205,7 +238,7 @@ export async function getRunCases(id: string, f: CaseFilters): Promise<CasesPage
  * honest approximation.
  */
 export async function createRun(run: PreparedRun, id?: string): Promise<string> {
-  const client = createAdminClient();
+  const client = createEvalClient();
 
   const { data, error } = await client
     .from("eval_runs")
@@ -214,6 +247,8 @@ export async function createRun(run: PreparedRun, id?: string): Promise<string> 
       label: run.label,
       git_commit: run.gitCommit,
       branch: run.branch,
+      version: run.version,
+      channel: run.channel,
       total_runs: run.totalRuns,
       total_cases: run.totalCases,
       audio_cases: run.audioCases,
@@ -255,8 +290,36 @@ export async function createRun(run: PreparedRun, id?: string): Promise<string> 
   return runId;
 }
 
+/**
+ * The newest run for each version that has one, newest version first.
+ *
+ * Backs the per-version view: a release cuts one run, but a re-run against the
+ * same version is allowed (a flaky suite, a re-push), and the last one is the
+ * one that counts. Grouping happens here rather than in SQL because PostgREST
+ * has no DISTINCT ON, and the row count is the number of releases, not the
+ * number of cases.
+ */
+export async function listRunsByVersion(limit = 40): Promise<RunSummary[]> {
+  const { data, error } = await createEvalClient()
+    .from("eval_runs")
+    .select(RUN_COLUMNS)
+    .not("version", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(500);
+
+  if (error) throw new Error(error.message);
+
+  const newestPerVersion = new Map<string, RunSummary>();
+  for (const row of (data ?? []) as RunRow[]) {
+    const run = toRunSummary(row);
+    const key = `${run.version}\u0000${run.channel ?? ""}`;
+    if (!newestPerVersion.has(key)) newestPerVersion.set(key, run);
+  }
+  return [...newestPerVersion.values()].slice(0, limit);
+}
+
 /** Delete a run and, by cascade, its result rows. */
 export async function deleteRun(id: string): Promise<void> {
-  const { error } = await createAdminClient().from("eval_runs").delete().eq("id", id);
+  const { error } = await createEvalClient().from("eval_runs").delete().eq("id", id);
   if (error) throw new Error(error.message);
 }

@@ -24,6 +24,13 @@ import type { ResultRow } from "@/lib/eval/scoring";
 export const runtime = "nodejs";
 
 /**
+ * The release channels a run may claim. Anything else is stored as null rather
+ * than rejected: the channel is a label on a chart, and a typo in a release
+ * script should not throw away the run it just spent twenty minutes producing.
+ */
+const CHANNELS = new Set(["stable", "beta", "dev"]);
+
+/**
  * Constant-time comparison. Length is checked first because `timingSafeEqual`
  * throws on buffers of different lengths; the length of a shared secret is not
  * itself the secret, so returning early on it leaks nothing worth having.
@@ -87,6 +94,8 @@ export async function POST(request: Request) {
     label: typeof body.label === "string" ? body.label : null,
     gitCommit: typeof body.gitCommit === "string" ? body.gitCommit : null,
     branch: typeof body.branch === "string" ? body.branch : null,
+    version: typeof body.version === "string" && body.version ? body.version : null,
+    channel: CHANNELS.has(body.channel as string) ? (body.channel as string) : null,
   });
 
   try {

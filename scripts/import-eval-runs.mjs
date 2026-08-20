@@ -44,8 +44,11 @@ if (!url || !key) {
   console.error("NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set.");
   process.exit(2);
 }
+// `public` in every environment, matching lib/eval/queries.ts: the eval history
+// is one public record, not per-environment data. Deliberately NOT
+// SUPABASE_DB_SCHEMA.
 const supabase = createClient(url, key, {
-  db: { schema: env("SUPABASE_DB_SCHEMA") ?? "public" },
+  db: { schema: "public" },
   auth: { autoRefreshToken: false, persistSession: false },
 });
 
@@ -133,6 +136,9 @@ for (const run of [...runs].reverse()) {
     label: run.label,
     git_commit: run.gitCommit,
     branch: run.branch,
+    // The imported runs predate the release hook, so they carry no version.
+    version: null,
+    channel: null,
     total_runs: run.totalRuns,
     total_cases: run.totalCases,
     audio_cases: run.audioCases,
@@ -156,6 +162,18 @@ for (const run of [...runs].reverse()) {
 
   imported++;
   console.log(`  import  ${name} — ${rows.length} rows`);
+  // The source's read API groups by (case id, target), so a run whose cases
+  // file repeated an id stores fewer rows than its own `totalRuns` claims. That
+  // is exactly what the old dashboard's detail view already showed, and the
+  // aggregate is copied verbatim either way — but say so rather than let the
+  // two numbers quietly disagree. "first live run" is short by 4 for this
+  // reason: 89 case lines over 87 distinct ids.
+  if (rows.length !== run.totalRuns) {
+    console.log(
+      `          note: the run header says ${run.totalRuns} rows; ${rows.length} are readable. ` +
+        `Duplicate case ids collapse on read. The stored aggregate is unchanged.`
+    );
+  }
 }
 
 console.log(DRY_RUN ? "Dry run, nothing written." : `Imported ${imported} run(s).`);

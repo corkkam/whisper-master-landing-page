@@ -13,6 +13,10 @@ export interface IngestMeta {
   label?: string | null;
   gitCommit?: string | null;
   branch?: string | null;
+  /** Marketing version, when Scripts/release.sh cut the run. */
+  version?: string | null;
+  /** stable | beta | dev, when Scripts/release.sh cut the run. */
+  channel?: string | null;
 }
 
 export interface PreparedResult {
@@ -37,6 +41,8 @@ export interface PreparedRun {
   label: string | null;
   gitCommit: string | null;
   branch: string | null;
+  version: string | null;
+  channel: string | null;
   totalRuns: number;
   totalCases: number;
   audioCases: number;
@@ -102,6 +108,8 @@ export function prepareRun(rows: ResultRow[], rules: Map<string, Rule>, meta: In
     label: meta.label ?? null,
     gitCommit: meta.gitCommit ?? null,
     branch: meta.branch ?? null,
+    version: meta.version ?? null,
+    channel: meta.channel ?? null,
     totalRuns: rows.length,
     totalCases: caseIds.size,
     audioCases: prepared.filter((r) => r.inputKind === "audio" && r.target === "light").length,
