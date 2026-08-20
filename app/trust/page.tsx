@@ -131,7 +131,7 @@ export default function TrustPage() {
           </p>
           <p className="trust-body">
             The same reasoning is why we publish our{" "}
-            <Link href="/#comparison">accuracy numbers including the bad ones</Link>
+            <Link href="/eval">accuracy numbers including the bad ones</Link>
             — the noisy-room and Bluetooth-microphone figures where we currently do
             worst. A vendor who only shows you their good numbers is telling you
             about their marketing, not their product.
