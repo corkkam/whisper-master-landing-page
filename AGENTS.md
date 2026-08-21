@@ -36,7 +36,10 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 | `/trust`, `/privacy`, `/terms` | the disclosure surface, copy in `lib/legal.ts` |
 | `/welcome`, `/sign-in`, `/sign-up`, `/sso-callback` | Clerk auth flow |
 | `/r/[code]` | referral redirect |
+| `/eval`, `/eval/[id]` | the published evaluation history, data in `lib/eval/` on Supabase |
 | `/api/checkout`, `/api/portal`, `/api/webhooks/polar` | Polar billing |
+| `/api/eval/ingest` | run upload, token-gated on `EVAL_INGEST_TOKEN`, fails closed |
+| `/api/usage`, `/api/usage/[userId]`, `/api/notes` | the macOS app's sync, auth in `lib/sync/auth.ts` |
 
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
@@ -129,6 +132,13 @@ any `+clerk_test@` address accepts `424242` as its email code.
     is a public "give me the beta build" endpoint.
 
 ## 5. Configuration
+
+**The Mac app talks to this deployment.** `/api/usage` and `/api/notes` are the
+sync endpoints for notes, reminders and usage rollups; they moved here from a
+separate SvelteKit deploy so that deploy could be deleted. Per-user attribution
+comes from the Clerk session token's verified `sub` and never from the request
+body, so `CLERK_SECRET_KEY` being set is what keeps them non-spoofable. Breaking
+or removing these routes breaks sync for every installed copy of the app.
 
 Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`,

@@ -70,6 +70,7 @@ const PAGES = [
   // enquiry form still files leads, it is just not advertised anywhere.
   // { href: "/for-teams", label: "Teams" },
   { href: "/roadmap", label: "Roadmap" },
+  { href: "/eval", label: "How we know it works" },
   { href: "/trust", label: "What leaves your Mac" },
 ];
 

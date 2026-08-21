@@ -3671,6 +3671,765 @@ cite {
   color: var(--haze-dim);
 }
 
+/* ── /eval ──────────────────────────────────────────────────────────────────
+   The evidence page: how the dictation scores, run by run and version by
+   version. Set as a register rather than a dashboard — rules and columns, no
+   card chrome, no fill except on the two panels the run page borrows from
+   /trust. The numbers are the decoration.
+
+   One colour rule, inherited from the palette and not negotiable here: ember is
+   the human and signal is the machine, so a word-error figure that is *good*
+   goes signal and one that is *bad* goes ember, with the warning amber between
+   them. `toneFor()` in lib/eval/present.ts owns the thresholds; nothing in this
+   file hardcodes them.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.ev-sec {
+  margin-top: var(--space-700);
+}
+.ev-sec--first {
+  margin-top: 0;
+}
+.ev-h2 {
+  margin: 0 0 var(--space-100);
+  font-family: var(--display);
+  font-size: var(--text-2xl);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.ev-cap {
+  max-width: 64ch;
+  margin: 0 0 var(--space-300);
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
+}
+.ev-term {
+  font-family: var(--font-note);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.ev-stamp {
+  margin: 0 0 var(--space-200);
+}
+.ev-mono {
+  font-family: var(--font-note);
+}
+.ev-empty {
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ink-3);
+  font-size: var(--text-sm);
+  line-height: var(--lh-sm);
+}
+
+/* The four measured values. Rules top and bottom, nothing else — this is a
+   readout on paper, not a row of stat cards. */
+.ev-read {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-300);
+  padding: var(--space-400) 0;
+  border-top: 1px solid var(--hair);
+  border-bottom: 1px solid var(--hair);
+}
+.ev-read > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ev-read b {
+  font-family: var(--display);
+  font-size: 2.5rem;
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  color: var(--ink);
+}
+.ev-read b small {
+  font-size: 0.45em;
+  letter-spacing: 0;
+}
+.ev-read span {
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--ink-2);
+  font-weight: 500;
+}
+.ev-read i {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+@media (max-width: 900px) {
+  .ev-read {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Word error by condition. */
+.ev-bars {
+  display: grid;
+  gap: 14px;
+  max-width: 640px;
+}
+.ev-bar {
+  display: grid;
+  grid-template-columns: 200px 1fr 54px;
+  align-items: center;
+  gap: 16px;
+}
+.ev-bar-lab {
+  display: flex;
+  flex-direction: column;
+  font-size: var(--text-sm);
+  color: var(--ink);
+}
+.ev-bar-lab i {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+.ev-bar-track {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--paper-sunken);
+  overflow: hidden;
+}
+.ev-bar-track > i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.ev-bar-val {
+  text-align: right;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 1.0625rem;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 640px) {
+  .ev-bar {
+    grid-template-columns: 120px 1fr 48px;
+    gap: 10px;
+  }
+}
+
+.ev-blame {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-300) var(--space-600);
+  margin-top: var(--space-400);
+  padding-top: var(--space-300);
+  border-top: 1px solid var(--hair);
+}
+.ev-blame > div {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+.ev-blame b {
+  font-family: var(--display);
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+}
+.ev-blame span {
+  font-size: var(--text-sm);
+  color: var(--ink-2);
+  max-width: 26ch;
+  line-height: 1.35;
+}
+
+/* Per-version scores. */
+.ev-vers {
+  border-top: 1px solid var(--hair);
+}
+.ev-vers-head,
+.ev-vers-row {
+  display: grid;
+  grid-template-columns: 1fr 150px 90px 90px 90px 120px;
+  gap: 14px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.ev-vers-head {
+  padding-bottom: 10px;
+  color: var(--ink-faint);
+}
+.ev-vers-row {
+  transition: background var(--t-quick) var(--ease);
+}
+.ev-vers-row:hover {
+  background: var(--paper-2);
+}
+.ev-vers-name {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  font-family: var(--font-note);
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+.ev-chan {
+  font-style: normal;
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hair);
+  color: var(--ink-3);
+}
+.ev-chan--beta {
+  border-color: rgba(181, 56, 18, 0.35);
+  color: var(--ember-ink);
+}
+.ev-chan--stable {
+  border-color: rgba(19, 96, 89, 0.35);
+  color: var(--signal-ink);
+}
+.ev-vers-big {
+  font-family: var(--display);
+  font-size: 1.375rem;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+.ev-vers-cell,
+.ev-vers-when {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+@media (max-width: 1000px) {
+  .ev-vers-head {
+    display: none;
+  }
+  .ev-vers-row {
+    grid-template-columns: 1fr auto auto;
+  }
+  .ev-vers-when {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The four-stage method. Columns divided by rules, no boxes. */
+.ev-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-top: 1px solid var(--hair);
+}
+.ev-steps li {
+  padding: var(--space-300) var(--space-300) var(--space-400) 0;
+  border-right: 1px solid var(--hair);
+}
+.ev-steps li:last-child {
+  border-right: 0;
+}
+.ev-step-n {
+  font-family: var(--font-note);
+  font-size: 0.6875rem;
+  letter-spacing: 0.16em;
+  color: var(--ember-ink);
+}
+.ev-steps h3 {
+  margin: 10px 0 6px;
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.ev-steps p {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--ink-3);
+  max-width: 32ch;
+}
+@media (max-width: 860px) {
+  .ev-steps {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ev-steps li:nth-child(2n) {
+    border-right: 0;
+  }
+}
+
+/* The trend. */
+/* The chart keeps its own aspect ratio rather than being stretched to the
+   content width: at 1240px a 680x210 viewBox letterboxed itself into the middle
+   of the column with a third of the row empty on the left. */
+.ev-chart {
+  max-width: 760px;
+}
+.ev-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.ev-grid {
+  stroke: var(--rule);
+  stroke-width: 1;
+}
+.ev-axis {
+  fill: var(--ink-faint);
+  font-family: var(--font-note);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+}
+.ev-line {
+  fill: none;
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.ev-line--typed {
+  stroke: var(--ink);
+}
+.ev-line--spoken {
+  stroke: var(--ember-ink);
+  stroke-dasharray: 5 4;
+}
+.ev-dot--typed {
+  fill: var(--ink);
+}
+.ev-dot--spoken {
+  fill: var(--ember-ink);
+}
+.ev-legend {
+  display: flex;
+  gap: var(--space-300);
+  flex-wrap: wrap;
+  font-size: var(--text-sm);
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+.ev-legend b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.ev-legend i {
+  display: inline-block;
+  width: 18px;
+  height: 2px;
+  vertical-align: middle;
+  margin-right: 7px;
+}
+.ev-legend i.t {
+  background: var(--ink);
+}
+.ev-legend i.a {
+  background: var(--ember-ink);
+}
+
+/* The register of runs. */
+.ev-reg {
+  border-top: 1px solid var(--hair);
+}
+.ev-reg-head,
+.ev-row {
+  display: grid;
+  grid-template-columns: 1fr 190px 74px 82px 84px 84px 96px;
+  gap: 14px;
+  align-items: baseline;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--hair);
+}
+.ev-reg-head {
+  padding-bottom: 10px;
+  color: var(--ink-faint);
+}
+.ev-row {
+  color: var(--ink);
+  transition: background var(--t-quick) var(--ease);
+}
+.ev-row:hover {
+  background: var(--paper-2);
+}
+.ev-row-label {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  flex-wrap: wrap;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  letter-spacing: -0.01em;
+}
+.ev-row-kind {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hair);
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.ev-row-kind--audio {
+  border-color: rgba(181, 56, 18, 0.35);
+  color: var(--ember-ink);
+}
+.ev-row-kind--version {
+  border-color: rgba(19, 96, 89, 0.35);
+  color: var(--signal-ink);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+.ev-row-when,
+.ev-row-commit,
+.ev-row-wer {
+  font-size: 0.75rem;
+  color: var(--ink-3);
+}
+.ev-row-n {
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+}
+.ev-row-score {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+}
+.ev-row-score i {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 400;
+  margin-top: 2px;
+}
+@media (max-width: 1080px) {
+  .ev-reg-head {
+    display: none;
+  }
+  .ev-row {
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 14px;
+  }
+  .ev-row-when,
+  .ev-row-commit {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── /eval/[id] — the proof sheet ───────────────────────────────────────── */
+
+.ev-run-head {
+  max-width: 68ch;
+}
+.ev-back {
+  /* Block, not inline-block: the eyebrow that follows is an inline-flex row and
+     was sitting on the same line as the arrow. */
+  display: block;
+  width: fit-content;
+  margin-bottom: var(--space-200);
+  font-size: 0.8125rem;
+  color: var(--ink-3);
+  transition: color var(--t-quick) var(--ease);
+}
+.ev-back:hover {
+  color: var(--ember-ink);
+}
+.ev-run-meta {
+  margin: var(--space-200) 0 0;
+  font-size: 0.75rem;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.ev-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-300);
+  margin-top: var(--space-500);
+}
+.ev-panel {
+  padding: var(--space-300) var(--space-400) var(--space-400);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-panel);
+}
+.ev-panel-h {
+  margin: 0 0 var(--space-300);
+  font-family: var(--display);
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+@media (max-width: 860px) {
+  .ev-panels {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ev-tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ev-tile {
+  padding: 14px 16px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-card);
+}
+.ev-tile--span {
+  grid-column: 1 / -1;
+}
+.ev-tile-big {
+  font-family: var(--display);
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+.ev-tile-big small {
+  font-size: 0.55em;
+}
+.ev-tile-cap {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  margin-top: 8px;
+}
+.ev-tile-sub {
+  font-size: 0.75rem;
+  margin-top: 3px;
+  color: var(--ink-3);
+}
+.ev-tile-blame {
+  font-size: 0.8125rem;
+  margin-top: 8px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+@media (max-width: 520px) {
+  .ev-tiles {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Filters. Sticky, because a run is a few hundred cases long and scrolling back
+   to the top to change one is the whole reason people stop reading. */
+.ev-filters {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 12px 0;
+  background: var(--paper);
+  border-bottom: 1px solid var(--hair);
+  transition: opacity var(--t-quick) var(--ease);
+}
+.ev-filters[data-pending="true"] {
+  opacity: 0.55;
+}
+.ev-chips {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.ev-chip {
+  font-family: var(--font-read);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  border: 1px solid var(--hair);
+  background: transparent;
+  color: var(--ink-2);
+  border-radius: var(--r-pill);
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: background var(--t-quick) var(--ease), color var(--t-quick) var(--ease),
+    border-color var(--t-quick) var(--ease);
+}
+.ev-chip[aria-pressed="true"] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper-2);
+}
+.ev-chip--pen[aria-pressed="true"] {
+  background: var(--ember-ink);
+  border-color: var(--ember-ink);
+  color: #fff;
+}
+.ev-chip--off {
+  opacity: 0.4;
+  cursor: default;
+}
+.ev-search {
+  flex: 1;
+  min-width: 200px;
+  font-family: var(--font-read);
+  font-size: 0.875rem;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--hair);
+  border-radius: var(--r-control);
+  padding: 9px 14px;
+}
+.ev-count {
+  margin: 14px 0 0;
+}
+.ev-pg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin-top: var(--space-400);
+}
+.ev-pg-at {
+  min-width: 120px;
+  text-align: center;
+}
+
+/* The cases themselves. */
+.ev-cases {
+  border-top: 1px solid var(--hair);
+  margin-top: 10px;
+}
+.ev-case {
+  padding: var(--space-300) 0;
+  border-bottom: 1px solid var(--hair);
+}
+.ev-case-top {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.ev-case-id {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+.ev-tag {
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--hair);
+  border-radius: var(--r-pill);
+  padding: 2px 8px;
+  color: var(--ink-3);
+}
+.ev-verdict {
+  margin-left: auto;
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+.ev-verdict--pass {
+  color: var(--signal-ink);
+}
+.ev-verdict--fail {
+  color: var(--ember-ink);
+}
+.ev-case-lines {
+  margin-top: 12px;
+  display: grid;
+  gap: 7px;
+}
+.ev-line {
+  display: grid;
+  grid-template-columns: 84px 1fr;
+  gap: 14px;
+  align-items: baseline;
+}
+.ev-role {
+  font-family: var(--font-note);
+  font-size: 0.625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  text-align: right;
+}
+.ev-role--heard,
+.ev-role--why {
+  color: var(--ember-ink);
+}
+.ev-txt {
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.ev-txt--dim {
+  color: var(--ink-faint);
+  font-size: 0.875rem;
+}
+.ev-txt--why {
+  font-size: 0.875rem;
+  color: var(--ink-3);
+}
+.ev-ms {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.625rem;
+  color: var(--ink-faint);
+  margin-left: 8px;
+}
+.ev-wer {
+  font-style: normal;
+  font-family: var(--font-note);
+  font-size: 0.5625rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-left: 8px;
+  white-space: nowrap;
+}
+.ev-kept {
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--signal-ink);
+  margin-left: 8px;
+}
+@media (max-width: 620px) {
+  .ev-line {
+    grid-template-columns: 64px 1fr;
+    gap: 10px;
+  }
+}
+
+/* Proofreading marks. `mark` rather than a span because that is what it means,
+   and the default yellow highlight is removed rather than styled around. */
+mark.ins,
+mark.del {
+  background: none;
+}
+mark.ins {
+  color: var(--ember-ink);
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 2px;
+  font-weight: 500;
+}
+mark.del {
+  color: var(--ink-faint);
+  text-decoration: line-through;
+  text-decoration-color: var(--ember-ink);
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    FOR TEAMS — the organisation funnel (/for-teams) and the lead form.
 
