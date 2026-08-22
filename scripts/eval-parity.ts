@@ -63,5 +63,14 @@ eq("pct(10,.9)", percentileIndex(10, 0.9), 8);
 eq("pct(100,.99)", percentileIndex(100, 0.99), 98);
 eq("pct(0,.9)", percentileIndex(0, 0.9), 0);
 
-console.log(bad === 0 ? "PARITY OK — 29 checks match the Swift EvalScoreKit tests" : `${bad} FAILED`);
+// --- case-sensitive assertions (Swift MatcherTests.testExactAssertion*)
+eq("exact/API-right", matches("API", "Our API is slow.", true), true);
+eq("exact/API-wrong", matches("API", "Our api is slow.", true), false);
+eq("exact/API-plural", matches("API", "Our APIs are slow.", true), false);
+eq("exact/Parakeet-lower", matches("Parakeet", "We deployed the parakeet model.", true), false);
+eq("exact/Parakeet-right", matches("Parakeet", "We deployed the Parakeet model.", true), true);
+eq("insensitive-unchanged", matches("api", "Our API is slow."), true);
+eq("exact/punctuation-term", matches("$25", "It is $25.", true), true);
+
+console.log(bad === 0 ? "PARITY OK — 36 checks match the Swift EvalScoreKit tests" : `${bad} FAILED`);
 process.exit(bad ? 1 : 0);

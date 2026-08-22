@@ -70,6 +70,8 @@ export function parseCases(jsonl?: string | null): Map<string, Rule> {
       map.set(c.id, {
         mustContain: c.must_contain ?? [],
         mustNotContain: c.must_not_contain ?? [],
+        mustContainExact: c.must_contain_exact ?? [],
+        mustNotContainExact: c.must_not_contain_exact ?? [],
         reference: c.reference ?? null,
         category: c.category ?? null
       });
