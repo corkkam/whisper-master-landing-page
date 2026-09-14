@@ -91,7 +91,7 @@ use the screenshot script. "It compiles" is not done.
    quoted together or not at all.
 10. **Link a versioned DMG, never an overwriteable alias.** `WhisperMaster.dmg`
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
-    `dl.corkkam.com/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
+    `dl.corkkam.com/WhisperMaster-1.2.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
 11. **Never weaken an auth gate**, and never commit a secret. `.env.local` is
     git-ignored; document a new variable in `.env.local.example` by name only.
