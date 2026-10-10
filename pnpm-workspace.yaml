@@ -7,8 +7,15 @@
 #   source-map-js <1.2.2 — GHSA-68fv-2mgg-jv7q, reached via next > postcss
 #   nanoid  <3.3.18 — infinite loop when a custom generator is given size zero
 #                     (GHSA-2v37-7h3g-55p8), reached only via next > postcss > nanoid
+#   build-time only (Tailwind / browserslist chain, never shipped to the client):
+#   postcss-selector-parser <7.1.6 — quadratic flat-selector parsing (CPU DoS)
+#   browserslist <4.28.7 — crash / prototype write via custom stats json
+#   baseline-browser-mapping <2.11.0 — process exit on invalid input
 overrides:
   postcss@<8.5.18: '>=8.5.18'
   sharp@<0.35.5: '>=0.35.5'
   source-map-js@<1.2.2: '>=1.2.2'
   nanoid@<3.3.18: '>=3.3.18'
+  postcss-selector-parser@<7.1.6: '>=7.1.6'
+  browserslist@<4.28.7: '>=4.28.7'
+  baseline-browser-mapping@<2.11.0: '>=2.11.0'
