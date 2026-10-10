@@ -1,6 +1,6 @@
 # Security policy
 
-This repository is the website at https://whispermaster.app: marketing pages,
+This repository is the website at https://whisper.corkkam.com: marketing pages,
 downloads, sign-in, billing, the admin console, the public eval pages, and the sync
 API that the Whisper Master Mac app calls.
 
