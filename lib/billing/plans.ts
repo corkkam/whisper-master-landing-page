@@ -134,6 +134,11 @@ export function tierForProductId(productId: string): EntitlementTier | null {
   return null;
 }
 
+/** Is this tier sold as a one-time purchase (granted by `order.paid`)? */
+export function isOneTimeTier(tier: EntitlementTier): boolean {
+  return Object.values(PLANS).some((p) => p.oneTime && p.tier === tier);
+}
+
 /** Sandbox unless explicitly told otherwise — the safe default to fail into. */
 export function polarServer(): "sandbox" | "production" {
   return process.env.POLAR_SERVER === "production" ? "production" : "sandbox";

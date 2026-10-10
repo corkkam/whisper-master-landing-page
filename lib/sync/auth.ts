@@ -68,8 +68,11 @@ export async function resolveUserId(
         ...(authorizedParties.length ? { authorizedParties } : {}),
       });
     } catch (error) {
+      // The Clerk reason (expired, kid mismatch, wrong party) goes to the log
+      // only; the caller just learns the token was not accepted.
       const why = error instanceof Error ? error.message : "token verification failed";
-      throw new SyncAuthError(401, `unauthorized: ${why}`);
+      console.error(`[sync/auth] token verification failed: ${why}`);
+      throw new SyncAuthError(401, "unauthorized");
     }
 
     const sub = typeof payload.sub === "string" ? payload.sub : "";
@@ -79,10 +82,10 @@ export async function resolveUserId(
 
   const token = process.env.EVAL_INGEST_TOKEN?.trim() || undefined;
   if (!token) {
-    throw new SyncAuthError(
-      500,
-      "sync auth is not configured: set CLERK_SECRET_KEY, or EVAL_INGEST_TOKEN for the shared-token mode"
+    console.error(
+      "[sync/auth] sync auth is not configured: set CLERK_SECRET_KEY, or EVAL_INGEST_TOKEN for the shared-token mode"
     );
+    throw new SyncAuthError(500, "sync is not available");
   }
   if (!tokensMatch(request.headers.get("x-ingest-token") ?? "", token)) {
     throw new SyncAuthError(401, "unauthorized: missing or invalid x-ingest-token");

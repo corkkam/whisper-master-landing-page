@@ -3,7 +3,10 @@
 The entry point for any AI agent working in this repository. It overrides the
 machine-level `~/AGENTS.md` where the two disagree.
 
-Last verified against the tree: **2026-08-14**, `main` and `dev` both at `e1a4dd9`.
+Last verified against the tree: **2026-08-14**, `main` and `dev` both at `b4fcff5`.
+A security audit on that date fixed the client-bundle beta-URL leak, tightened the
+CSP, patched a dependency advisory, and added migration `0008`; the working
+reference for day-to-day is **[`CLAUDE.md`](CLAUDE.md)**, which points back here.
 
 ---
 
@@ -18,7 +21,7 @@ behind a Clerk flag.
 **Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 3 · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
-Live at **https://whispermaster.app**. The Mac app it sells lives at
+Live at **https://whisper.corkkam.com**. (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
 `../whisper-master/`; shared product and business docs are in `../docs/`.
 
 ## 2. Routes and what owns them
@@ -44,10 +47,11 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
 aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
-queries), `lib/waitlist/`
-(actions, queries, points), `lib/supabase/server.ts`, plus `config.ts`,
-`content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`,
-`turnstile.ts`.
+queries), `lib/waitlist/` (actions, queries, points), `lib/supabase/server.ts`,
+plus `config.ts` (public product copy and the stable download URL),
+`config.server.ts` (`server-only` values that must never reach the client
+bundle — the beta download URL lives here), `content.ts`, `legal.ts`,
+`pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`, `turnstile.ts`.
 
 ## 3. Build and gates
 
@@ -99,6 +103,12 @@ any `+clerk_test@` address accepts `424242` as its email code.
    for.
 5. **Grants never downgrade.** `grantEntitlement` compares tier rank before
    writing, because Polar delivers at-least-once and unordered.
+   The same unordered delivery shapes the rest of the webhook: `order.paid`
+   and `order.refunded` ignore orders that carry a `subscriptionId` (the
+   `subscription.*` events own that access), a subscription grant requires
+   status `active` or `trialing`, and a refund only downgrades when it is a
+   full refund of the order recorded as `publicMetadata.polarOrderId` for the
+   user's current one-time tier. Any other refund keeps access and is logged.
 6. **Checkout resolves the product id server-side** against the allow-list in
    `lib/billing/plans.ts`. Do not switch to `Checkout()` from `@polar-sh/nextjs`:
    it takes the product id from a query parameter, which would make the browser
@@ -117,6 +127,11 @@ any `+clerk_test@` address accepts `424242` as its email code.
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
     `dl.corkkam.com/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
+    The **beta** URL is not there — it is in `lib/config.server.ts` behind
+    `server-only`, because a `"use client"` file that imports one field off an
+    exported object ships the whole object in the public JS. A gated URL that
+    ships to everyone is not gated; do not move `betaDownloadUrl` back into a
+    client-importable module.
 11. **Never weaken an auth gate**, and never commit a secret. `.env.local` is
     git-ignored; document a new variable in `.env.local.example` by name only.
 12. **The middleware's retired-cookie guard is load-bearing.** An unverifiable
@@ -138,7 +153,11 @@ sync endpoints for notes, reminders and usage rollups; they moved here from a
 separate SvelteKit deploy so that deploy could be deleted. Per-user attribution
 comes from the Clerk session token's verified `sub` and never from the request
 body, so `CLERK_SECRET_KEY` being set is what keeps them non-spoofable. Breaking
-or removing these routes breaks sync for every installed copy of the app.
+or removing these routes breaks sync for every installed copy of the app. Their
+write caps live in `lib/sync/limits.ts` and are deliberately loose: the app sends
+every dirty item in one request and retries a rejected batch forever, so a cap a
+real user can reach stalls their sync for good. Check the app's sync clients
+before you tighten one.
 
 Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`,
@@ -152,10 +171,15 @@ Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (every
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.
 Full annotations in `.env.local.example`.
 
-Migrations are `supabase/migrations/0001` through `0007`. `0006_leads.sql` backs
-the lead funnel; `0007_entitlements.sql` is only needed when charging starts.
-**Whether these have been run against the live project is not knowable from the
-repo — verify with the Supabase CLI, do not assume.**
+Migrations are `supabase/migrations/0001` through `0010`. `0006_leads.sql` backs
+the lead funnel; `0007_entitlements.sql` is only needed when charging starts;
+`0008_lead_upsert_hardening.sql` redefines `upsert_lead` to stop a resubmission
+overwriting an existing Clerk linkage and to bound the appended notes;
+`0009_lead_events_ip_hash.sql` lets the IP rate cap count resubmissions;
+`0010_eval_runs.sql` backs `/eval`. `CLAUDE.md` records 0008 and 0009 as
+applied to prod on 2026-08-14. **Whether any of these have
+been run against the live project is not knowable from the repo — verify with the
+Supabase CLI, do not assume.**
 
 Read live configuration through the CLIs (`vercel env ls`, `supabase`, `gh`).
 Never ask the user to click through a dashboard, and never print a secret value —

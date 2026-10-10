@@ -52,7 +52,6 @@ export default function LeadForm({ source = "for-teams" }: { source?: string }) 
   const [token, setToken] = useState<string | null>(null);
   const [state, setState] = useState<"idle" | "sending" | "done">("idle");
   const [error, setError] = useState<string | null>(null);
-  const [band, setBand] = useState<"hot" | "warm" | "cold">("cold");
 
   function set<K extends keyof LeadInput>(key: K, v: LeadInput[K]) {
     setValues((prev) => ({ ...prev, [key]: v }));
@@ -67,7 +66,6 @@ export default function LeadForm({ source = "for-teams" }: { source?: string }) 
     const res = await submitLead({ ...values, source }, token, honeypot);
 
     if (res.ok) {
-      setBand(res.band);
       setState("done");
     } else {
       setError(res.error);
@@ -76,10 +74,10 @@ export default function LeadForm({ source = "for-teams" }: { source?: string }) 
   }
 
   if (state === "done") {
-    // The confirmation is tiered by band, because the promise has to be one we
-    // can actually keep. Telling every enquiry "we'll call you within a day"
-    // and then not doing so for the low-intent ones is worse than saying
-    // nothing. Hot leads get a hard commitment; the rest get an honest one.
+    // One confirmation for every enquiry. It used to be tiered by score band,
+    // but the band reveals whether the email belongs to an existing product
+    // user, so the server no longer returns it. The promise is the one we can
+    // keep for every lead; hot leads simply hear back sooner than promised.
     return (
       <div className="lead-done">
         <p className="label">
@@ -88,19 +86,9 @@ export default function LeadForm({ source = "for-teams" }: { source?: string }) 
         </p>
         <h3>Thank you — that&rsquo;s everything we need.</h3>
         <p>
-          {band === "hot" ? (
-            <>
-              This lands as a priority enquiry, so you&rsquo;ll hear from us{" "}
-              <strong>within one working day</strong> — from the person who wrote
-              the app, not a sales team, because there isn&rsquo;t one.
-            </>
-          ) : (
-            <>
-              We&rsquo;ll come back to you <strong>within three working days</strong>.
-              It&rsquo;s a one-person company, so the reply will be a real one
-              rather than a fast one.
-            </>
-          )}
+          We&rsquo;ll come back to you <strong>within three working days</strong>.
+          It&rsquo;s a one-person company, so the reply will be a real one
+          rather than a fast one.
         </p>
         <p className="lead-done-next">
           In the meantime, the two things every compliance review asks for are

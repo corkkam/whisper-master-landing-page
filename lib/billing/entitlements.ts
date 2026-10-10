@@ -18,7 +18,7 @@ import "server-only";
 
 import { clerkClient } from "@clerk/nextjs/server";
 import { createAdminClient } from "@/lib/supabase/server";
-import { outranks, type EntitlementTier } from "./plans";
+import { isOneTimeTier, outranks, type EntitlementTier } from "./plans";
 
 function today(): string {
   return new Date().toISOString().slice(0, 10);
@@ -57,6 +57,16 @@ export async function grantEntitlement(args: GrantArgs): Promise<void> {
   const keepExisting = outranks(currentTier, args.tier) && currentTier !== args.tier;
   const effectiveTier = keepExisting ? currentTier : args.tier;
 
+  // The order that granted a one-time tier is recorded on the user, so a later
+  // refund can be matched to the grant it pays for (see `revokeRefundedOrder`).
+  // Only the order that first granted the tier is kept: a second purchase of
+  // a tier the user already holds does not replace it.
+  const recordOrder =
+    !!args.polarOrderId &&
+    isOneTimeTier(args.tier) &&
+    !keepExisting &&
+    (currentTier !== args.tier || typeof existing.polarOrderId !== "string");
+
   if (keepExisting) {
     console.warn(
       `[billing] Not downgrading ${args.clerkUserId}: holds "${currentTier}", ` +
@@ -76,6 +86,7 @@ export async function grantEntitlement(args: GrantArgs): Promise<void> {
       ...(args.polarSubscriptionId
         ? { polarSubscriptionId: args.polarSubscriptionId }
         : {}),
+      ...(recordOrder ? { polarOrderId: args.polarOrderId } : {}),
       planExpiresAt: args.currentPeriodEnd ?? null,
     },
   });
@@ -128,6 +139,51 @@ export async function revokeEntitlement(
     active: false,
     revokedReason: reason,
   });
+}
+
+/**
+ * End a one-time grant because its order was fully refunded.
+ *
+ * Downgrades ONLY when the user's current tier is a one-time tier AND the
+ * refunded order is the order that granted it (`publicMetadata.polarOrderId`).
+ * Any other refund (a different order, a duplicate purchase, a grant made
+ * before order ids were recorded) leaves access alone and returns why, so the
+ * founder can act by hand. Stripping a lifetime licence on an unrelated refund
+ * is the worse error: it takes away something the customer still paid for.
+ *
+ * Returns a short description of what it did, for the billing event log.
+ */
+export async function revokeRefundedOrder(
+  clerkUserId: string,
+  orderId: string
+): Promise<string> {
+  const client = await clerkClient();
+  const user = await client.users.getUser(clerkUserId);
+  const existing = (user.publicMetadata ?? {}) as Record<string, unknown>;
+  const currentTier = (existing.plan as EntitlementTier | undefined) ?? "free";
+
+  if (!isOneTimeTier(currentTier)) {
+    return `Holds "${currentTier}", not a one-time tier. Access kept`;
+  }
+  if (existing.polarOrderId !== orderId) {
+    console.warn(
+      `[billing] Refund of order ${orderId} for ${clerkUserId} does not match the ` +
+        `order that granted "${currentTier}". Access kept; check by hand.`
+    );
+    return `Order does not match the "${currentTier}" grant. Access kept`;
+  }
+
+  await client.users.updateUserMetadata(clerkUserId, {
+    publicMetadata: { plan: "free", planExpiresAt: null, seats: null, polarOrderId: null },
+  });
+  await mirrorToSupabase({
+    clerkUserId,
+    tier: "free",
+    active: false,
+    polarOrderId: orderId,
+    revokedReason: "order.refunded",
+  });
+  return `Full refund of the "${currentTier}" order. Revoked`;
 }
 
 /**
