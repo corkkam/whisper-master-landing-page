@@ -103,3 +103,7 @@ commit a secret.
 
 - `../whisper-master/` — the Mac app this site sells
 - `../docs/` — the shared documentation set for the whole project
+
+## License
+
+[GNU AGPL-3.0](LICENSE). Report security issues privately: see [SECURITY.md](SECURITY.md). To contribute, see [CONTRIBUTING.md](CONTRIBUTING.md).
