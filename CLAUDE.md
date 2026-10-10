@@ -10,7 +10,7 @@ and `AGENTS.md` disagree, `AGENTS.md` wins; this one just gets you moving faster
 The public web surface for **Whisper Master**, a local-first macOS dictation app:
 marketing page, downloads, sign-in, pricing, the trust/legal pages, the B2B lead
 funnel, and dormant billing plumbing. It is **not** a waitlist page, whatever the
-git history says. Live at https://whispermaster.app.
+git history says. Live at https://whisper.corkkam.com (`whispermaster.app` is not registered).
 
 **Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind 3 · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.

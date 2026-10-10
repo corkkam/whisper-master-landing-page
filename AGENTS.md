@@ -21,7 +21,7 @@ behind a Clerk flag.
 **Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 3 · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
-Live at **https://whispermaster.app**. The Mac app it sells lives at
+Live at **https://whisper.corkkam.com**. (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
 `../whisper-master/`; shared product and business docs are in `../docs/`.
 
 ## 2. Routes and what owns them

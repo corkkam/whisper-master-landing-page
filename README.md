@@ -1,6 +1,6 @@
 # Whisper Master — the website
 
-This is the code behind **[whispermaster.app](https://whispermaster.app)**, the
+This is the code behind **[whisper.corkkam.com](https://whisper.corkkam.com)**, the
 site for Whisper Master: a local-first dictation app for macOS. Everything the
 public sees lives here — the marketing page, the downloads, sign-in, pricing, the
 privacy and trust pages, the team enquiry form, and the billing plumbing.

@@ -9,7 +9,11 @@
  * Google the site does not exist. So a localhost value is only trusted when we
  * are actually running locally.
  */
-const PRODUCTION_ORIGIN = "https://whispermaster.app";
+// whisper.corkkam.com, not whispermaster.app: that .app name is not
+// registered, so a fallback to it hands checkout and portal redirects, the
+// sitemap and share cards to whoever buys it. Change this only after the
+// domain is owned and serving this deployment.
+const PRODUCTION_ORIGIN = "https://whisper.corkkam.com";
 
 function isLocal(url: string): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(url);
