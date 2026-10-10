@@ -32,9 +32,10 @@ import { leadSchema, type LeadInput } from "./schema";
 import { scoreLead, suggestedNextAction } from "./scoring";
 import { isExistingProductUser, notifyFounder, recordLead } from "./queries";
 
-export type LeadSubmitResult =
-  | { ok: true; band: "hot" | "warm" | "cold" }
-  | { ok: false; error: string };
+// Success carries nothing on purpose. The score band depends on whether the
+// email belongs to an existing product user, so returning it would let anyone
+// probe which addresses have accounts.
+export type LeadSubmitResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Best-effort client IP. Vercel sets `x-forwarded-for`; the leftmost entry is
@@ -61,7 +62,7 @@ export async function submitLead(
   // 1. Honeypot. Report success rather than an error: telling a bot which
   //    check it failed is how it learns to pass next time.
   if (honeypot.trim() !== "") {
-    return { ok: true, band: "cold" };
+    return { ok: true };
   }
 
   // 2. Shape.
@@ -126,5 +127,5 @@ export async function submitLead(
     isNew: result.isNew,
   });
 
-  return { ok: true, band };
+  return { ok: true };
 }
