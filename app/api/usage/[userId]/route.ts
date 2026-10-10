@@ -35,7 +35,10 @@ export async function GET(
     .eq("user_id", userId)
     .order("day", { ascending: true });
 
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api/usage/[userId]] read failed: ${error.message}`);
+    return Response.json({ error: "database error" }, { status: 500 });
+  }
 
   return Response.json({
     userId,

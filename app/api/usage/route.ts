@@ -1,4 +1,12 @@
 import { resolveUserId } from "@/lib/sync/auth";
+import {
+  SYNC_LIMITS,
+  USAGE_CLAMPS,
+  clampInt,
+  clampNumber,
+  jsonBytes,
+  readJsonBody,
+} from "@/lib/sync/limits";
 import { authErrorResponse, syncClient } from "@/lib/sync/store";
 
 /**
@@ -31,17 +39,19 @@ function isValidDay(value: unknown): value is DayEntry {
     /^\d{4}-\d{2}-\d{2}$/.test(d.day) &&
     typeof d.words === "number" &&
     typeof d.dictations === "number" &&
-    typeof d.durationSeconds === "number"
+    typeof d.durationSeconds === "number" &&
+    (d.perApp === undefined ||
+      d.perApp === null ||
+      (typeof d.perApp === "object" &&
+        !Array.isArray(d.perApp) &&
+        jsonBytes(d.perApp) <= SYNC_LIMITS.maxPerAppBytes))
   );
 }
 
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "invalid JSON body" }, { status: 400 });
-  }
+  const read = await readJsonBody(request);
+  if (!read.ok) return read.response;
+  const body = read.body;
 
   let userId: string;
   try {
@@ -53,6 +63,9 @@ export async function POST(request: Request) {
   }
 
   const days = body.days;
+  if (Array.isArray(days) && days.length > SYNC_LIMITS.maxItemsPerArray) {
+    return Response.json({ error: "too many days in one request" }, { status: 413 });
+  }
   if (!Array.isArray(days) || !days.every(isValidDay)) {
     return Response.json(
       {
@@ -66,11 +79,11 @@ export async function POST(request: Request) {
   const rows = (days as DayEntry[]).map((d) => ({
     user_id: userId,
     day: d.day,
-    words: d.words,
-    dictations: d.dictations,
-    duration_seconds: d.durationSeconds,
-    fixes_words_corrected: d.fixesWordsCorrected ?? 0,
-    fixes_dictionary: d.fixesDictionary ?? 0,
+    words: clampInt(d.words, USAGE_CLAMPS.words),
+    dictations: clampInt(d.dictations, USAGE_CLAMPS.dictations),
+    duration_seconds: clampNumber(d.durationSeconds, USAGE_CLAMPS.durationSeconds),
+    fixes_words_corrected: clampInt(d.fixesWordsCorrected, USAGE_CLAMPS.fixes),
+    fixes_dictionary: clampInt(d.fixesDictionary, USAGE_CLAMPS.fixes),
     per_app: d.perApp ?? {},
     updated_at: new Date().toISOString(),
   }));
@@ -78,7 +91,10 @@ export async function POST(request: Request) {
   const { error } = await syncClient()
     .from("usage_daily")
     .upsert(rows, { onConflict: "user_id,day" });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api/usage] upsert failed: ${error.message}`);
+    return Response.json({ error: "database error" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, upserted: rows.length });
 }
