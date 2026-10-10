@@ -109,6 +109,6 @@ export async function POST(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "database error";
     console.error(`[eval/ingest] could not store the run: ${message}`);
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "database error" }, { status: 500 });
   }
 }

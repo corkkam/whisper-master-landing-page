@@ -66,6 +66,12 @@ function isReminder(value: unknown): value is ReminderPayload {
   );
 }
 
+/** Log the database detail; the caller only learns that it failed. */
+function dbError(context: string, detail: string): Response {
+  console.error(`[api/notes] ${context} failed: ${detail}`);
+  return Response.json({ error: "database error" }, { status: 500 });
+}
+
 async function caller(request: Request, fallback: string | undefined) {
   return resolveUserId(request, fallback);
 }
@@ -156,17 +162,16 @@ export async function POST(request: Request) {
       const { error } = await supabase
         .from("notes")
         .upsert(noteRows, { onConflict: "user_id,item_id" });
-      if (error) return Response.json({ error: error.message }, { status: 500 });
+      if (error) return dbError("notes upsert", error.message);
     }
     if (reminderRows.length) {
       const { error } = await supabase
         .from("reminders")
         .upsert(reminderRows, { onConflict: "user_id,item_id" });
-      if (error) return Response.json({ error: error.message }, { status: 500 });
+      if (error) return dbError("reminders upsert", error.message);
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "database error";
-    return Response.json({ error: message }, { status: 500 });
+    return dbError("notes push", error instanceof Error ? error.message : String(error));
   }
 
   return Response.json({ ok: true, notes: notes.length, reminders: reminders.length });
@@ -189,10 +194,8 @@ export async function GET(request: Request) {
     supabase.from("notes").select("*").eq("user_id", userId),
     supabase.from("reminders").select("*").eq("user_id", userId),
   ]);
-  if (noteResult.error) return Response.json({ error: noteResult.error.message }, { status: 500 });
-  if (reminderResult.error) {
-    return Response.json({ error: reminderResult.error.message }, { status: 500 });
-  }
+  if (noteResult.error) return dbError("notes read", noteResult.error.message);
+  if (reminderResult.error) return dbError("reminders read", reminderResult.error.message);
 
   // `deletedAt` is omitted rather than null when absent, so the Swift optional
   // decodes cleanly.

@@ -91,7 +91,10 @@ export async function POST(request: Request) {
   const { error } = await syncClient()
     .from("usage_daily")
     .upsert(rows, { onConflict: "user_id,day" });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error(`[api/usage] upsert failed: ${error.message}`);
+    return Response.json({ error: "database error" }, { status: 500 });
+  }
 
   return Response.json({ ok: true, upserted: rows.length });
 }
