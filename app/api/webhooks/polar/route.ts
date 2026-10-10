@@ -3,6 +3,7 @@ import {
   grantEntitlement,
   logBillingEvent,
   revokeEntitlement,
+  revokeRefundedOrder,
 } from "@/lib/billing/entitlements";
 import { tierForProductId } from "@/lib/billing/plans";
 
@@ -30,7 +31,22 @@ import { tierForProductId } from "@/lib/billing/plans";
  * DELIVERY IS AT-LEAST-ONCE AND UNORDERED
  * Every handler must therefore be idempotent, and grants must not downgrade.
  * That logic lives in `grantEntitlement`, not here.
+ *
+ * WHO OWNS WHAT
+ * Subscription access is granted and ended only by `subscription.*` events.
+ * `order.paid` and `order.refunded` act only on one-time orders (no
+ * `subscriptionId`); a renewal order or its refund is ignored there.
  */
+
+/**
+ * Subscription states that carry access. A subscription that has auto-renew
+ * off still reports `active` until the period ends, so this does not conflict
+ * with "canceled does not revoke". Checked on every grant so a late or retried
+ * event for a subscription that has since ended cannot grant it again.
+ */
+function subscriptionGrantsAccess(status: unknown): boolean {
+  return status === "active" || status === "trialing";
+}
 
 /**
  * Resolve which Clerk user a webhook payload is about.
@@ -63,6 +79,21 @@ export const POST = Webhooks({
     const order = payload.data;
     const clerkUserId = clerkUserIdFrom(order as never);
     const productId = order.productId;
+
+    // A subscription's first payment and each renewal also arrive as
+    // `order.paid`. The subscription events own that access, so granting here
+    // too would write a second, period-less grant for the same purchase.
+    if (order.subscriptionId) {
+      await logBillingEvent({
+        eventType: "order.paid",
+        clerkUserId,
+        polarCustomerId: order.customerId,
+        productId,
+        detail: "Subscription order. Handled by subscription events",
+      });
+      return;
+    }
+
     const tier = productId ? tierForProductId(productId) : null;
 
     await logBillingEvent({
@@ -103,14 +134,22 @@ export const POST = Webhooks({
     const clerkUserId = clerkUserIdFrom(sub as never);
     const productId = sub.productId;
     const tier = productId ? tierForProductId(productId) : null;
+    const status = String(sub.status ?? "");
+    const granting = subscriptionGrantsAccess(status);
 
     await logBillingEvent({
       eventType: "subscription.active",
       clerkUserId,
       polarCustomerId: sub.customerId,
       productId,
-      detail: tier ? `Granting ${tier}` : "No matching product — ignored",
+      detail: !granting
+        ? `Status "${status}" — not granting`
+        : tier
+          ? `Granting ${tier}`
+          : "No matching product — ignored",
     });
+
+    if (!granting) return;
 
     if (!clerkUserId || !tier) {
       console.error("[polar] subscription.active unresolved:", { id: sub.id, clerkUserId, productId });
@@ -145,7 +184,7 @@ export const POST = Webhooks({
     // re-granted by a routine update event. Revocation is handled by
     // `subscription.revoked`; this just avoids extending access here.
     const status = String(sub.status ?? "");
-    if (status !== "active" && status !== "trialing") {
+    if (!subscriptionGrantsAccess(status)) {
       await logBillingEvent({
         eventType: "subscription.updated",
         clerkUserId,
@@ -206,27 +245,33 @@ export const POST = Webhooks({
   // ── Refunds ────────────────────────────────────────────────────────────
   // A refunded one-time purchase has no subscription to revoke, so it has to be
   // handled explicitly or a refunded Lifetime licence stays granted forever.
+  // Only a FULL refund of the order that granted the user's current one-time
+  // tier downgrades; `revokeRefundedOrder` checks the match. A refund of a
+  // subscription order is left to `subscription.revoked`.
   onOrderRefunded: async (payload) => {
     const order = payload.data;
     const clerkUserId = clerkUserIdFrom(order as never);
+    const fullRefund =
+      order.status === "refunded" ||
+      (order.totalAmount > 0 && order.refundedAmount >= order.totalAmount);
+
+    let detail: string;
+    if (!clerkUserId) {
+      detail = "No resolvable Clerk user — ignored";
+    } else if (order.subscriptionId) {
+      detail = "Subscription order. Access follows subscription events";
+    } else if (!fullRefund) {
+      detail = `Partial refund (${order.refundedAmount}/${order.totalAmount}). Access kept`;
+    } else {
+      detail = await revokeRefundedOrder(clerkUserId, order.id);
+    }
 
     await logBillingEvent({
       eventType: "order.refunded",
       clerkUserId,
       polarCustomerId: order.customerId,
       productId: order.productId,
-      detail: "Refund — revoking",
-    });
-
-    if (!clerkUserId) return;
-
-    // `revokeEntitlement` refuses to revoke a lifetime licence, which is the
-    // right default everywhere except here. A refunded lifetime purchase is
-    // exactly the case that must override it, so it is done directly.
-    const { clerkClient } = await import("@clerk/nextjs/server");
-    const client = await clerkClient();
-    await client.users.updateUserMetadata(clerkUserId, {
-      publicMetadata: { plan: "free", planExpiresAt: null, seats: null },
+      detail,
     });
   },
 });

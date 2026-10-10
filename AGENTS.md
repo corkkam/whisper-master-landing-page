@@ -103,6 +103,12 @@ any `+clerk_test@` address accepts `424242` as its email code.
    for.
 5. **Grants never downgrade.** `grantEntitlement` compares tier rank before
    writing, because Polar delivers at-least-once and unordered.
+   The same unordered delivery shapes the rest of the webhook: `order.paid`
+   and `order.refunded` ignore orders that carry a `subscriptionId` (the
+   `subscription.*` events own that access), a subscription grant requires
+   status `active` or `trialing`, and a refund only downgrades when it is a
+   full refund of the order recorded as `publicMetadata.polarOrderId` for the
+   user's current one-time tier. Any other refund keeps access and is logged.
 6. **Checkout resolves the product id server-side** against the allow-list in
    `lib/billing/plans.ts`. Do not switch to `Checkout()` from `@polar-sh/nextjs`:
    it takes the product id from a query parameter, which would make the browser
