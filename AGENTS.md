@@ -153,7 +153,11 @@ sync endpoints for notes, reminders and usage rollups; they moved here from a
 separate SvelteKit deploy so that deploy could be deleted. Per-user attribution
 comes from the Clerk session token's verified `sub` and never from the request
 body, so `CLERK_SECRET_KEY` being set is what keeps them non-spoofable. Breaking
-or removing these routes breaks sync for every installed copy of the app.
+or removing these routes breaks sync for every installed copy of the app. Their
+write caps live in `lib/sync/limits.ts` and are deliberately loose: the app sends
+every dirty item in one request and retries a rejected batch forever, so a cap a
+real user can reach stalls their sync for good. Check the app's sync clients
+before you tighten one.
 
 Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`,
@@ -167,11 +171,13 @@ Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (every
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.
 Full annotations in `.env.local.example`.
 
-Migrations are `supabase/migrations/0001` through `0008`. `0006_leads.sql` backs
+Migrations are `supabase/migrations/0001` through `0010`. `0006_leads.sql` backs
 the lead funnel; `0007_entitlements.sql` is only needed when charging starts;
 `0008_lead_upsert_hardening.sql` redefines `upsert_lead` to stop a resubmission
-overwriting an existing Clerk linkage and to bound the appended notes — **it is
-written but not yet applied to the live project.** **Whether any of these have
+overwriting an existing Clerk linkage and to bound the appended notes;
+`0009_lead_events_ip_hash.sql` lets the IP rate cap count resubmissions;
+`0010_eval_runs.sql` backs `/eval`. `CLAUDE.md` records 0008 and 0009 as
+applied to prod on 2026-08-14. **Whether any of these have
 been run against the live project is not knowable from the repo — verify with the
 Supabase CLI, do not assume.**
 
