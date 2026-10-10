@@ -1,0 +1,13 @@
+# Security updates are switched on in the repo settings. This file adds a weekly,
+# grouped bump of minor and patch versions so the lockfile does not drift.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
