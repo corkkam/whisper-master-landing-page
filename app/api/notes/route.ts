@@ -1,4 +1,5 @@
 import { resolveUserId } from "@/lib/sync/auth";
+import { SYNC_LIMITS, readJsonBody } from "@/lib/sync/limits";
 import { authErrorResponse, existingUpdatedAt, isIso, optIso, syncClient } from "@/lib/sync/store";
 
 /**
@@ -35,16 +36,34 @@ interface ReminderPayload extends NotePayload {
   firedAt?: string | null;
 }
 
+/** Absent, or a string no longer than `max`. */
+const optString = (value: unknown, max: number) =>
+  value === undefined || value === null || (typeof value === "string" && value.length <= max);
+
 function isNote(value: unknown): value is NotePayload {
   if (typeof value !== "object" || value === null) return false;
   const n = value as Record<string, unknown>;
   return (
-    typeof n.id === "string" && n.id.length > 0 && isIso(n.createdAt) && isIso(n.updatedAt)
+    typeof n.id === "string" &&
+    n.id.length > 0 &&
+    n.id.length <= SYNC_LIMITS.maxIdChars &&
+    optString(n.title, SYNC_LIMITS.maxTitleChars) &&
+    optString(n.body, SYNC_LIMITS.maxNoteBodyChars) &&
+    isIso(n.createdAt) &&
+    isIso(n.updatedAt)
   );
 }
 
 function isReminder(value: unknown): value is ReminderPayload {
-  return isNote(value) && isIso((value as { dueDate?: unknown }).dueDate);
+  if (!isNote(value)) return false;
+  const r = value as unknown as Record<string, unknown>;
+  return (
+    isIso(r.dueDate) &&
+    optString(r.alertStyle, SYNC_LIMITS.maxShortFieldChars) &&
+    optString(r.soundName, SYNC_LIMITS.maxShortFieldChars) &&
+    optString(r.repeatRule, SYNC_LIMITS.maxShortFieldChars) &&
+    (r.isCompleted === undefined || typeof r.isCompleted === "boolean")
+  );
 }
 
 async function caller(request: Request, fallback: string | undefined) {
@@ -52,12 +71,9 @@ async function caller(request: Request, fallback: string | undefined) {
 }
 
 export async function POST(request: Request) {
-  let body: Record<string, unknown>;
-  try {
-    body = await request.json();
-  } catch {
-    return Response.json({ error: "invalid JSON body" }, { status: 400 });
-  }
+  const read = await readJsonBody(request);
+  if (!read.ok) return read.response;
+  const body = read.body;
 
   let userId: string;
   try {
@@ -70,12 +86,21 @@ export async function POST(request: Request) {
 
   const notes = Array.isArray(body.notes) ? body.notes : [];
   const reminders = Array.isArray(body.reminders) ? body.reminders : [];
+  if (
+    notes.length > SYNC_LIMITS.maxItemsPerArray ||
+    reminders.length > SYNC_LIMITS.maxItemsPerArray
+  ) {
+    return Response.json({ error: "too many items in one request" }, { status: 413 });
+  }
   if (!notes.every(isNote)) {
-    return Response.json({ error: "each note needs { id, createdAt, updatedAt }" }, { status: 400 });
+    return Response.json(
+      { error: "each note needs { id, createdAt, updatedAt } within the size limits" },
+      { status: 400 }
+    );
   }
   if (!reminders.every(isReminder)) {
     return Response.json(
-      { error: "each reminder needs { id, dueDate, createdAt, updatedAt }" },
+      { error: "each reminder needs { id, dueDate, createdAt, updatedAt } within the size limits" },
       { status: 400 }
     );
   }
