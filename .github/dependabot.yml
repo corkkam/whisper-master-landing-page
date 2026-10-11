@@ -11,3 +11,9 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 is the native (Go) compiler and ships no JS API. Next.js loads
+      # tsconfig paths through that API, so `next build` cannot resolve `@/...` on 7.
+      # Remove this when the Next.js version in use supports TypeScript 7.
+      - dependency-name: typescript
+        versions: [">=7"]

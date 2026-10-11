@@ -18,7 +18,7 @@ plumbing. It is **not** a waitlist page any more, whatever the git history and t
 old README said. Stable downloads are open to everyone; the beta build stays
 behind a Clerk flag.
 
-**Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 3 · Clerk ·
+**Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 4 (theme in `app/globals.css` `@theme`, no JS config) · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
 Live at **https://whisper.corkkam.com**. (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
