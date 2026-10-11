@@ -53,7 +53,7 @@ export const product = {
 // publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached
 // body** for that URL afterwards while HEAD on the same URL reports the new
 // object. On 2026-08-04 that meant dl.corkkam.com/WhisperMaster.dmg kept serving
-// 1.2.8 — carrying the retired model.scoopscore.in feed and the *exposed*
+// 1.2.8 — carrying the retired legacy feed and the *exposed*
 // SUPublicEDKey — for an unbounded time after 1.2.9 shipped. `cf-cache-status:
 // DYNAMIC` on the HEAD response does not mean the GET path is uncached; do not
 // trust it. A versioned key is written once and never overwritten, so it cannot
