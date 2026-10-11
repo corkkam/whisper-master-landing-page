@@ -12,7 +12,7 @@ marketing page, downloads, sign-in, pricing, the trust/legal pages, the B2B lead
 funnel, and dormant billing plumbing. It is **not** a waitlist page, whatever the
 git history says. Live at https://whisper.corkkam.com (`whispermaster.app` is not registered).
 
-**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind 3 · Clerk ·
+**Stack:** Next.js 15 (App Router) · React 19 · TypeScript · Tailwind 4 (theme in `app/globals.css` `@theme`, no JS config) · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
 ## Run it

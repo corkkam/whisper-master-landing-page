@@ -1,8 +1,165 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss' source(none);
+@source "../app";
+@source "../components";
+@source "../lib";
 
-/* ═══════════════════════════════════════════════════════════════════════
+/* Font utilities read the next/font variables set on <html> (app/layout.tsx).
+   `inline` makes the utility carry the stack itself. A plain @theme would also
+   write `--font-display`/`--font-mono` on :root, on top of the next/font names. */
+@theme inline {
+  --font-display: var(--font-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), Geist, ui-sans-serif, system-ui, sans-serif;
+  --font-mono:
+    var(--font-mono), Geist Mono, ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Palette concept: a treated recording room at night (moved here from the
+   Tailwind 3 `tailwind.config.ts`).
+
+   The ground is a flat neutral stack. No gradients, no tinted fields. Every
+   background is one of the ink values and nothing between them, so depth
+   comes from the step between surfaces rather than from a blur.
+
+   The two accents carry meaning and are not interchangeable:
+     ember  -> you. Your voice, the live record light, anything human.
+     signal -> the machine. On-device processing, locked-in text, data.
+   `ember-ink` is the warm near-black for text on an ember fill. It mirrors
+   `.btn--primary` so the modal matches the page CTAs. */
+@theme {
+  --color-ink-500: #313131;
+  --color-ink-600: #272727;
+  --color-ink-700: #1f1f1f;
+  --color-ink-800: #181818;
+  --color-ink-900: #000000;
+  --color-ink-950: #131209;
+  --color-ink: #000000;
+
+  --color-haze: #9b9b9b;
+  --color-haze-bright: #c4c4c4;
+  --color-haze-dim: #6e6e6e;
+
+  --color-bone: #f2efe9;
+
+  --color-ember: #ff6a3d;
+  --color-ember-bright: #ff8b64;
+  --color-ember-deep: #d94a20;
+  --color-ember-ink: #1a0a04;
+
+  --color-signal: #6ee7df;
+  --color-signal-bright: #9df3ed;
+  --color-signal-deep: #3bbdb4;
+
+  --tracking-label: 0.2em;
+  --tracking-display: -0.04em;
+
+  --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
+
+  --container-content: 1240px;
+  --container-prose: 62ch;
+
+  --shadow-raised: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --shadow-ember: 0 0 70px -12px rgba(255, 106, 61, 0.55);
+  --shadow-signal: 0 0 70px -12px rgba(110, 231, 223, 0.45);
+
+  --animate-record-breathe: record-breathe 2.6s ease-out infinite;
+  --animate-caret: caret 1.1s step-end infinite;
+  --animate-drift: drift 16s ease-in-out infinite;
+
+  @keyframes record-breathe {
+    0%,
+    100% {
+      opacity: 1;
+      box-shadow: 0 0 0 0 rgba(255, 106, 61, 0.45);
+    }
+    70% {
+      opacity: 0.75;
+      box-shadow: 0 0 0 7px rgba(255, 106, 61, 0);
+    }
+  }
+  @keyframes caret {
+    0%,
+    49% {
+      opacity: 1;
+    }
+    50%,
+    100% {
+      opacity: 0;
+    }
+  }
+  @keyframes drift {
+    0%,
+    100% {
+      transform: translate3d(0, 0, 0);
+    }
+    50% {
+      transform: translate3d(0, -20px, 0);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@utility glass {
+  background: var(--paper);
+  border: 1px solid var(--ink);
+}
+
+@utility glass-soft {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+}
+
+@utility field-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 2.15rem;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%234c6b68' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1.75 6 6.25 11 1.75'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 11px;
+}
+
+@utility inline-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--ink-3);
+  transition: text-decoration-color 500ms var(--ease);
+  &:hover {
+    text-decoration-color: var(--live);
+  }
+}
+
+@layer utilities {
+  /* ═══════════════════════════════════════════════════════════════════════
    WHISPER MASTER — the service manual.
 
    The conceit: this site is the product's own equipment manual. Warm drafting
@@ -23,7 +180,7 @@
    else. Nothing else on the site is allowed to be red.
    ═══════════════════════════════════════════════════════════════════════ */
 
-/* ── Palette ──────────────────────────────────────────────────────────
+  /* ── Palette ──────────────────────────────────────────────────────────
    Ported from the Mac app's `Theme.swift`, with one deliberate departure.
 
    The app's light mode is a *cool* blue-grey paper (#e9edf4), inherited from a
@@ -42,47 +199,47 @@
    readable as text on a light ground — vivid ember is only 2.6:1 on paper, so
    `--ember-ink` at 5.1:1 is what text and icons use.
    ─────────────────────────────────────────────────────────────────────── */
-:root {
-  /* Sampled from the illustrations themselves, so a full-bleed plate has no
+  :root {
+    /* Sampled from the illustrations themselves, so a full-bleed plate has no
      seam where the artwork meets the page. The stock reads ~#f5e6cb across all
      four warm plates; the ramp is built off that. */
-  --paper: #f4e6cd;
-  --paper-2: #faf1de;
-  --paper-3: #ead9b9;
-  --paper-sunken: #e2cfab;
+    --paper: #f4e6cd;
+    --paper-2: #faf1de;
+    --paper-3: #ead9b9;
+    --paper-sunken: #e2cfab;
 
-  /* Ink. Never pure black — tinted, per the app's ramp. */
-  --ink: #10141c;
-  --ink-2: #2c3444;
-  --ink-3: #4d5566;
-  /* 3.4:1 — decoration and non-text only, never body copy. */
-  --ink-faint: #7c8595;
+    /* Ink. Never pure black — tinted, per the app's ramp. */
+    --ink: #10141c;
+    --ink-2: #2c3444;
+    --ink-3: #4d5566;
+    /* 3.4:1 — decoration and non-text only, never body copy. */
+    --ink-faint: #7c8595;
 
-  /* Ember — the human. */
-  --ember: #ff6a3d;
-  --ember-bright: #ff8b64;
-  --ember-deep: #d94a20;
-  --ember-ink: #b53812;
-  --ember-on: #1a0a04;
+    /* Ember — the human. */
+    --ember: #ff6a3d;
+    --ember-bright: #ff8b64;
+    --ember-deep: #d94a20;
+    --ember-ink: #b53812;
+    --ember-on: #1a0a04;
 
-  /* Signal — the machine. */
-  --signal: #6ee7df;
-  --signal-deep: #3bbdb4;
-  --signal-ink: #136059;
-  --signal-on: #04211f;
+    /* Signal — the machine. */
+    --signal: #6ee7df;
+    --signal-deep: #3bbdb4;
+    --signal-ink: #136059;
+    --signal-on: #04211f;
 
-  --danger: #b3261e;
-  --warning: #8a5a00;
+    --danger: #b3261e;
+    --warning: #8a5a00;
 
-  --hair: rgba(16, 20, 28, 0.1);
-  --rule: rgba(16, 20, 28, 0.06);
+    --hair: rgba(16, 20, 28, 0.1);
+    --rule: rgba(16, 20, 28, 0.06);
 
-  /* The notch sub-palette. Always ink, in every mode, because the band sits on
+    /* The notch sub-palette. Always ink, in every mode, because the band sits on
      the physical bezel — this is why the site is allowed dark surfaces without
      owning a dark theme. */
-  /* The night stock the two dark plates are drawn on, sampled the same way. */
-  --void: #141c25;
-  /* The two rungs of the threshold: the ramp that carries paper down into the
+    /* The night stock the two dark plates are drawn on, sampled the same way. */
+    --void: #141c25;
+    /* The two rungs of the threshold: the ramp that carries paper down into the
      void where the page enters the machine.
 
      They are here as explicit stops rather than left to the browser because
@@ -92,185 +249,209 @@
      the seam came out looking like fog laid over the page. These two are
      sampled off the warm plates' own shadows, so the fall-off reads as light
      leaving a room instead. */
-  --dusk-2: #c8aa84;
-  --dusk-1: #6b5843;
-  --notch: #07090e;
-  --notch-text: #f2efe9;
-  --notch-text-2: #aab3c4;
-  --notch-hair: rgba(255, 255, 255, 0.09);
+    --dusk-2: #c8aa84;
+    --dusk-1: #6b5843;
+    --notch: #07090e;
+    --notch-text: #f2efe9;
+    --notch-text-2: #aab3c4;
+    --notch-hair: rgba(255, 255, 255, 0.09);
 
-  --font-plate: var(--font-display), "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
-  --font-read: var(--font-body), "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
-  --font-note: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-plate:
+      var(--font-display), 'Bricolage Grotesque', ui-sans-serif, system-ui,
+      sans-serif;
+    --font-read:
+      var(--font-body), 'Instrument Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-note:
+      var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  --gutter: 24px;
-  --content: 1240px;
-  --measure: 62ch;
+    --gutter: 24px;
+    --content: 1240px;
+    --measure: 62ch;
 
-  /* Geometry, from the app: cards 16, panels 18, controls 12, pills round. */
-  --r-card: 16px;
-  --r-panel: 18px;
-  --r-control: 12px;
-  --r-pill: 999px;
+    /* Geometry, from the app: cards 16, panels 18, controls 12, pills round. */
+    --r-card: 16px;
+    --r-panel: 18px;
+    --r-control: 12px;
+    --r-pill: 999px;
 
-  /* The house curve: fast out, long soft settle, no overshoot. The app does not
+    /* The house curve: fast out, long soft settle, no overshoot. The app does not
      use springs and neither does this. */
-  --ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --t-settle: 420ms;
-  --t-quick: 250ms;
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    --t-settle: 420ms;
+    --t-quick: 250ms;
 
-  /* ── The display ────────────────────────────────────────────────────
+    /* ── The display ────────────────────────────────────────────────────
      The viewport is a Mac screen, so it has a bezel, and the bezel has the
      proportions of the real one: thick along the top because that is the edge
      holding the camera, a hairline of the same ink down the other three sides.
      Every measurement in the menu bar and the notch is derived from these, so
      the whole assembly stays in register at any width. */
-  --bezel: 10px;
-  --bezel-side: 4px;
-  /* The chin. Heavier than the sides and lighter than the top: on the real
+    --bezel: 10px;
+    --bezel-side: 4px;
+    /* The chin. Heavier than the sides and lighter than the top: on the real
      machine the bottom edge is the one carrying the hinge, and giving it its own
      number stops the lid reading as an evenly weighted picture frame while still
      keeping the top the heaviest edge — which is what sells the notch. */
-  --bezel-bottom: 6px;
-  --screen-r: 18px;
-  /* The glass sits inside the ink, so its corners are the lid's radius less the
+    --bezel-bottom: 6px;
+    --screen-r: 18px;
+    /* The glass sits inside the ink, so its corners are the lid's radius less the
      ink it is set into. Derived rather than typed, so the two curves stay
      concentric at any breakpoint instead of drifting apart. */
-  --glass-r: calc(var(--screen-r) - var(--bezel-side));
+    --glass-r: calc(var(--screen-r) - var(--bezel-side));
 
-  /* The notch. `--notch-w` is the closed shape — the camera island — and it is
+    /* The notch. `--notch-w` is the closed shape — the camera island — and it is
      wide-to-tall at roughly 5:1 because that is the ratio on the machine; a
      squarer pill reads as a badge stuck to the page instead. The wings grow
      outward from it and are equal by construction, which is what keeps the
      island pinned to the centre of the screen through every state. */
-  --notch-w: 132px;
-  --notch-h: 26px;
-  --notch-wing: 88px;
-  --notch-r: 12px;
-  /* Menu bar height, measured below the bezel. */
-  --bar-h: 38px;
-}
+    --notch-w: 132px;
+    --notch-h: 26px;
+    --notch-wing: 88px;
+    --notch-r: 12px;
+    /* Menu bar height, measured below the bezel. */
+    --bar-h: 38px;
+  }
 
-/* Narrow. One breakpoint re-scales the whole display, because every part of it
+  /* Narrow. One breakpoint re-scales the whole display, because every part of it
    is derived from these six numbers and they have to move together — a bezel
    that stayed at desktop weight around a 390px viewport is 2.5% of the screen
    instead of 0.7%, and a band that stayed open would eat the wordmark.
    The wings fold away here; see the notch's own rules for why. */
-@media (max-width: 980px) {
-  :root {
-    --bezel: 8px;
-    --bezel-side: 3px;
-    --bezel-bottom: 5px;
-    --screen-r: 14px;
-    --notch-w: 96px;
-    --notch-h: 22px;
-    --notch-wing: 0px;
-    --notch-r: 10px;
-    --bar-h: 34px;
+  @media (max-width: 980px) {
+    :root {
+      --bezel: 8px;
+      --bezel-side: 3px;
+      --bezel-bottom: 5px;
+      --screen-r: 14px;
+      --notch-w: 96px;
+      --notch-h: 22px;
+      --notch-wing: 0px;
+      --notch-r: 10px;
+      --bar-h: 34px;
+    }
   }
-}
 
-/* ── Legacy palette bridge ────────────────────────────────────────────
+  /* ── Legacy palette bridge ────────────────────────────────────────────
    The inner pages are styled against the names the old dark theme used. Those
    are re-pointed here so each of those pages follows the redesign untouched.
    New work uses the names above. Note `--ember`/`--signal` resolve to the
    *readable* cuts for those sheets, since they use them as text on paper. */
-:root {
-  --space-0: 0; --space-25: 2px; --space-50: 4px; --space-75: 8px;
-  --space-100: 12px; --space-200: 16px; --space-300: 24px; --space-400: 32px;
-  --space-500: 40px; --space-600: 48px; --space-700: 64px; --space-800: 80px;
-  --space-900: 96px;
+  :root {
+    --space-0: 0;
+    --space-25: 2px;
+    --space-50: 4px;
+    --space-75: 8px;
+    --space-100: 12px;
+    --space-200: 16px;
+    --space-300: 24px;
+    --space-400: 32px;
+    --space-500: 40px;
+    --space-600: 48px;
+    --space-700: 64px;
+    --space-800: 80px;
+    --space-900: 96px;
 
-  --text-xs: 0.75rem;   --lh-xs: 1rem;
-  --text-sm: 0.875rem;  --lh-sm: 1.25rem;
-  --text-base: 1rem;    --lh-base: 1.5rem;
-  --text-lg: 1.125rem;  --lh-lg: 1.75rem;
-  --text-xl: 1.25rem;   --lh-xl: 1.75rem;
-  --text-2xl: 1.5rem;   --lh-2xl: 2rem;
-  --text-3xl: 1.875rem; --lh-3xl: 2.25rem;
-  --text-4xl: 2.25rem;  --lh-4xl: 2.5rem;
-  --text-5xl: 3rem; --text-6xl: 3.75rem; --text-7xl: 4.5rem; --text-8xl: 6rem;
+    --text-xs: 0.75rem;
+    --lh-xs: 1rem;
+    --text-sm: 0.875rem;
+    --lh-sm: 1.25rem;
+    --text-base: 1rem;
+    --lh-base: 1.5rem;
+    --text-lg: 1.125rem;
+    --lh-lg: 1.75rem;
+    --text-xl: 1.25rem;
+    --lh-xl: 1.75rem;
+    --text-2xl: 1.5rem;
+    --lh-2xl: 2rem;
+    --text-3xl: 1.875rem;
+    --lh-3xl: 2.25rem;
+    --text-4xl: 2.25rem;
+    --lh-4xl: 2.5rem;
+    --text-5xl: 3rem;
+    --text-6xl: 3.75rem;
+    --text-7xl: 4.5rem;
+    --text-8xl: 6rem;
 
-  --ink-800: var(--paper-2);
-  --ink-700: var(--paper-2);
-  --ink-600: var(--paper-3);
-  --ink-500: var(--paper-sunken);
-  --ink-950: var(--paper-2);
-  --bone: var(--ink);
-  --haze: var(--ink-2);
-  --haze-bright: var(--ink-2);
-  --haze-dim: var(--ink-3);
-  --alarm: var(--danger);
-  --line: var(--hair);
-  --line-soft: var(--rule);
-  --surface: var(--paper-2);
-  --surface-2: var(--paper-3);
-  --spine-dim: var(--hair);
-  --mono: var(--font-note);
-  --display: var(--font-plate);
-  --signal-bright: var(--signal-ink);
-  --live: var(--ember-ink);
-}
+    --ink-800: var(--paper-2);
+    --ink-700: var(--paper-2);
+    --ink-600: var(--paper-3);
+    --ink-500: var(--paper-sunken);
+    --ink-950: var(--paper-2);
+    --bone: var(--ink);
+    --haze: var(--ink-2);
+    --haze-bright: var(--ink-2);
+    --haze-dim: var(--ink-3);
+    --alarm: var(--danger);
+    --line: var(--hair);
+    --line-soft: var(--rule);
+    --surface: var(--paper-2);
+    --surface-2: var(--paper-3);
+    --spine-dim: var(--hair);
+    --mono: var(--font-note);
+    --display: var(--font-plate);
+    --signal-bright: var(--signal-ink);
+    --live: var(--ember-ink);
+  }
 
-html {
-  background: var(--paper);
-  -webkit-text-size-adjust: 100%;
-}
-html.lenis,
-html.lenis body {
-  height: auto;
-}
+  html {
+    background: var(--paper);
+    -webkit-text-size-adjust: 100%;
+  }
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
 
-body {
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-read);
-  font-size: 1.0625rem;
-  line-height: 1.6;
-  overflow-x: hidden;
-  -webkit-font-smoothing: antialiased;
-  font-feature-settings: "onum" 1;
-}
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-read);
+    font-size: 1.0625rem;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    font-feature-settings: 'onum' 1;
+  }
 
-a {
-  color: inherit;
-  text-decoration: none;
-}
-button,
-input,
-textarea,
-select {
-  font: inherit;
-  color: inherit;
-}
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-::selection {
-  background: var(--live);
-  color: var(--paper);
-}
-:focus-visible {
-  outline: 2px solid var(--live);
-  outline-offset: 3px;
-  border-radius: 2px;
-}
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+  button,
+  input,
+  textarea,
+  select {
+    font: inherit;
+    color: inherit;
+  }
+  button,
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: var(--live);
+    color: var(--paper);
+  }
+  :focus-visible {
+    outline: 2px solid var(--live);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
 
-/* Inner scrollers keep a real scrollbar, styled to the paper. */
-::-webkit-scrollbar {
-  width: 11px;
-}
-::-webkit-scrollbar-track {
-  background: var(--paper-2);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--hair);
-  border: 3px solid var(--paper-2);
-  border-radius: 99px;
-}
+  /* Inner scrollers keep a real scrollbar, styled to the paper. */
+  ::-webkit-scrollbar {
+    width: 11px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--paper-2);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--hair);
+    border: 3px solid var(--paper-2);
+    border-radius: 99px;
+  }
 
-/* ── The document scrollbar ───────────────────────────────────────────
+  /* ── The document scrollbar ───────────────────────────────────────────
    Hidden, and replaced by `.screen-scroll` further down.
 
    Not a cosmetic preference. A classic (non-overlay) scrollbar takes its width
@@ -282,86 +463,46 @@ a {
    Scoped to the document scroller alone; the rules above still apply
    everywhere else.
    ─────────────────────────────────────────────────────────────────────── */
-html {
-  scrollbar-width: none;
-}
-html::-webkit-scrollbar {
-  width: 0;
-  height: 0;
-}
+  html {
+    scrollbar-width: none;
+  }
+  html::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
 
-p {
-  text-wrap: pretty;
-}
-h1,
-h2,
-h3 {
-  text-wrap: balance;
-}
-em,
-i,
-cite {
-  font-style: normal;
-}
+  p {
+    text-wrap: pretty;
+  }
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+  em,
+  i,
+  cite {
+    font-style: normal;
+  }
 
-.skip-link {
-  position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 200;
-  padding: 8px 12px;
-  border-radius: 2px;
-  background: var(--ink);
-  color: var(--paper);
-  font-family: var(--font-note);
-  font-size: 0.75rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  transform: translateY(-200%);
-  transition: transform 600ms var(--ease);
-}
-.skip-link:focus-visible {
-  transform: translateY(0);
-}
-
-@layer components {
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
+  .skip-link {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    z-index: 200;
+    padding: 8px 12px;
+    border-radius: 2px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--font-note);
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    transform: translateY(-200%);
+    transition: transform 600ms var(--ease);
   }
-  .glass {
-    background: var(--paper);
-    border: 1px solid var(--ink);
-  }
-  .glass-soft {
-    background: var(--paper-2);
-    border: 1px solid var(--rule);
-  }
-  .field-select {
-    appearance: none;
-    -webkit-appearance: none;
-    padding-right: 2.15rem;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%234c6b68' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'><path d='M1 1.75 6 6.25 11 1.75'/></svg>");
-    background-repeat: no-repeat;
-    background-position: right 12px center;
-    background-size: 11px;
-  }
-  .inline-link {
-    text-decoration: underline;
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-    text-decoration-color: var(--ink-3);
-    transition: text-decoration-color 500ms var(--ease);
-  }
-  .inline-link:hover {
-    text-decoration-color: var(--live);
+  .skip-link:focus-visible {
+    transform: translateY(0);
   }
 }
 
