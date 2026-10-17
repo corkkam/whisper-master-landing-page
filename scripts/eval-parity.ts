@@ -17,7 +17,7 @@
 // source of truth and its own tests gate it, so this is the check you run when
 // touching the port.
 
-import { matches, normWords, novelWords, percentileIndex } from "../lib/eval/scoring.ts";
+import { matches, normWords, novelWords, percentileIndex, scoreRow } from "../lib/eval/scoring.ts";
 
 let bad = 0;
 const eq = (label: string, got: unknown, want: unknown) => {
@@ -72,5 +72,15 @@ eq("exact/Parakeet-right", matches("Parakeet", "We deployed the Parakeet model."
 eq("insensitive-unchanged", matches("api", "Our API is slow."), true);
 eq("exact/punctuation-term", matches("$25", "It is $25.", true), true);
 
-console.log(bad === 0 ? "PARITY OK — 36 checks match the Swift EvalScoreKit tests" : `${bad} FAILED`);
+// --- max_reference_wer: the same cases as ScorerTests' reference-WER tests
+const dRule = {
+  mustContain: [], mustNotContain: [],
+  reference: "I don't want this to be a unilateral conversation.", maxReferenceWer: 0.2
+};
+const dRow = (out: string) => ({ id: "d", target: "light", llm_output: out });
+eq("refwer/no-op fails", scoreRow(dRow("Well, I don't want to, I don't want this to be a unilateral conversation."), dRule, null).pass, false);
+eq("refwer/clean passes", scoreRow(dRow("i don't want this to be a unilateral conversation"), dRule, null).pass, true);
+eq("refwer/opt-in only", scoreRow(dRow("a b"), { mustContain: [], mustNotContain: [], reference: "completely different words here" }, null).pass, true);
+
+console.log(bad === 0 ? "PARITY OK — 39 checks match the Swift EvalScoreKit tests" : `${bad} FAILED`);
 process.exit(bad ? 1 : 0);

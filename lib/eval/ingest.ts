@@ -73,6 +73,7 @@ export function parseCases(jsonl?: string | null): Map<string, Rule> {
         mustContainExact: c.must_contain_exact ?? [],
         mustNotContainExact: c.must_not_contain_exact ?? [],
         reference: c.reference ?? null,
+        maxReferenceWer: typeof c.max_reference_wer === "number" ? c.max_reference_wer : null,
         category: c.category ?? null
       });
     } catch {
