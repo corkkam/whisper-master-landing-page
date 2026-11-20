@@ -21,7 +21,7 @@ behind a Clerk flag.
 **Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 4 (theme in `app/globals.css` `@theme`, no JS config) · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
-Live at **https://whisper.corkkam.com**. (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
+Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
 `../whisper-master/`; shared product and business docs are in `../docs/`.
 
 ## 2. Routes and what owns them
@@ -125,7 +125,7 @@ any `+clerk_test@` address accepts `424242` as its email code.
    quoted together or not at all.
 10. **Link a versioned DMG, never an overwriteable alias.** `WhisperMaster.dmg`
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
-    `dl.corkkam.com/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
+    `dl.typing.sucks/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
     The **beta** URL is not there — it is in `lib/config.server.ts` behind
     `server-only`, because a `"use client"` file that imports one field off an

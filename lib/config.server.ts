@@ -18,4 +18,4 @@ import "server-only";
  * you didn't ship, this is why. The beta DMG is produced by the beta release
  * channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
  */
-export const betaDownloadUrl = "https://dl.corkkam.com/WhisperMaster-beta.dmg";
+export const betaDownloadUrl = "https://dl.typing.sucks/WhisperMaster-beta.dmg";
