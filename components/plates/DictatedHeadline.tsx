@@ -82,7 +82,7 @@ const SEAL_STEP = 62;
  * they disappear. Removing them silently is technically the same result and
  * reads as nothing having happened.
  */
-type Phase =
+export type Phase =
   | "streaming"
   | "holding"
   | "marking"
@@ -104,6 +104,7 @@ type Phase =
 export function DictatedHeadline({
   className = "",
   onSettle,
+  onPhase,
 }: {
   className?: string;
   /**
@@ -113,10 +114,30 @@ export function DictatedHeadline({
    * won the reader's attention over the message.
    */
   onSettle?: () => void;
+  /** Every phase change, so the pond can answer the line rather than a timer. */
+  onPhase?: (phase: Phase) => void;
 }) {
   const [phase, setPhase] = useState<Phase>("streaming");
   const [spoken, setSpoken] = useState(0);
   const reduced = useRef(false);
+  /* Held in a ref so an incoming utterance can cancel whatever the previous one
+     still had scheduled. Two overlapping chains would fight over `phase`. */
+  const timers = useRef<number[]>([]);
+  const clear = () => {
+    timers.current.forEach(clearTimeout);
+    timers.current = [];
+  };
+
+  /** The machine's half: mark the fillers, cut them, seat the line, stop it. */
+  const write = (from = 0) => {
+    const markAt = from;
+    const cleanAt = markAt + MARK_MS;
+    timers.current.push(window.setTimeout(() => setPhase("marking"), markAt));
+    timers.current.push(window.setTimeout(() => setPhase("cleaning"), cleanAt));
+    timers.current.push(window.setTimeout(() => setPhase("sealing"), cleanAt + SEAL_IN));
+    const sealDone = cleanAt + SEAL_IN + SPOKEN.length * SEAL_STEP + 520;
+    timers.current.push(window.setTimeout(() => setPhase("settled"), sealDone));
+  };
 
   useEffect(() => {
     reduced.current =
@@ -129,34 +150,42 @@ export function DictatedHeadline({
       return;
     }
 
-    const timers: number[] = [];
     // Stream the words in.
     for (let i = 1; i <= SPOKEN.length; i++) {
-      timers.push(window.setTimeout(() => setSpoken(i), 340 + i * WORD_MS));
+      timers.current.push(window.setTimeout(() => setSpoken(i), 340 + i * WORD_MS));
     }
     const streamEnd = 340 + SPOKEN.length * WORD_MS;
-    const markAt = streamEnd + HOLD_MS;
-    const cleanAt = markAt + MARK_MS;
-    timers.push(window.setTimeout(() => setPhase("holding"), streamEnd));
-    timers.push(window.setTimeout(() => setPhase("marking"), markAt));
-    timers.push(window.setTimeout(() => setPhase("cleaning"), cleanAt));
-    timers.push(window.setTimeout(() => setPhase("sealing"), cleanAt + SEAL_IN));
-    const sealDone = cleanAt + SEAL_IN + SPOKEN.length * SEAL_STEP + 520;
-    timers.push(window.setTimeout(() => setPhase("settled"), sealDone));
+    timers.current.push(window.setTimeout(() => setPhase("holding"), streamEnd));
+    write(streamEnd + HOLD_MS);
 
-    return () => timers.forEach(clearTimeout);
+    return clear;
   }, []);
 
   useEffect(() => {
     if (phase === "sealing") onSettle?.();
   }, [phase, onSettle]);
 
+  useEffect(() => {
+    onPhase?.(phase);
+  }, [phase, onPhase]);
+
   const cleaned = phase === "cleaning" || phase === "sealing" || phase === "settled";
   const marking = phase === "marking" || cleaned;
   const sealing = phase === "sealing" || phase === "settled";
   const stopped = phase === "settled";
 
-  /** Index of the final surviving word — the one the full stop attaches to. */
+  /**
+   * Index of the final surviving word — the one the full stop attaches to.
+   *
+   * Deliberately the whole script, never "as far as the reader got". Words that
+   * have not arrived yet are laid out at `opacity: 0` rather than withheld, so
+   * the line always occupies its final setting and never reflows as it fills.
+   * Bounding this by what had been spoken attached the stop to whichever word
+   * was last at the moment the key came up, which swallowed that word's
+   * trailing space and left the real stop stranded after the rest of the line.
+   * A released key flushes the remaining words instead — see the push-to-talk
+   * effect above.
+   */
   const lastKept = useMemo(() => {
     for (let i = SPOKEN.length - 1; i >= 0; i--) if (SPOKEN[i].clean !== null) return i;
     return -1;

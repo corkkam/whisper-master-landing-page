@@ -1,0 +1,19 @@
+# Security updates are switched on in the repo settings. This file adds a weekly,
+# grouped bump of minor and patch versions so the lockfile does not drift.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    target-branch: dev
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # TypeScript 7 is the native (Go) compiler and ships no JS API. Next.js loads
+      # tsconfig paths through that API, so `next build` cannot resolve `@/...` on 7.
+      # Remove this when the Next.js version in use supports TypeScript 7.
+      - dependency-name: typescript
+        versions: [">=7"]

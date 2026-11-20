@@ -60,10 +60,15 @@ async function isRateLimited(ipHash: string | null): Promise<boolean> {
   try {
     const supabase = createAdminClient();
     const since = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60_000).toISOString();
+    // Count lead_events, not leads: a resubmission to a known email updates
+    // the existing leads row instead of inserting one, so counting leads
+    // rows makes repeat submissions to one email invisible to this cap
+    // (see the NOTE in migration 0008, fixed by 0009's lead_events.ip_hash).
     const { count, error } = await supabase
-      .from("leads")
+      .from("lead_events")
       .select("id", { count: "exact", head: true })
       .eq("ip_hash", ipHash)
+      .in("kind", ["created", "resubmitted"])
       .gte("created_at", since);
     if (error) return false;
     return (count ?? 0) >= RATE_LIMIT_MAX_PER_WINDOW;
@@ -309,7 +314,9 @@ async function notifyTelegram(text: string): Promise<void> {
         // user-supplied strings — a firm called "Smith_Jones & Co" or a note
         // containing an asterisk would break Markdown parsing and Telegram
         // would reject the whole message with a 400. Losing the alert for a
-        // hot lead to gain bold text is a bad trade.
+        // hot lead to gain bold text is a bad trade. Without a parse mode
+        // nothing in the text is interpreted, so it needs no escaping either;
+        // escaping here would show a literal "&amp;" in the alert.
         text: text.slice(0, TELEGRAM_MAX),
         disable_web_page_preview: true,
       }),
@@ -325,6 +332,11 @@ async function notifyTelegram(text: string): Promise<void> {
   }
 }
 
+/** Slack's escaping for message text: only &, < and > are control characters. */
+function escapeSlack(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 async function notifyGenericWebhook(text: string): Promise<void> {
   const url = process.env.LEAD_NOTIFY_WEBHOOK_URL?.trim();
   if (!url) return;
@@ -333,7 +345,18 @@ async function notifyGenericWebhook(text: string): Promise<void> {
     await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text, content: text }), // `text` = Slack, `content` = Discord
+      body: JSON.stringify({
+        // Slack reads `text`. Its control sequences (`<!channel>`, `<url|label>`,
+        // `<@U123>`) are all angle-bracket based, so escaping & < > per Slack's
+        // own rules makes lead-supplied text inert. The template adds none of
+        // these characters itself, so escaping the whole message is safe.
+        text: escapeSlack(text),
+        // Discord reads `content`. Entities are not decoded there, so it gets the
+        // raw text, and `allowed_mentions` with no parse types turns off
+        // @everyone, @here, role and user pings from anything a lead typed.
+        content: text,
+        allowed_mentions: { parse: [] },
+      }),
       cache: "no-store",
     });
   } catch (e) {

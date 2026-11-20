@@ -27,9 +27,10 @@ export const product = {
 // ─────────────────────────────────────────────────────────────────────────
 // DOWNLOADS
 // Direct-download artifacts on Cloudflare R2, served from the `whisper-master-macos`
-// bucket via the corkkam custom domain `dl.corkkam.com` — the same host the app's
-// Sparkle feeds and model mirror use. Keep this host in lock-step with
-// CH_SU_FEED_URL in the app repo's Scripts/channel.sh; a link pointing at a bucket
+// bucket via the custom domain `dl.typing.sucks`. The app's Sparkle feeds and
+// model mirror still use `dl.corkkam.com` until the app repo moves its four hosts.
+// Keep this bucket in lock-step with CH_SU_FEED_URL in the app repo's
+// Scripts/channel.sh; a link pointing at a bucket
 // the release scripts don't upload to serves a stale build indefinitely, which is
 // what it did before.
 //
@@ -38,19 +39,26 @@ export const product = {
 // migration. The custom domain also gets edge caching and escapes r2.dev's
 // public-bucket rate limits.
 //
+// The link moved dl.corkkam.com → dl.typing.sucks on 2026-11-20, because the
+// corkkam.com nameservers now point at a parking service. Same bucket, both
+// custom domains attached, so it is again a DNS change, not a data migration.
+//
 // - `stable` is public and unauthenticated: anyone can download it, signed in or
 //   not, and /download renders this link for signed-out visitors. The *app* still
 //   requires Clerk sign-in on first launch — that gate is deliberate and stays
 //   (see the vault's decisions note), so don't let download copy imply otherwise.
-// - `beta` is gated: only users with Clerk `publicMetadata.betaAccess === true`
-//   see the real link (see app/download/page.tsx). The beta DMG is produced by
-//   the beta release channel (CHANNEL=beta) — see the app repo's CLAUDE.md.
+// - The beta link is NOT here on purpose. It lives in `lib/config.server.ts`
+//   behind `server-only`, because everything exported here is fair game for a
+//   client component to import, and bundlers do not tree-shake a single property
+//   off an exported object — Hero/Unit import `downloads` for `.requirements`, so
+//   anything in this object ships in the public homepage JS. A gated URL that
+//   ships to every visitor is not gated. See app/download/page.tsx.
 // ⚠️ `stable` points at the VERSIONED key, not the WhisperMaster.dmg alias, and
 // must be bumped on every stable release. The alias is unsafe to link:
 // publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached
 // body** for that URL afterwards while HEAD on the same URL reports the new
 // object. On 2026-08-04 that meant dl.corkkam.com/WhisperMaster.dmg kept serving
-// 1.2.8 — carrying the retired model.scoopscore.in feed and the *exposed*
+// 1.2.8 — carrying the retired legacy feed and the *exposed*
 // SUPublicEDKey — for an unbounded time after 1.2.9 shipped. `cf-cache-status:
 // DYNAMIC` on the HEAD response does not mean the GET path is uncached; do not
 // trust it. A versioned key is written once and never overwritten, so it cannot
@@ -63,17 +71,11 @@ export const product = {
 //
 // To go back to the alias, add a Cloudflare cache purge for that exact URL as the
 // last step of publish-dmg.sh; until that exists, keep linking the versioned key.
-// Versioning was reset to 1.0.0 for the launch and has climbed from there, so
-// the 1.2.8/1.2.9/1.2.10 builds named above are from the PRE-reset series. Those
-// numbers collide with the current one but are older builds; do not read the
-// 1.2.0 below as a downgrade from them. CFBundleVersion keeps increasing across
-// the reset, which is what Sparkle actually compares.
+// Versioning was reset to 1.0.0 for the launch, so this number is *lower* than
+// the 1.2.x builds referenced above. That is deliberate, not a typo: 1.0.0 is the
+// newest build (its CFBundleVersion still increases, which is what Sparkle reads).
 export const downloads = {
-  stable: "https://dl.corkkam.com/WhisperMaster-1.2.0.dmg",
-  // Same overwrite-staleness hazard applies here — this is an alias too. Lower
-  // stakes because beta is gated and its audience re-downloads often, but if a
-  // beta tester reports installing a build you didn't ship, this is why.
-  beta: "https://dl.corkkam.com/WhisperMaster-beta.dmg",
+  stable: "https://dl.typing.sucks/WhisperMaster-1.0.0.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;

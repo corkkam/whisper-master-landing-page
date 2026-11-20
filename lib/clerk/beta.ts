@@ -15,8 +15,10 @@
 // `setBetaAccess(userId, false)` and the same account rolls onto stable — no
 // re-signup.
 //
-// Server-only: importing `@clerk/nextjs/server` (and using the secret key)
-// keeps this module out of any client bundle.
+// Server-only: it uses the Clerk secret key. `server-only` makes importing it
+// from a client component a build error instead of a convention.
+import "server-only";
+
 import { clerkClient } from "@clerk/nextjs/server";
 
 /** Date-only stamp (YYYY-MM-DD) for `betaJoinedAt`. */

@@ -40,8 +40,10 @@ const GROUPS: { head: string; links: { href: string; label: string }[] }[] = [
     head: "The fine print",
     links: [
       // The privacy proof sits with the legal notices on purpose: it is the
-      // document that backs the claim the rest of them are written around.
+      // document that backs the claim the rest of them are written around. The
+      // eval page is the same kind of thing for the accuracy claims.
       { href: "/trust", label: "What leaves your Mac" },
+      { href: "/eval", label: "How we know it works" },
       { href: "/privacy", label: "Privacy policy" },
       { href: "/terms", label: "Terms" },
     ],

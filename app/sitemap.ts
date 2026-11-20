@@ -25,6 +25,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // downloads, and this is the only page that captures one.
     { path: "/for-teams", priority: 0.8, changeFrequency: "monthly" },
     { path: "/trust", priority: 0.7, changeFrequency: "monthly" },
+    // Ranked with /trust: both are the evidence behind a claim someone is
+    // deciding on. Individual runs at /eval/<id> are deliberately absent — they
+    // are noindex, and the index page is what should rank.
+    { path: "/eval", priority: 0.7, changeFrequency: "weekly" },
     { path: "/roadmap", priority: 0.6, changeFrequency: "weekly" },
     { path: "/privacy", priority: 0.3, changeFrequency: "monthly" },
     { path: "/terms", priority: 0.3, changeFrequency: "monthly" },

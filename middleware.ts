@@ -141,10 +141,43 @@ export default async function middleware(request: NextRequest, event: NextFetchE
   }
 }
 
+/**
+ * Everything except the machine endpoints.
+ *
+ * `/api/usage`, `/api/notes` and `/api/eval/*` are called by the Mac app and by
+ * `push-run.mjs`, not by a browser with a session. They authenticate
+ * themselves — `verifyToken` on the Bearer token, or a shared ingest token —
+ * so Clerk's request-level auth buys them nothing, and running it over them is
+ * actively harmful: `clerkMiddleware()` **throws** while parsing a malformed
+ * `Authorization: Bearer` value, and on Vercel a throw here is a 500 on the
+ * route before the handler ever runs.
+ *
+ * That is not hypothetical. A truncated token produced
+ *
+ *     Error [SyntaxError]: Unexpected end of data
+ *         at async middleware (middleware.ts:101)
+ *
+ * and a 500 where the route would have answered `401 unauthorized: missing
+ * Bearer token`. The retired-cookie guard below does not catch it, because it
+ * matches on the JWKS and handshake messages and this is a parse failure. For
+ * sync that would be the worst shape of failure available: the app retries,
+ * every retry 500s, and the server looks broken rather than the token looking
+ * wrong.
+ *
+ * Excluded in both patterns on purpose. The first one is broad enough to match
+ * `/api/...` on its own, so listing them only in the second would not exclude
+ * them at all.
+ */
+/**
+ * Written out in full rather than composed from a constant: Next statically
+ * analyses these at build time and silently ignores a pattern it cannot read,
+ * which means a template literal here produces no error and no exclusion. That
+ * cost an hour once.
+ */
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    "/((?!api/usage|api/notes|api/eval|_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
+    "/(api(?!/usage|/notes|/eval)|trpc)(.*)",
     "/__clerk/:path*",
   ],
 };

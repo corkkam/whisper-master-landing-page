@@ -3,7 +3,10 @@
 The entry point for any AI agent working in this repository. It overrides the
 machine-level `~/AGENTS.md` where the two disagree.
 
-Last verified against the tree: **2026-08-14**, `main` and `dev` both at `e1a4dd9`.
+Last verified against the tree: **2026-08-14**, `main` and `dev` both at `b4fcff5`.
+A security audit on that date fixed the client-bundle beta-URL leak, tightened the
+CSP, patched a dependency advisory, and added migration `0008`; the working
+reference for day-to-day is **[`CLAUDE.md`](CLAUDE.md)**, which points back here.
 
 ---
 
@@ -15,10 +18,10 @@ plumbing. It is **not** a waitlist page any more, whatever the git history and t
 old README said. Stable downloads are open to everyone; the beta build stays
 behind a Clerk flag.
 
-**Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 3 · Clerk ·
+**Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 4 (theme in `app/globals.css` `@theme`, no JS config) · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
-Live at **https://whispermaster.app**. The Mac app it sells lives at
+Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
 `../whisper-master/`; shared product and business docs are in `../docs/`.
 
 ## 2. Routes and what owns them
@@ -29,18 +32,26 @@ Live at **https://whispermaster.app**. The Mac app it sells lives at
 | `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
 | `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
 | `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
-| `/admin/pipeline` | the lead pipeline, gated by `ADMIN_USER_IDS`, fails closed with a 404 |
+| `/admin` | founder overview: account, beta and product-usage stats. Same gate |
+| `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control |
+| `/admin/pipeline` | the lead pipeline. All three are gated by `ADMIN_USER_IDS` and fail closed with a 404 |
 | `/roadmap` | public roadmap, data in `lib/content.ts` |
 | `/trust`, `/privacy`, `/terms` | the disclosure surface, copy in `lib/legal.ts` |
 | `/welcome`, `/sign-in`, `/sign-up`, `/sso-callback` | Clerk auth flow |
 | `/r/[code]` | referral redirect |
+| `/eval`, `/eval/[id]` | the published evaluation history, data in `lib/eval/` on Supabase |
 | `/api/checkout`, `/api/portal`, `/api/webhooks/polar` | Polar billing |
+| `/api/eval/ingest` | run upload, token-gated on `EVAL_INGEST_TOKEN`, fails closed |
+| `/api/usage`, `/api/usage/[userId]`, `/api/notes` | the macOS app's sync, auth in `lib/sync/auth.ts` |
 
 Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
-`lib/leads/` (schema, scoring, stages, actions, queries), `lib/waitlist/`
-(actions, queries, points), `lib/supabase/server.ts`, plus `config.ts`,
-`content.ts`, `legal.ts`, `pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`,
-`turnstile.ts`.
+`lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
+aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
+queries), `lib/waitlist/` (actions, queries, points), `lib/supabase/server.ts`,
+plus `config.ts` (public product copy and the stable download URL),
+`config.server.ts` (`server-only` values that must never reach the client
+bundle — the beta download URL lives here), `content.ts`, `legal.ts`,
+`pricing.ts`, `site.ts`, `analytics.ts`, `admin.ts`, `turnstile.ts`.
 
 ## 3. Build and gates
 
@@ -48,15 +59,32 @@ Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
 pnpm install
 pnpm dev            # http://localhost:3000
 pnpm build          # the real gate — it type-checks the whole app
-pnpm lint
 node scripts/shoot.mjs   # Playwright screenshots of the site
 ```
 
 **`pnpm build` passing is the gate.** There is no test suite. Use pnpm; an
-`npm install` here is wrong.
+`npm install` here is wrong. `pnpm lint` is *not* a gate: no ESLint config has
+ever been added here, so `next lint` drops into its interactive setup prompt and
+exits non-zero. Do not report it as a failure, and do not add a config to make
+it pass without being asked.
 
 **Verify visually before claiming a UI change.** Run the dev server and look, or
 use the screenshot script. "It compiles" is not done.
+
+**Seeing `/admin` locally takes two steps**, because it is gated and the local
+database starts empty:
+
+```bash
+supabase start                              # needs OrbStack running
+python3 scripts/seed-dev-admin.py seed      # fixture accounts + 30 days of usage
+#   then put the printed user id in ADMIN_USER_IDS in .env.local, restart dev
+node scripts/shoot-admin.mjs                # signs in and captures admin-shots/
+python3 scripts/seed-dev-admin.py clean     # removes every +clerk_test fixture
+```
+
+Both scripts refuse to run against anything but an `sk_test` Clerk key and a
+`127.0.0.1` Supabase URL. Sign-in uses Clerk's development-instance convention:
+any `+clerk_test@` address accepts `424242` as its email code.
 
 ## 4. Hard rules
 
@@ -75,6 +103,12 @@ use the screenshot script. "It compiles" is not done.
    for.
 5. **Grants never downgrade.** `grantEntitlement` compares tier rank before
    writing, because Polar delivers at-least-once and unordered.
+   The same unordered delivery shapes the rest of the webhook: `order.paid`
+   and `order.refunded` ignore orders that carry a `subscriptionId` (the
+   `subscription.*` events own that access), a subscription grant requires
+   status `active` or `trialing`, and a refund only downgrades when it is a
+   full refund of the order recorded as `publicMetadata.polarOrderId` for the
+   user's current one-time tier. Any other refund keeps access and is logged.
 6. **Checkout resolves the product id server-side** against the allow-list in
    `lib/billing/plans.ts`. Do not switch to `Checkout()` from `@polar-sh/nextjs`:
    it takes the product id from a query parameter, which would make the browser
@@ -91,33 +125,61 @@ use the screenshot script. "It compiles" is not done.
    quoted together or not at all.
 10. **Link a versioned DMG, never an overwriteable alias.** `WhisperMaster.dmg`
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
-    `dl.corkkam.com/WhisperMaster-1.2.0.dmg` on purpose, with the reasoning
+    `dl.typing.sucks/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
+    The **beta** URL is not there — it is in `lib/config.server.ts` behind
+    `server-only`, because a `"use client"` file that imports one field off an
+    exported object ships the whole object in the public JS. A gated URL that
+    ships to everyone is not gated; do not move `betaDownloadUrl` back into a
+    client-importable module.
 11. **Never weaken an auth gate**, and never commit a secret. `.env.local` is
     git-ignored; document a new variable in `.env.local.example` by name only.
 12. **The middleware's retired-cookie guard is load-bearing.** An unverifiable
     Clerk token is treated as no session rather than allowed to throw — an
     unhandled throw in `clerkMiddleware()` is a 500 on every route in the matcher.
     Read the comment at the top of `middleware.ts` before changing it.
+13. **`/admin/beta` writes the beta gate, so its actions are the highest-value
+    endpoints on the site.** `lib/beta/admin-actions.ts` is the only
+    browser-callable module that can set `publicMetadata.betaAccess`, and every
+    export in it calls `requireAdmin()` first. The reads and the Clerk writes
+    live in `lib/beta/queue.ts` behind `server-only`. Keep that split: an
+    approval helper exported from a `"use server"` file without an admin check
+    is a public "give me the beta build" endpoint.
 
 ## 5. Configuration
+
+**The Mac app talks to this deployment.** `/api/usage` and `/api/notes` are the
+sync endpoints for notes, reminders and usage rollups; they moved here from a
+separate SvelteKit deploy so that deploy could be deleted. Per-user attribution
+comes from the Clerk session token's verified `sub` and never from the request
+body, so `CLERK_SECRET_KEY` being set is what keeps them non-spoofable. Breaking
+or removing these routes breaks sync for every installed copy of the app. Their
+write caps live in `lib/sync/limits.ts` and are deliberately loose: the app sends
+every dirty item in one request and retries a rejected batch forever, so a cap a
+real user can reach stalls their sync for good. Check the app's sync clients
+before you tighten one.
 
 Required: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`,
 `NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL`, `NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL`,
 `NEXT_PUBLIC_SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_SCHEMA`,
 `NEXT_PUBLIC_SITE_URL`.
 
-Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (the lead
-pipeline 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
+Optional, and each one switches a whole feature on: `ADMIN_USER_IDS` (every
+`/admin` route 404s until it is set), `LEAD_NOTIFY_WEBHOOK_URL` /
 `LEAD_NOTIFY_TELEGRAM_*`, `NEXT_PUBLIC_TURNSTILE_SITE_KEY` +
 `TURNSTILE_SECRET_KEY` (or `TURNSTILE_DISABLED=true`),
 `NEXT_PUBLIC_GA_MEASUREMENT_ID`, and the `POLAR_*` set that turns checkout on.
 Full annotations in `.env.local.example`.
 
-Migrations are `supabase/migrations/0001` through `0007`. `0006_leads.sql` backs
-the lead funnel; `0007_entitlements.sql` is only needed when charging starts.
-**Whether these have been run against the live project is not knowable from the
-repo — verify with the Supabase CLI, do not assume.**
+Migrations are `supabase/migrations/0001` through `0010`. `0006_leads.sql` backs
+the lead funnel; `0007_entitlements.sql` is only needed when charging starts;
+`0008_lead_upsert_hardening.sql` redefines `upsert_lead` to stop a resubmission
+overwriting an existing Clerk linkage and to bound the appended notes;
+`0009_lead_events_ip_hash.sql` lets the IP rate cap count resubmissions;
+`0010_eval_runs.sql` backs `/eval`. `CLAUDE.md` records 0008 and 0009 as
+applied to prod on 2026-08-14. **Whether any of these have
+been run against the live project is not knowable from the repo — verify with the
+Supabase CLI, do not assume.**
 
 Read live configuration through the CLIs (`vercel env ls`, `supabase`, `gh`).
 Never ask the user to click through a dashboard, and never print a secret value —

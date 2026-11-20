@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
+import AdminNav from "@/components/admin/AdminNav";
 import LeadCard from "@/components/leads/LeadCard";
 import { isAdmin } from "@/lib/admin";
 import { listLeads, pipelineSummary } from "@/lib/leads/queries";
@@ -71,6 +72,8 @@ export default async function PipelinePage() {
               : <>Nothing <em>overdue</em>.</>}
           </h1>
         </header>
+
+        <AdminNav current="pipeline" />
 
         <div className="pl-summary">
           <div className="pl-stat">
