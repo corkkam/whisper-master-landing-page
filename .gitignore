@@ -58,3 +58,8 @@ service-account*.json
 
 # admin dashboard screenshots (scripts/shoot-admin.mjs)
 /admin-shots/
+
+# Cloudflare (OpenNext / Wrangler)
+.open-next
+.wrangler
+.dev.vars*
