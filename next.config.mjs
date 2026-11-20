@@ -33,7 +33,7 @@ const supabaseOrigin = (() => {
 const scriptSrc = [
   "script-src 'self' 'unsafe-inline'",
   isDev ? "'unsafe-eval'" : "",
-  "https://*.clerk.accounts.dev https://clerk.whisper.corkkam.com https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com",
+  "https://*.clerk.accounts.dev https://clerk.typing.sucks https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com",
 ]
   .filter(Boolean)
   .join(" ");
@@ -50,13 +50,13 @@ const csp = [
   "img-src 'self' data: blob: https://img.clerk.com https://www.googletagmanager.com https://www.google-analytics.com",
   "font-src 'self' data:",
   [
-    "connect-src 'self' https://*.clerk.accounts.dev https://clerk.whisper.corkkam.com",
+    "connect-src 'self' https://*.clerk.accounts.dev https://clerk.typing.sucks",
     supabaseOrigin,
     "https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
   ]
     .filter(Boolean)
     .join(" "),
-  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.whisper.corkkam.com",
+  "frame-src 'self' https://challenges.cloudflare.com https://*.clerk.accounts.dev https://clerk.typing.sucks",
   "media-src 'self'",
   "manifest-src 'self'",
   "upgrade-insecure-requests",

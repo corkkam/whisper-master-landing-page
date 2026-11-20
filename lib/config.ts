@@ -27,9 +27,10 @@ export const product = {
 // ─────────────────────────────────────────────────────────────────────────
 // DOWNLOADS
 // Direct-download artifacts on Cloudflare R2, served from the `whisper-master-macos`
-// bucket via the corkkam custom domain `dl.corkkam.com` — the same host the app's
-// Sparkle feeds and model mirror use. Keep this host in lock-step with
-// CH_SU_FEED_URL in the app repo's Scripts/channel.sh; a link pointing at a bucket
+// bucket via the custom domain `dl.typing.sucks`. The app's Sparkle feeds and
+// model mirror still use `dl.corkkam.com` until the app repo moves its four hosts.
+// Keep this bucket in lock-step with CH_SU_FEED_URL in the app repo's
+// Scripts/channel.sh; a link pointing at a bucket
 // the release scripts don't upload to serves a stale build indefinitely, which is
 // what it did before.
 //
@@ -37,6 +38,10 @@ export const product = {
 // and every artifact came along unchanged — it is a DNS/alias change, not a data
 // migration. The custom domain also gets edge caching and escapes r2.dev's
 // public-bucket rate limits.
+//
+// The link moved dl.corkkam.com → dl.typing.sucks on 2026-11-20, because the
+// corkkam.com nameservers now point at a parking service. Same bucket, both
+// custom domains attached, so it is again a DNS change, not a data migration.
 //
 // - `stable` is public and unauthenticated: anyone can download it, signed in or
 //   not, and /download renders this link for signed-out visitors. The *app* still
@@ -70,7 +75,7 @@ export const product = {
 // the 1.2.x builds referenced above. That is deliberate, not a typo: 1.0.0 is the
 // newest build (its CFBundleVersion still increases, which is what Sparkle reads).
 export const downloads = {
-  stable: "https://dl.corkkam.com/WhisperMaster-1.0.0.dmg",
+  stable: "https://dl.typing.sucks/WhisperMaster-1.0.0.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;

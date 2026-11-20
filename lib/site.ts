@@ -13,7 +13,7 @@
 // registered, so a fallback to it hands checkout and portal redirects, the
 // sitemap and share cards to whoever buys it. Change this only after the
 // domain is owned and serving this deployment.
-const PRODUCTION_ORIGIN = "https://whisper.corkkam.com";
+const PRODUCTION_ORIGIN = "https://typing.sucks";
 
 function isLocal(url: string): boolean {
   return /^https?:\/\/(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])(:|\/|$)/i.test(url);
