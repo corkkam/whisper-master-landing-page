@@ -32,6 +32,10 @@ export interface Rule {
    *  "Parakeet", the pipeline emits "parakeet", and `mustContain` passes. */
   mustContainExact?: string[];
   mustNotContainExact?: string[];
+  /** When set, the case fails if the output's WER against `reference` is above
+   *  this. Without it `reference` stays diagnostic. Used by the public
+   *  `disfluency-cases.jsonl` suite, whose answer key is a whole transcript. */
+  maxReferenceWer?: number | null;
 }
 
 export interface Scored {
@@ -129,6 +133,14 @@ export function scoreRow(row: ResultRow, rule: Rule | undefined, werValue: numbe
   }
   for (const t of rule?.mustNotContainExact ?? []) {
     if (matches(t, out, true)) reasons.push(`forbidden (exact) '${t}'`);
+  }
+
+  // Opt-in per case, same rule as the Swift Scorer: WER is case- and
+  // punctuation-blind, so this grades words kept and dropped, not casing.
+  const limit = rule?.maxReferenceWer;
+  if (limit != null && rule?.reference) {
+    const w = wer(rule.reference, out);
+    if (w > limit + 1e-9) reasons.push(`reference wer ${Math.round(w * 100)}% > ${Math.round(limit * 100)}%`);
   }
 
   let attribution: "asr" | "cleanup" | null = null;
