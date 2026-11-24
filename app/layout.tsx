@@ -11,8 +11,6 @@ import ScreenScrollbar from "@/components/chrome/ScreenScrollbar";
 import DictationProvider from "@/components/chrome/DictationContext";
 import CookieConsent from "@/components/chrome/CookieConsent";
 import GoogleAnalytics from "@/components/chrome/GoogleAnalytics";
-import { Analytics } from "@vercel/analytics/next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { product } from "@/lib/config";
 import { siteUrl } from "@/lib/site";
 
@@ -134,8 +132,6 @@ export default function RootLayout({
           <ScreenFrame />
           <Cursor />
           <CookieConsent />
-          <SpeedInsights />
-          <Analytics />
           {/* GA4 stays dark until CookieConsent says otherwise. */}
           <GoogleAnalytics />
         </body>

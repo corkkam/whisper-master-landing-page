@@ -16,10 +16,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PricingPage() {
-  // Vercel sets this at the edge. Absent locally and on other hosts, in which
-  // case everyone gets USD and can switch — a wrong default is a minor
-  // annoyance, so this deliberately has no fallback geo lookup.
-  const country = (await headers()).get("x-vercel-ip-country");
+  // Cloudflare sets this at the edge. Absent locally, in which case everyone
+  // gets USD and can switch — a wrong default is a minor annoyance, so this
+  // deliberately has no fallback geo lookup.
+  const country = (await headers()).get("cf-ipcountry");
   const initial = defaultCurrencyForCountry(country);
 
   // Evaluated here rather than inside PlanGrid: that is a client component and
