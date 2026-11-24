@@ -114,19 +114,17 @@ export default async function WelcomePage() {
             Invoices, payment method and cancellation all live in one place. No
             email required, no retention flow to sit through.
           </p>
-          <div className="page-cta-actions">
-            {/* The portal cannot open without Polar configured, and its failure
-                is a raw 500, so the link only exists when it can work. */}
-            {polarAccessToken() ? (
+          {/* The portal cannot open without Polar configured (it answers 503
+              JSON), so the link only exists when it can work. */}
+          {polarAccessToken() ? (
+            <div className="page-cta-actions">
               <a className="btn btn--ghost" href="/api/portal">
                 Open billing portal
               </a>
-            ) : (
-              <button type="button" className="btn btn--ghost btn--soon" disabled>
-                Coming soon · nothing is billed during beta
-              </button>
-            )}
-          </div>
+            </div>
+          ) : (
+            <p>Billing opens when paid plans launch.</p>
+          )}
         </section>
       </main>
       <Footer />

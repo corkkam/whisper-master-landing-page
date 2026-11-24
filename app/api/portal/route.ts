@@ -1,5 +1,6 @@
 import { CustomerPortal } from "@polar-sh/nextjs";
 import { auth } from "@clerk/nextjs/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { polarServer } from "@/lib/billing/plans";
 import { polarAccessToken } from "@/lib/billing/checkout";
 import { siteUrl } from "@/lib/site";
@@ -20,13 +21,22 @@ import { siteUrl } from "@/lib/site";
  * affordance, and a 500 on an unauthenticated request to a billing portal is a
  * far better failure than silently opening somebody else's.
  */
-export const GET = CustomerPortal({
-  accessToken: polarAccessToken() ?? "",
-  server: polarServer(),
-  returnUrl: `${siteUrl()}/welcome`,
-  getExternalCustomerId: async () => {
-    const { userId } = await auth();
-    if (!userId) throw new Error("Not signed in");
-    return userId;
-  },
-});
+export async function GET(req: NextRequest) {
+  // Built per request, so the token is read at request time like checkout's.
+  const accessToken = polarAccessToken();
+  if (!accessToken) {
+    console.error("[portal] POLAR_ACCESS_TOKEN is not set");
+    return NextResponse.json({ error: "Billing is not configured yet." }, { status: 503 });
+  }
+
+  return CustomerPortal({
+    accessToken,
+    server: polarServer(),
+    returnUrl: `${siteUrl()}/welcome`,
+    getExternalCustomerId: async () => {
+      const { userId } = await auth();
+      if (!userId) throw new Error("Not signed in");
+      return userId;
+    },
+  })(req);
+}

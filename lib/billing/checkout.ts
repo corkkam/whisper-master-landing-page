@@ -23,8 +23,8 @@ export function polarAccessToken(): string | null {
  * is nothing to forget to flip. The Buy buttons on /pricing link to checkout
  * exactly when the access token and the product id of every plan they link to
  * are set — the same two things `/api/checkout` checks — so no button can lead
- * to its 503. Otherwise they render as a disabled "Coming soon".
- * shortcut: all or nothing, so one unset product id disables every button;
+ * to its 503. Otherwise /pricing renders no Buy buttons at all.
+ * shortcut: all or nothing, so one unset product id hides every button;
  * make it per plan if plans ever launch one at a time.
  *
  * This matters because doc 10 §10.6 records a deliberate decision that the beta

@@ -30,7 +30,7 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 |---|---|
 | `/` | the marketing page, assembled from `components/sections/` |
 | `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
-| `/pricing` | published prices, PPP for India, **disabled "Coming soon" in place of Buy links while checkout is dormant** |
+| `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
 | `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
 | `/admin` | founder overview: account, beta and product-usage stats. Same gate |
 | `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control |
@@ -44,7 +44,9 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 | `/api/eval/ingest` | run upload, token-gated on `EVAL_INGEST_TOKEN`, fails closed |
 | `/api/usage`, `/api/usage/[userId]`, `/api/notes` | the macOS app's sync, auth in `lib/sync/auth.ts` |
 
-Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
+Library layout: `lib/billing/` (plans, entitlements, and `checkout.ts`: the
+`server-only` Polar check that `/api/checkout`, `/api/portal`, `/pricing` and
+`/welcome` share, so no page links to a billing route that would answer 503), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
 aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
 queries), `lib/waitlist/` (actions, queries, points), `lib/supabase/server.ts`,

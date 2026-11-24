@@ -676,17 +676,6 @@
   pointer-events: none;
   box-shadow: none;
 }
-/* An action that is not on offer yet (checkout before billing is configured).
-   It keeps its slot and says why in its label, but reads as plainly inert:
-   dashed, dimmed ink, no hover lift. Not opacity, so the reason stays legible.
-   Three classes so it outranks `.btn--ghost.plan-buy`, which sits further down. */
-.btn.btn--soon:disabled {
-  border-style: dashed;
-  background: transparent;
-  color: var(--haze-bright);
-  cursor: default;
-  pointer-events: none;
-}
 
 /* On a dark plate the outline buttons invert; the filled variants are
    unchanged, since both accents carry their own on-colour.

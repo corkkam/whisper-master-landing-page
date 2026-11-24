@@ -17,8 +17,7 @@ export default function PlanGrid({
   /**
    * Whether self-serve checkout is live. Computed on the server from whether
    * Polar is configured (`selfServeCheckoutReady()`) and passed down, because
-   * `process.env` is empty in the browser. While false, each paid plan shows a
-   * disabled "Coming soon" in place of its Buy link.
+   * `process.env` is empty in the browser.
    *
    * Default `false` so that finishing the payments plumbing does not, by
    * itself, start charging anyone — doc 10 §10.6 records that the free beta is
@@ -80,21 +79,14 @@ export default function PlanGrid({
                 ))}
               </ul>
 
-              {plan.checkoutSlug &&
-                (checkoutEnabled ? (
-                  <a
-                    className={`btn ${plan.featured ? "btn--primary" : "btn--ghost"} plan-buy`}
-                    href={`/api/checkout?plan=${plan.checkoutSlug}`}
-                  >
-                    {plan.key === "lifetime" ? "Buy once" : "Subscribe"}
-                  </a>
-                ) : (
-                  // Not a link: `/api/checkout` answers 503 JSON until Polar is
-                  // configured. The label carries the reason.
-                  <button type="button" className="btn btn--ghost btn--soon plan-buy" disabled>
-                    Coming soon · free during beta
-                  </button>
-                ))}
+              {checkoutEnabled && plan.checkoutSlug && (
+                <a
+                  className={`btn ${plan.featured ? "btn--primary" : "btn--ghost"} plan-buy`}
+                  href={`/api/checkout?plan=${plan.checkoutSlug}`}
+                >
+                  {plan.key === "lifetime" ? "Buy once" : "Subscribe"}
+                </a>
+              )}
 
               <p className="plan-note">{plan.note}</p>
             </article>
