@@ -1,7 +1,9 @@
 // Approval flag, stored on Clerk `publicMetadata`.
 //
-// This single flag is the waitlist gate: `betaAccess === true` means "approved
-// off the waitlist" and unlocks the beta download on /download. Joining the
+// This single flag is the waitlist flag: `betaAccess === true` means "approved
+// off the waitlist". It shows the beta download link on /download and puts the
+// user on the beta Sparkle track. It does not protect the beta DMG, which is
+// public on purpose (see lib/config.server.ts). Joining the
 // waitlist deliberately does *not* set it — approval is a manual decision you
 // make per user in the Clerk dashboard (Users → Metadata), or programmatically
 // with `approveUser()`. See SETUP-WAITLIST.md → "Approving a waitlist member".

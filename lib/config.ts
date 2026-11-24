@@ -51,8 +51,10 @@ export const product = {
 //   behind `server-only`, because everything exported here is fair game for a
 //   client component to import, and bundlers do not tree-shake a single property
 //   off an exported object — Hero/Unit import `downloads` for `.requirements`, so
-//   anything in this object ships in the public homepage JS. A gated URL that
-//   ships to every visitor is not gated. See app/download/page.tsx.
+//   anything in this object ships in the public homepage JS. The link then
+//   reaches every visitor, not only flagged users. The file itself is public on
+//   purpose (COR-75), so this is display, not access control. See
+//   app/download/page.tsx.
 // ⚠️ `stable` points at the VERSIONED key, not the WhisperMaster.dmg alias, and
 // must be bumped on every stable release. The alias is unsafe to link:
 // publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached

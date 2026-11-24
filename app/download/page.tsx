@@ -88,13 +88,13 @@ export default async function DownloadPage() {
             <p className="dl-req">{downloads.requirements}</p>
           </section>
 
-          {/* ── Beta: requires sign-in *and* early-access approval ───────── */}
+          {/* ── Beta: the link shows only to approved users (display only, the DMG is public) ── */}
           <section className="dl-card dl-card--beta">
             <div className="dl-badge dl-badge--beta">Beta</div>
             <h2>Early builds, first</h2>
             <p className="dl-desc">
               New features and fixes before they reach stable, updated often.
-              Installs side by side with the stable app.
+              It is the same app as stable and replaces it.
             </p>
 
             {beta ? (

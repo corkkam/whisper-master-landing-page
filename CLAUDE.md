@@ -42,8 +42,9 @@ script. "It compiles" is not done.
 2. **Client bundles leak whole objects.** A `"use client"` file that imports one
    property off an exported object ships the entire object in the public JS. That
    is why the beta download URL lives in `lib/config.server.ts` (`server-only`),
-   not in `downloads` in `lib/config.ts` — a gated URL that ships to everyone is
-   not gated.
+   not in `downloads` in `lib/config.ts`. That keeps the link off the homepage JS
+   and shows it only to flagged users. It is display, not access control: the beta
+   DMG is public on purpose (AGENTS.md §4.10).
 3. **Billing is complete and deliberately dormant.** Public position is "free
    during beta". Never describe payments as live. `selfServeCheckoutReady()`
    derives dormancy from whether `POLAR_PRODUCT_*` is set.
