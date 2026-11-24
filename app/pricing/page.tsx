@@ -6,7 +6,7 @@ import Footer from "@/components/sections/Footer";
 import PlanGrid from "@/components/pricing/PlanGrid";
 import { product } from "@/lib/config";
 import { defaultCurrencyForCountry } from "@/lib/pricing";
-import { selfServeCheckoutReady } from "@/lib/billing/plans";
+import { selfServeCheckoutReady } from "@/lib/billing/checkout";
 
 export const metadata: Metadata = {
   title: `Pricing — ${product.name}`,
@@ -24,6 +24,7 @@ export default async function PricingPage() {
 
   // Evaluated here rather than inside PlanGrid: that is a client component and
   // `process.env` is empty in the browser, so the flag has to cross as a prop.
+  // Per request, not at build: `headers()` above makes this page dynamic.
   const checkoutEnabled = selfServeCheckoutReady();
 
   return (

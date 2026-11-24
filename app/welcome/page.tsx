@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
 import { currentTier } from "@/lib/billing/entitlements";
+import { polarAccessToken } from "@/lib/billing/checkout";
 import { product } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -113,11 +114,17 @@ export default async function WelcomePage() {
             Invoices, payment method and cancellation all live in one place. No
             email required, no retention flow to sit through.
           </p>
-          <div className="page-cta-actions">
-            <a className="btn btn--ghost" href="/api/portal">
-              Open billing portal
-            </a>
-          </div>
+          {/* The portal cannot open without Polar configured (it answers 503
+              JSON), so the link only exists when it can work. */}
+          {polarAccessToken() ? (
+            <div className="page-cta-actions">
+              <a className="btn btn--ghost" href="/api/portal">
+                Open billing portal
+              </a>
+            </div>
+          ) : (
+            <p>Billing opens when paid plans launch.</p>
+          )}
         </section>
       </main>
       <Footer />

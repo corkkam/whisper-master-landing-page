@@ -45,7 +45,9 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 | `/api/eval/ingest` | run upload, token-gated on `EVAL_INGEST_TOKEN`, fails closed |
 | `/api/usage`, `/api/usage/[userId]`, `/api/notes` | the macOS app's sync, auth in `lib/sync/auth.ts` |
 
-Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
+Library layout: `lib/billing/` (plans, entitlements, and `checkout.ts`: the
+`server-only` Polar check that `/api/checkout`, `/api/portal`, `/pricing` and
+`/welcome` share, so no page links to a billing route that would answer 503), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
 aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
 queries), `lib/waitlist/` (actions, queries, points), `lib/supabase/server.ts`,
