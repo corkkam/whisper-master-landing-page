@@ -14,6 +14,8 @@ allowBuilds:
 #   postcss-selector-parser <7.1.6 — quadratic flat-selector parsing (CPU DoS)
 #   browserslist <4.28.7 — crash / prototype write via custom stats json
 #   baseline-browser-mapping <2.11.0 — process exit on invalid input
+#   minimatch 7.x-11.0.0 — DoS via globparts amplification, reached via
+#                     @opennextjs/cloudflare > glob (deploy build only)
 overrides:
   postcss@<8.5.18: '>=8.5.18'
   sharp@<0.35.5: '>=0.35.5'
@@ -22,3 +24,4 @@ overrides:
   postcss-selector-parser@<7.1.6: '>=7.1.6'
   browserslist@<4.28.7: '>=4.28.7'
   baseline-browser-mapping@<2.11.0: '>=2.11.0'
+  minimatch@>=7.0.0 <11.0.1: ^11.0.1
