@@ -71,11 +71,11 @@ export const product = {
 //
 // To go back to the alias, add a Cloudflare cache purge for that exact URL as the
 // last step of publish-dmg.sh; until that exists, keep linking the versioned key.
-// Versioning was reset to 1.0.0 for the launch, so this number is *lower* than
-// the 1.2.x builds referenced above. That is deliberate, not a typo: 1.0.0 is the
-// newest build (its CFBundleVersion still increases, which is what Sparkle reads).
+// Versioning was reset to 1.0.0 for the launch, so the 1.2.x builds referenced
+// above are older than they look. 1.3.0 (2026-11-20) is the first stable build
+// that signs in through clerk.typing.sucks; anything older cannot sign in.
 export const downloads = {
-  stable: "https://dl.typing.sucks/WhisperMaster-1.0.0.dmg",
+  stable: "https://dl.typing.sucks/WhisperMaster-1.3.0.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;

@@ -125,7 +125,7 @@ any `+clerk_test@` address accepts `424242` as its email code.
    quoted together or not at all.
 10. **Link a versioned DMG, never an overwriteable alias.** `WhisperMaster.dmg`
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
-    `dl.typing.sucks/WhisperMaster-1.0.0.dmg` on purpose, with the reasoning
+    `dl.typing.sucks/WhisperMaster-1.3.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
     The **beta** URL is not there — it is in `lib/config.server.ts` behind
     `server-only`, because a `"use client"` file that imports one field off an
