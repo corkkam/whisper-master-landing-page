@@ -17,3 +17,11 @@ updates:
       # Remove this when the Next.js version in use supports TypeScript 7.
       - dependency-name: typescript
         versions: [">=7"]
+      # Majors of these packages need a migration, not a bump (#50-#52 closed on
+      # 2026-11-24). Remove an entry when that migration starts.
+      - dependency-name: next
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@polar-sh/nextjs"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@polar-sh/sdk"
+        update-types: ["version-update:semver-major"]
