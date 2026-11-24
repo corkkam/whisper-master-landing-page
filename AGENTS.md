@@ -30,7 +30,7 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 |---|---|
 | `/` | the marketing page, assembled from `components/sections/` |
 | `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
-| `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
+| `/pricing` | published prices, PPP for India, **disabled "Coming soon" in place of Buy links while checkout is dormant** |
 | `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
 | `/admin` | founder overview: account, beta and product-usage stats. Same gate |
 | `/admin/beta` | the beta queue: who is waiting, and the approve/revoke control |

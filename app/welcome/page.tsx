@@ -4,6 +4,7 @@ import { auth } from "@clerk/nextjs/server";
 import Nav from "@/components/Nav";
 import Footer from "@/components/sections/Footer";
 import { currentTier } from "@/lib/billing/entitlements";
+import { polarAccessToken } from "@/lib/billing/checkout";
 import { product } from "@/lib/config";
 
 export const metadata: Metadata = {
@@ -114,9 +115,17 @@ export default async function WelcomePage() {
             email required, no retention flow to sit through.
           </p>
           <div className="page-cta-actions">
-            <a className="btn btn--ghost" href="/api/portal">
-              Open billing portal
-            </a>
+            {/* The portal cannot open without Polar configured, and its failure
+                is a raw 500, so the link only exists when it can work. */}
+            {polarAccessToken() ? (
+              <a className="btn btn--ghost" href="/api/portal">
+                Open billing portal
+              </a>
+            ) : (
+              <button type="button" className="btn btn--ghost btn--soon" disabled>
+                Coming soon · nothing is billed during beta
+              </button>
+            )}
           </div>
         </section>
       </main>

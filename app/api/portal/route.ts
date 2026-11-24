@@ -1,6 +1,7 @@
 import { CustomerPortal } from "@polar-sh/nextjs";
 import { auth } from "@clerk/nextjs/server";
 import { polarServer } from "@/lib/billing/plans";
+import { polarAccessToken } from "@/lib/billing/checkout";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -20,7 +21,7 @@ import { siteUrl } from "@/lib/site";
  * far better failure than silently opening somebody else's.
  */
 export const GET = CustomerPortal({
-  accessToken: process.env.POLAR_ACCESS_TOKEN ?? "",
+  accessToken: polarAccessToken() ?? "",
   server: polarServer(),
   returnUrl: `${siteUrl()}/welcome`,
   getExternalCustomerId: async () => {

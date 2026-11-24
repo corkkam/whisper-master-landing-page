@@ -143,26 +143,3 @@ export function isOneTimeTier(tier: EntitlementTier): boolean {
 export function polarServer(): "sandbox" | "production" {
   return process.env.POLAR_SERVER === "production" ? "production" : "sandbox";
 }
-
-/**
- * Is self-serve checkout live?
- *
- * Derived from configuration rather than being its own feature flag, so there
- * is nothing to forget to flip. Checkout appears exactly when an access token
- * and at least one self-serve product id exist, and disappears if they are
- * removed.
- *
- * This matters because doc 10 §10.6 records a deliberate decision that the beta
- * is free — charging before retention is proven optimises the wrong number. The
- * plumbing being finished should not silently start billing people. Leave the
- * `POLAR_PRODUCT_*` vars unset and `/pricing` keeps saying "free during beta",
- * which is what it says today and what it should keep saying until the founder
- * decides otherwise.
- *
- * Server-side only — `process.env` is not populated in the browser, so this
- * must be evaluated in a server component and passed down as a prop.
- */
-export function selfServeCheckoutReady(): boolean {
-  if (!process.env.POLAR_ACCESS_TOKEN?.trim()) return false;
-  return Object.values(PLANS).some((p) => p.selfServe && productIdFor(p.slug));
-}
