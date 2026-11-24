@@ -3,9 +3,9 @@
 // Security headers applied to every response.
 //
 // The CSP is deliberately explicit about third parties rather than using a
-// wildcard: Clerk (auth), Cloudflare (Turnstile), Google (Analytics) and Vercel
-// (analytics/speed-insights) are the only origins allowed to run script or
-// receive beacons. Adding a vendor means adding it here.
+// wildcard: Clerk (auth), Cloudflare (Turnstile, and the Web Analytics beacon its
+// edge injects into every HTML page) and Google (Analytics) are the only origins
+// allowed to run script or receive beacons. Adding a vendor means adding it here.
 //
 // `'unsafe-inline'` in script-src is still required by Next.js's bootstrap;
 // removing it needs the nonce-based CSP (`experimental.strictNextHead` +
@@ -33,7 +33,7 @@ const supabaseOrigin = (() => {
 const scriptSrc = [
   "script-src 'self' 'unsafe-inline'",
   isDev ? "'unsafe-eval'" : "",
-  "https://*.clerk.accounts.dev https://clerk.typing.sucks https://challenges.cloudflare.com https://www.googletagmanager.com https://va.vercel-scripts.com",
+  "https://*.clerk.accounts.dev https://clerk.typing.sucks https://challenges.cloudflare.com https://www.googletagmanager.com https://static.cloudflareinsights.com",
 ]
   .filter(Boolean)
   .join(" ");
@@ -52,7 +52,7 @@ const csp = [
   [
     "connect-src 'self' https://*.clerk.accounts.dev https://clerk.typing.sucks",
     supabaseOrigin,
-    "https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+    "https://challenges.cloudflare.com https://www.google-analytics.com https://region1.google-analytics.com https://cloudflareinsights.com",
   ]
     .filter(Boolean)
     .join(" "),
@@ -65,7 +65,7 @@ const csp = [
 const securityHeaders = [
   { key: "Content-Security-Policy", value: csp },
   // Force HTTPS for two years, including subdomains. Safe here: the site is
-  // Vercel-hosted and HTTPS-only already.
+  // served by Cloudflare and HTTPS-only already.
   {
     key: "Strict-Transport-Security",
     value: "max-age=63072000; includeSubDomains; preload",

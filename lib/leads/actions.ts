@@ -38,16 +38,18 @@ import { isExistingProductUser, notifyFounder, recordLead } from "./queries";
 export type LeadSubmitResult = { ok: true } | { ok: false; error: string };
 
 /**
- * Best-effort client IP. Vercel sets `x-forwarded-for`; the leftmost entry is
- * the original client. Only ever used to derive a salted hash for rate
- * limiting — the raw value is never stored.
+ * Best-effort client IP. Cloudflare sets `cf-connecting-ip` and overwrites any
+ * value the client sent. It only appends to `x-forwarded-for`, so the leftmost
+ * entry there is whatever the client wrote; that header is a local-dev fallback
+ * only. Only ever used to derive a salted hash for rate limiting — the raw value
+ * is never stored.
  */
 async function clientIp(): Promise<{ ip: string | null; country: string | null }> {
   try {
     const h = await headers();
     const fwd = h.get("x-forwarded-for");
-    const ip = fwd?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
-    const country = h.get("x-vercel-ip-country");
+    const ip = h.get("cf-connecting-ip") || fwd?.split(",")[0]?.trim() || h.get("x-real-ip") || null;
+    const country = h.get("cf-ipcountry");
     return { ip, country };
   } catch {
     return { ip: null, country: null };
