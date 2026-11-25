@@ -51,8 +51,10 @@ export const product = {
 //   behind `server-only`, because everything exported here is fair game for a
 //   client component to import, and bundlers do not tree-shake a single property
 //   off an exported object — Hero/Unit import `downloads` for `.requirements`, so
-//   anything in this object ships in the public homepage JS. A gated URL that
-//   ships to every visitor is not gated. See app/download/page.tsx.
+//   anything in this object ships in the public homepage JS. The link then
+//   reaches every visitor, not only flagged users. The file itself is public on
+//   purpose (COR-75), so this is display, not access control. See
+//   app/download/page.tsx.
 // ⚠️ `stable` points at the VERSIONED key, not the WhisperMaster.dmg alias, and
 // must be bumped on every stable release. The alias is unsafe to link:
 // publish-dmg.sh overwrites it in place, and Cloudflare serves a **stale cached
@@ -75,7 +77,7 @@ export const product = {
 // above are older than they look. 1.3.0 (2026-11-20) is the first stable build
 // that signs in through clerk.typing.sucks; anything older cannot sign in.
 export const downloads = {
-  stable: "https://dl.typing.sucks/WhisperMaster-1.3.0.dmg",
+  stable: "https://dl.typing.sucks/WhisperMaster-1.4.0.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;

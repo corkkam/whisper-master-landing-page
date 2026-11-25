@@ -15,8 +15,9 @@ reference for day-to-day is **[`CLAUDE.md`](CLAUDE.md)**, which points back here
 The public web surface for Whisper Master: the marketing site, the download page,
 sign-in, pricing, the trust and legal pages, the B2B lead funnel, and the billing
 plumbing. It is **not** a waitlist page any more, whatever the git history and the
-old README said. Stable downloads are open to everyone; the beta build stays
-behind a Clerk flag.
+old README said. Stable downloads are open to everyone. The beta link on
+`/download` shows only to users with a Clerk flag, but the beta DMG file is public
+on purpose (§4 rule 10).
 
 **Stack:** Next.js 15 App Router · React 19 · TypeScript · Tailwind 4 (theme in `app/globals.css` `@theme`, no JS config) · Clerk ·
 Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
@@ -29,7 +30,7 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 | Route | What it is |
 |---|---|
 | `/` | the marketing page, assembled from `components/sections/` |
-| `/download` | stable DMG open to all, beta DMG behind `publicMetadata.betaAccess` |
+| `/download` | stable DMG open to all. The beta DMG link shows only with `publicMetadata.betaAccess`, but the file is public (§4.10) |
 | `/pricing` | published prices, PPP for India, **no Buy buttons while checkout is dormant** |
 | `/for-teams` | the B2B lead form, deliberately with no sign-in gate |
 | `/admin` | founder overview: account, beta and product-usage stats. Same gate |
@@ -44,7 +45,9 @@ Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whisp
 | `/api/eval/ingest` | run upload, token-gated on `EVAL_INGEST_TOKEN`, fails closed |
 | `/api/usage`, `/api/usage/[userId]`, `/api/notes` | the macOS app's sync, auth in `lib/sync/auth.ts` |
 
-Library layout: `lib/billing/` (plans, entitlements), `lib/clerk/` (beta flag),
+Library layout: `lib/billing/` (plans, entitlements, and `checkout.ts`: the
+`server-only` Polar check that `/api/checkout`, `/api/portal`, `/pricing` and
+`/welcome` share, so no page links to a billing route that would answer 503), `lib/clerk/` (beta flag),
 `lib/beta/` (queue read, admin actions, shared row type), `lib/stats/` (usage
 aggregation, pure derivations), `lib/leads/` (schema, scoring, stages, actions,
 queries), `lib/waitlist/` (actions, queries, points), `lib/supabase/server.ts`,
@@ -125,13 +128,22 @@ any `+clerk_test@` address accepts `424242` as its email code.
    quoted together or not at all.
 10. **Link a versioned DMG, never an overwriteable alias.** `WhisperMaster.dmg`
     kept serving stale bytes from the CDN; `lib/config.ts` points stable at
-    `dl.typing.sucks/WhisperMaster-1.3.0.dmg` on purpose, with the reasoning
+    `dl.typing.sucks/WhisperMaster-1.4.0.dmg` on purpose, with the reasoning
     written above the constant. Update it deliberately when a release lands.
     The **beta** URL is not there — it is in `lib/config.server.ts` behind
     `server-only`, because a `"use client"` file that imports one field off an
-    exported object ships the whole object in the public JS. A gated URL that
-    ships to everyone is not gated; do not move `betaDownloadUrl` back into a
-    client-importable module.
+    exported object ships the whole object in the public JS. That keeps the link
+    off the homepage and shows it only to flagged users. Do not move
+    `betaDownloadUrl` back into a client-importable module.
+    **The beta DMG is public on purpose (COR-75, decided 2026-11-25), so hiding
+    the link is display, not access control.** The flag only picks the Sparkle
+    update track in the Mac app (`BetaAccess.allowedChannels`). It gates no
+    feature. The Sparkle beta archive is public in the same R2 bucket, and R2 sets
+    public access per bucket, so gating only the DMG link would protect nothing.
+    The app source is public too (AGPL-3.0). Do not write that the beta download
+    is private, gated or invite-only. Known gap: the public
+    `WhisperMaster-beta.dmg` is stale (1.2.0-beta.1, cannot sign in). Replacing it
+    is an R2 upload and needs the owner.
 11. **Never weaken an auth gate**, and never commit a secret. `.env.local` is
     git-ignored; document a new variable in `.env.local.example` by name only.
 12. **The middleware's retired-cookie guard is load-bearing.** An unverifiable

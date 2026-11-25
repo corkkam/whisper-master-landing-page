@@ -2,6 +2,7 @@ import { Polar } from "@polar-sh/sdk";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { NextResponse, type NextRequest } from "next/server";
 import { isPlanSlug, PLANS, polarServer, productIdFor } from "@/lib/billing/plans";
+import { polarAccessToken } from "@/lib/billing/checkout";
 import { siteUrl } from "@/lib/site";
 
 /**
@@ -32,7 +33,7 @@ import { siteUrl } from "@/lib/site";
  * kind of manual work a one-person company cannot absorb.
  */
 export async function GET(req: NextRequest) {
-  const accessToken = process.env.POLAR_ACCESS_TOKEN;
+  const accessToken = polarAccessToken();
   if (!accessToken) {
     console.error("[checkout] POLAR_ACCESS_TOKEN is not set");
     return NextResponse.json({ error: "Checkout is not configured yet." }, { status: 503 });
