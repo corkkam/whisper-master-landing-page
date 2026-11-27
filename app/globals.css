@@ -393,6 +393,18 @@
     --live: var(--ember-ink);
   }
 
+  /* Phones read the small step as the base step. It carries the running text
+     of every inner page and every form field, and at 14px the text is too
+     small at arm's length and iOS zooms the page when a field takes focus.
+     Tailwind's `text-sm` reads the same variable, so the join modal follows.
+     The height test catches a phone held sideways. */
+  @media (max-width: 640px), (max-height: 480px) {
+    :root {
+      --text-sm: var(--text-base);
+      --lh-sm: var(--lh-base);
+    }
+  }
+
   html {
     background: var(--paper);
     -webkit-text-size-adjust: 100%;
@@ -1271,6 +1283,14 @@
   opacity: 1;
   pointer-events: auto;
 }
+/* Below ~464px the space right of the notch holds the menu button or the
+   label, not both, and the pill was clipping to "et the ap". The sheet behind
+   the menu button carries the download. */
+@media (max-width: 479px) {
+  .runhead-cta {
+    display: none;
+  }
+}
 
 /* The rule beneath the head. Printed, not a shadow — and it fills in ember as
    you read down, which is the page number's job done as a line. */
@@ -1463,8 +1483,9 @@
 /* The orb mark. 24px because the dot field needs room to read as a sphere —
    the meter it replaced was 12px, but below ~20 the field collapses into a
    plain ember ball and throws away the one thing that makes the mark
-   recognisable. Its own asset is drawn for exactly this box, so don't resize it
-   here without regenerating (`Scripts/make-logo.swift` → wordmarkDisplayPixels). */
+   recognisable. The asset is the app icon's 128px slot, cropped to the tile and
+   stored at 72px (3x this box), so re-extract it from `AppIcon.icns` if this
+   size changes. See components/Wordmark.tsx. */
 .wordmark-mark {
   flex: none;
   width: 24px;
@@ -1672,7 +1693,10 @@
     #000 58%
   );
 }
-@media (max-width: 900px) {
+/* Portrait only. A phone held sideways has the flank, and under this rule its
+   whole first screen was the band, with the headline starting below the fold.
+   It takes the wide layout instead. HeroPond.tsx matches this query. */
+@media (max-width: 900px) and (orientation: portrait) {
   /* Portrait has no flank to give the art, and letterboxing a 16:9 drawing into
      a phone width left the koi as a 200px sliver. Crop to the fish instead: a
      tall band, filled, positioned on the koi, fading out before the copy. */
@@ -1709,8 +1733,28 @@
   /* Sits directly under the band, tracking the same width-derived height. The
      overlap is deliberate: the bottom 28% of the band is masked out, so the
      plate number starts inside the fade rather than below a hard edge. */
+  /* Capped with the band. Past 516px wide the band stops at 320px, and an
+     uncapped 62vw left up to 230px of empty paper under it on tablets. */
   .hero {
-    padding-top: calc(62vw + 24px);
+    padding-top: calc(min(62vw, 320px) + 24px);
+  }
+  /* A short phone (iPhone SE) had the download button cut by the fold.
+     Tighter steps between the plate number, the line and the button lift it
+     clear without touching the art. */
+  @media (max-height: 700px) {
+    .hero {
+      padding-top: calc(min(62vw, 320px) + 8px);
+    }
+    /* `.hero` in front: the "Hero rhythm" rules further down set these. */
+    .hero .plate-no {
+      margin-bottom: 20px;
+    }
+    .hero .hero-sub {
+      margin-top: 20px;
+    }
+    .hero .hero-actions {
+      margin-top: 24px;
+    }
   }
 }
 
@@ -3426,10 +3470,18 @@
   color: var(--haze);
 }
 
-.trust-section {
+/* `.section` and its parts lost their rules in the 2026-08-05 redesign, but
+   /for-teams and /welcome still use them, so their headings ran into the text
+   above as plain body copy. They take the trust page's section rhythm. */
+.trust-section,
+.section {
   margin-top: var(--space-600);
 }
-.trust-h2 {
+.section-head {
+  margin-bottom: var(--space-300);
+}
+.trust-h2,
+.section-title {
   margin: 0 0 var(--space-200);
   font-family: var(--display);
   font-size: var(--text-xl);
@@ -3439,7 +3491,8 @@
   color: var(--bone);
 }
 .trust-note,
-.trust-body {
+.trust-body,
+.section-lede {
   max-width: 68ch;
   font-size: var(--text-sm);
   line-height: var(--lh-sm);
@@ -4080,13 +4133,15 @@
 .ev-steps li:last-child {
   border-right: 0;
 }
-.ev-step-n {
+.ev-step-n,
+.step-n {
   font-family: var(--font-note);
   font-size: 0.6875rem;
   letter-spacing: 0.16em;
   color: var(--ember-ink);
 }
-.ev-steps h3 {
+.ev-steps h3,
+.step h3 {
   margin: 10px 0 6px;
   font-family: var(--display);
   font-size: 1.0625rem;
@@ -4099,6 +4154,31 @@
   line-height: 1.45;
   color: var(--ink-3);
   max-width: 32ch;
+}
+/* /welcome's next steps lost their rules with `.section`. Same number and
+   heading as the method above, one step per row. */
+.steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--hair);
+}
+.step {
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr);
+  align-items: baseline;
+  padding: var(--space-300) 0;
+  border-bottom: 1px solid var(--hair);
+}
+.step p {
+  max-width: 60ch;
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.step .btn {
+  margin-top: var(--space-200);
 }
 @media (max-width: 860px) {
   .ev-steps {
@@ -4399,6 +4479,8 @@
   color: var(--ink-2);
   border-radius: var(--r-pill);
   padding: 6px 14px;
+  /* The pager's "← Previous" was breaking its arrow onto a second line. */
+  white-space: nowrap;
   cursor: pointer;
   transition: background var(--t-quick) var(--ease), color var(--t-quick) var(--ease),
     border-color var(--t-quick) var(--ease);
@@ -4421,7 +4503,8 @@
   flex: 1;
   min-width: 200px;
   font-family: var(--font-read);
-  font-size: 0.875rem;
+  /* The token, so phones get 16px and iOS does not zoom on focus. */
+  font-size: var(--text-sm);
   color: var(--ink);
   background: var(--paper-2);
   border: 1px solid var(--hair);
@@ -4441,6 +4524,15 @@
 .ev-pg-at {
   min-width: 120px;
   text-align: center;
+}
+/* Two whole chips and a 120px label are wider than a 360px phone. */
+@media (max-width: 400px) {
+  .ev-pg {
+    gap: 10px;
+  }
+  .ev-pg-at {
+    min-width: 0;
+  }
 }
 
 /* The cases themselves. */
@@ -4674,8 +4766,10 @@ mark.del {
   gap: var(--space-200);
   margin-top: var(--space-400);
 }
+/* No negative margin: -0.35rem pulled this line into the descenders of the one
+   above it at every width. */
 .plan-sub--inr {
-  margin-top: -0.35rem !important;
+  margin-top: 0 !important;
   font-size: var(--text-xs) !important;
   line-height: var(--lh-xs) !important;
   color: var(--haze-dim) !important;
@@ -6521,3 +6615,63 @@ mark.del {
    it is upstream of CSS anyway: `DictationContext` stops the clock and holds
    the band open on its finished state, rather than opening and shutting on a
    timer nobody asked for. */
+
+/* ── Touch targets ────────────────────────────────────────────────────
+   44px, Apple's floor, for every control a thumb has to hit. Coarse pointers
+   only: a mouse hits the drawn size, and the drawn size stays. Where the
+   menu bar or a line of text fixes the drawn size, the extra is hit area
+   (padding, a transparent border, an empty ::after), not a bigger control. */
+@media (pointer: coarse) {
+  /* The menu bar is 34px tall on a phone. */
+  .runhead-mark {
+    padding: 10px;
+    margin: -10px;
+  }
+  /* Measured from the padding box, inside the 1px border: 30x24 becomes 44x44. */
+  .menu-toggle::after {
+    content: "";
+    position: absolute;
+    inset: -10px -7px;
+  }
+  /* `overflow: hidden` clips an ::after here, so the pill is the padding box
+     and the transparent border around it is the extra. */
+  .runhead-cta {
+    height: 44px;
+    margin-block: -9px;
+    border-block-width: 9px;
+    background-clip: padding-box;
+  }
+
+  .hero-secondary,
+  .cur-btn,
+  .ev-search,
+  .consent-btn {
+    min-height: 44px;
+  }
+  .ev-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .ev-back {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+
+  .colophon-group ul {
+    gap: 0;
+  }
+  .colophon-group a,
+  .colophon-group button {
+    display: inline-flex;
+    align-items: center;
+    min-width: 44px;
+    min-height: 44px;
+  }
+  .colophon-foot > a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+  }
+}

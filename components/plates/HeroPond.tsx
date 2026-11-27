@@ -404,7 +404,7 @@ export function HeroPond({
       /* Match the CSS `object-position` so the canvas frames the plate exactly
          as the still image it replaces. Portrait crops onto the koi; landscape
          gives the art a box of its own aspect, where this is a no-op. */
-      const narrow = window.matchMedia("(max-width: 900px)");
+      const narrow = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
       const setFocus = () =>
         gl.uniform2f(u.focus!, narrow.matches ? 0.84 : 0.5, narrow.matches ? 0.74 : 0.5);
       setFocus();
