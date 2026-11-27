@@ -1,4 +1,4 @@
-# AGENTS.md — Whisper Master landing page
+# AGENTS.md — Typing.sucks landing page
 
 The entry point for any AI agent working in this repository. It overrides the
 machine-level `~/AGENTS.md` where the two disagree.
@@ -12,7 +12,7 @@ reference for day-to-day is **[`CLAUDE.md`](CLAUDE.md)**, which points back here
 
 ## 1. What this repository is
 
-The public web surface for Whisper Master: the marketing site, the download page,
+The public web surface for Typing.sucks: the marketing site, the download page,
 sign-in, pricing, the trust and legal pages, the B2B lead funnel, and the billing
 plumbing. It is **not** a waitlist page any more, whatever the git history and the
 old README said. Stable downloads are open to everyone. The beta link on
@@ -24,6 +24,14 @@ Supabase · Polar · Framer Motion · Three.js · pnpm 11 · Vercel.
 
 Live at **https://typing.sucks** (Cloudflare Workers, `pnpm cf:deploy`). (`whispermaster.app` is not registered; do not link it.) The Mac app it sells lives at
 `../whisper-master/`; shared product and business docs are in `../docs/`.
+
+**The product is named Typing.sucks** (owner decision D1, 2026-11-27). It was called
+Whisper Master. Only the words a visitor reads changed. These keep the old name
+because renaming one breaks a link, a cookie or an installed app: the R2 object
+names in the download URLs (`WhisperMaster-<version>.dmg`), the Worker name
+`whisper-master-landing-page` in `wrangler.jsonc`, the package name, the referral
+cookie `whisper_master_ref`, the `whisper-master:dashboard` localStorage key, the
+Supabase project id, the repo name and the paths into the Mac app repo.
 
 ## 2. Routes and what owns them
 

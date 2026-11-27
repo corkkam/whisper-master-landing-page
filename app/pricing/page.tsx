@@ -11,7 +11,7 @@ import { selfServeCheckoutReady } from "@/lib/billing/checkout";
 export const metadata: Metadata = {
   title: `Pricing — ${product.name}`,
   description:
-    "Whisper Master is free while in beta. Here is exactly what it will cost when it isn't, in USD and INR — published up front so nobody is surprised later.",
+    "Typing.sucks is free while in beta. Here is exactly what it will cost when it isn't, in USD and INR — published up front so nobody is surprised later.",
   alternates: { canonical: "/pricing" },
 };
 

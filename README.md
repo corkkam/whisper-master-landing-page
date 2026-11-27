@@ -1,7 +1,7 @@
-# Whisper Master — the website
+# Typing.sucks — the website
 
-This is the code behind **[whisper.corkkam.com](https://whisper.corkkam.com)**, the
-site for Whisper Master: a local-first dictation app for macOS. Everything the
+This is the code behind **[typing.sucks](https://typing.sucks)**, the
+site for Typing.sucks: a local-first dictation app for macOS. Everything the
 public sees lives here — the marketing page, the downloads, sign-in, pricing, the
 privacy and trust pages, the team enquiry form, and the billing plumbing.
 

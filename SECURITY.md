@@ -1,8 +1,8 @@
 # Security policy
 
-This repository is the website at https://whisper.corkkam.com: marketing pages,
+This repository is the website at https://typing.sucks: marketing pages,
 downloads, sign-in, billing, the admin console, the public eval pages, and the sync
-API that the Whisper Master Mac app calls.
+API that the Typing.sucks Mac app calls.
 
 ## Report a vulnerability
 

@@ -5,7 +5,7 @@ import type { LeadInput } from "./schema";
  *
  * This is not a generic "MQL score". It encodes one specific commercial thesis:
  *
- *   Whisper Master cannot win a head-on prosumer fight. Superwhisper is cheaper
+ *   Typing.sucks cannot win a head-on prosumer fight. Superwhisper is cheaper
  *   and MacWhisper is a one-time €59, both are already on-device, and neither
  *   has to be discovered — they own the category's search traffic. What none of
  *   them sells is dictation a *compliance officer will approve*: per-seat, with

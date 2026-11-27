@@ -367,7 +367,7 @@ export default function JoinModal({
     // Deliberately not "I just got early access" — the sharer is usually still
     // pending, and a claim they can't back is a bad first impression of the app.
     const text =
-      "I'm on the Whisper Master early-access list — talk, and it types. Join with my link:";
+      "I'm on the Typing.sucks early-access list — talk, and it types. Join with my link:";
     const url =
       network === "x"
         ? `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(referralLink)}`
@@ -589,7 +589,7 @@ export default function JoinModal({
                       </select>
                     </Field>
                   </div>
-                  <Field label="What will you use Whisper Master for? (optional)">
+                  <Field label="What will you use Typing.sucks for? (optional)">
                     <textarea
                       rows={2}
                       value={form.useCase}

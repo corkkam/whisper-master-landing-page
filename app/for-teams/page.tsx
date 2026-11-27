@@ -47,7 +47,7 @@ export default function ForTeamsPage() {
             Most dictation tools send your audio to a server. For a law firm, a
             clinic or a therapy practice, that single fact ends the evaluation —
             so a lot of professionals simply gave up on dictation and went back
-            to typing. Whisper Master transcribes entirely on the Mac in front of
+            to typing. Typing.sucks transcribes entirely on the Mac in front of
             you. There is no server to send audio to.
           </p>
         </header>
@@ -63,7 +63,7 @@ export default function ForTeamsPage() {
               real and the paperwork is how you manage it.
             </p>
             <p>
-              Whisper Master runs the speech model on your own hardware. The
+              Typing.sucks runs the speech model on your own hardware. The
               audio is processed in memory on the Mac and never written to a
               network socket. There is no retention policy to audit because
               there is nothing to retain — a difference your reviewer can verify

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /**
- * Whisper Master — team/organisation enquiry form.
+ * Typing.sucks — team/organisation enquiry form.
  *
  * FIELD COUNT IS A CONVERSION DECISION, NOT A DATA-COLLECTION ONE.
  * Every field added here costs completions. The split below is deliberate:

@@ -8,7 +8,7 @@ import { flows, neverLeaves, entity, LEGAL_UPDATED } from "@/lib/legal";
 export const metadata: Metadata = {
   title: `Privacy Policy — ${product.name}`,
   description:
-    "How Whisper Master handles your data. Transcription happens on your Mac; your audio is never uploaded. This policy lists every exception.",
+    "How Typing.sucks handles your data. Transcription happens on your Mac; your audio is never uploaded. This policy lists every exception.",
   alternates: { canonical: "/privacy" },
 };
 

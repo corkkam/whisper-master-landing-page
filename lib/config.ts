@@ -1,5 +1,5 @@
 /**
- * Whisper Master — single source of truth for product copy + feature flags.
+ * Typing.sucks — single source of truth for product copy + feature flags.
  * Edit this file to rebrand or retune without touching components.
  */
 
@@ -15,7 +15,7 @@ export const EMAIL_AUTH_ENABLED = true;
 // ─────────────────────────────────────────────────────────────────────────
 
 export const product = {
-  name: "Whisper Master",
+  name: "Typing.sucks",
   tagline: "Voice-to-text that never leaves your device.",
   contactEmail: "corkkam.info@gmail.com",
   // No `waitlistCount` here on purpose. It used to hold a hardcoded "2,400+"

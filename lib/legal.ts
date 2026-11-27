@@ -1,5 +1,5 @@
 /**
- * Whisper Master — legal + trust source of truth.
+ * Typing.sucks — legal + trust source of truth.
  *
  * Every factual claim on /privacy, /terms and /trust is derived from this file,
  * so the three pages can never drift apart. The data-flow table below was
@@ -19,7 +19,7 @@
 // registered private-limited name if one exists.
 export const entity = {
   /** Trading name shown to users. */
-  tradingName: "Whisper Master",
+  tradingName: "Typing.sucks",
   /** Legal entity that contracts with the user and receives payment. */
   legalEntity: "Corkkam",
   /** Registered place of business. Determines governing law + tax treatment. */

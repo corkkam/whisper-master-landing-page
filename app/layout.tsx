@@ -45,12 +45,12 @@ const mono = JetBrains_Mono({
 
 const TITLE = `${product.name} — talk to your Mac, privately`;
 const DESCRIPTION =
-  "Whisper Master turns speech into clean, formatted text in any Mac app — transcribed entirely on your device. No cloud round-trip, no audio uploaded, works offline.";
+  "Typing.sucks turns speech into clean, formatted text in any Mac app — transcribed entirely on your device. No cloud round-trip, no audio uploaded, works offline.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   // No `template` here on purpose: every sub-page already sets a full
-  // "Page — Whisper Master" title, so a template would suffix the brand twice.
+  // "Page — Typing.sucks" title, so a template would suffix the brand twice.
   title: TITLE,
   description: DESCRIPTION,
   applicationName: product.name,
