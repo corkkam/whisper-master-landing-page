@@ -12,7 +12,7 @@ import { betaDownloadUrl } from "@/lib/config.server";
 export const metadata: Metadata = {
   title: `Download ${product.name}`,
   description:
-    "Download Whisper Master for macOS — the stable build is free and needs no account. The beta channel opens once you're approved for early access.",
+    "Download Typing.sucks for macOS — the stable build is free and needs no account. The beta channel opens once you're approved for early access.",
 };
 
 // The stable link is public, but the *beta* card still branches on Clerk

@@ -9,7 +9,7 @@ import { product } from "@/lib/config";
 export const metadata: Metadata = {
   title: `Roadmap — ${product.name}`,
   description:
-    "What ships today, what's being worked on now, and where Whisper Master goes next — including the accuracy numbers we're still chasing.",
+    "What ships today, what's being worked on now, and where Typing.sucks goes next — including the accuracy numbers we're still chasing.",
 };
 
 const STATE_LABEL: Record<string, string> = {

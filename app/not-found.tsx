@@ -5,7 +5,7 @@ import Footer from "@/components/sections/Footer";
 import { ArrowRight } from "@/components/icons";
 
 export const metadata: Metadata = {
-  title: "Page not found — Whisper Master",
+  title: "Page not found — Typing.sucks",
   robots: { index: false, follow: true },
 };
 

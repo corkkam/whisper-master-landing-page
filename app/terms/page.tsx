@@ -8,7 +8,7 @@ import { entity, LEGAL_UPDATED } from "@/lib/legal";
 export const metadata: Metadata = {
   title: `Terms of Service — ${product.name}`,
   description:
-    "The agreement between you and Whisper Master: what you may do with the app, what we promise, and what we don't.",
+    "The agreement between you and Typing.sucks: what you may do with the app, what we promise, and what we don't.",
   alternates: { canonical: "/terms" },
 };
 

@@ -39,7 +39,7 @@ export function Wordmark({ className = "" }: { className?: string }) {
     <span className={`wordmark ${className}`}>
       <OrbMark />
       <span className="wordmark-text">
-        whisper<em>master</em>
+        Typing<em>.sucks</em>
       </span>
     </span>
   );

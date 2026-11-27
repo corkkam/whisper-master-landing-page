@@ -11,7 +11,7 @@ import { useDictation } from "./DictationContext";
  * sitting in the middle of a page. Here the browser viewport is the display, so
  * the band hangs off the real top edge, dead centre, with the wordmark and the
  * contents index either side of it — which is the arrangement a Mac menu bar
- * has, and the arrangement Whisper Master lives in.
+ * has, and the arrangement Typing.sucks lives in.
  *
  * Two things follow from that, and both are load-bearing:
  *
@@ -64,7 +64,7 @@ export default function MenuBarNotch() {
 
       {/* The band is decorative; this is the part a screen reader gets. */}
       <span className="sr-only" aria-live="polite">
-        {live ? `Whisper Master: ${label}` : ""}
+        {live ? `Typing.sucks: ${label}` : ""}
       </span>
     </div>
   );

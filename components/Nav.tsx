@@ -167,7 +167,7 @@ export default function Nav() {
       <nav className="runhead" data-dropped={dropped} aria-label="Main">
         {/* Left of the island: who this is, and where you are in it. */}
         <div className="runhead-side runhead-side--l">
-          <Link href="/" className="runhead-mark" aria-label="Whisper Master home">
+          <Link href="/" className="runhead-mark" aria-label="Typing.sucks home">
             <Wordmark />
           </Link>
 

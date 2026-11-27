@@ -9,7 +9,7 @@ import { flows, neverLeaves, entity, LEGAL_UPDATED } from "@/lib/legal";
 export const metadata: Metadata = {
   title: `What leaves your Mac — ${product.name}`,
   description:
-    "Every network request Whisper Master makes, what is inside it, and how to switch it off. Five rows. Audio is not one of them.",
+    "Every network request Typing.sucks makes, what is inside it, and how to switch it off. Five rows. Audio is not one of them.",
   alternates: { canonical: "/trust" },
 };
 

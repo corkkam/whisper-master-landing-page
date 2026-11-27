@@ -1,5 +1,5 @@
 /**
- * Whisper Master — pricing source of truth.
+ * Typing.sucks — pricing source of truth.
  *
  * Nothing charges money yet: the app is free during beta and no processor is
  * wired. But the *numbers* are decided and published, for two reasons:
