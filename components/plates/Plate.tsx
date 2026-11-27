@@ -47,13 +47,16 @@ export function Rise({
   as: Tag = "div",
   className = "",
   delay = 0,
+  rootMargin,
 }: {
   children: ReactNode;
   as?: ElementType;
   className?: string;
   delay?: number;
+  /** Overrides the default -12% inset, for content that must show at the fold. */
+  rootMargin?: string;
 }) {
-  const { ref, inView } = useInView<HTMLDivElement>();
+  const { ref, inView } = useInView<HTMLDivElement>(rootMargin);
   return (
     <Tag
       ref={ref}

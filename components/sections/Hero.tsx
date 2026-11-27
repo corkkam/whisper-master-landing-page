@@ -110,7 +110,9 @@ export default function Hero() {
           </p>
         </Rise>
 
-        <Rise delay={140}>
+        {/* The real fold, not the default 12% inset: on a short phone the
+            button sat in the bottom 12% and stayed invisible until a scroll. */}
+        <Rise delay={140} rootMargin="0px">
           <div className="hero-actions">
             <a className="btn btn--primary btn--xl" href="#unit">
               Download for Mac
@@ -121,7 +123,7 @@ export default function Hero() {
           </div>
         </Rise>
 
-        <Rise delay={200}>
+        <Rise delay={200} rootMargin="0px">
           <p className="hero-meta">
             <span>{downloads.requirements}</span>
             <i aria-hidden="true" />
