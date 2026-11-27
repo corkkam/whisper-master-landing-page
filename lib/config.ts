@@ -77,7 +77,7 @@ export const product = {
 // above are older than they look. 1.3.0 (2026-11-20) is the first stable build
 // that signs in through clerk.typing.sucks; anything older cannot sign in.
 export const downloads = {
-  stable: "https://dl.typing.sucks/WhisperMaster-1.4.0.dmg",
+  stable: "https://dl.typing.sucks/WhisperMaster-1.4.1.dmg",
   // Shown as helper copy under the buttons.
   requirements: "macOS 14 (Sonoma) or later · Apple Silicon",
 } as const;
